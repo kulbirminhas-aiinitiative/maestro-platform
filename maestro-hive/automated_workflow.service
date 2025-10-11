@@ -1,0 +1,26 @@
+[Unit]
+Description=Maestro Automated Template Workflow Service
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/home/ec2-user/projects/maestro-platform/maestro-hive
+Environment="PATH=/usr/bin:/usr/local/bin"
+Environment="PYTHONUNBUFFERED=1"
+
+# Run in safe mode with 2-hour interval
+ExecStart=/usr/bin/python3 /home/ec2-user/projects/maestro-platform/maestro-hive/automated_template_workflow.py --mode safe --interval 7200
+
+# Restart policy
+Restart=always
+RestartSec=60
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=maestro-workflow
+
+[Install]
+WantedBy=multi-user.target

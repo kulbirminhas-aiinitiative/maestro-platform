@@ -1,0 +1,10 @@
+{
+  "session_id": "test_disabled",
+  "requirement": "Build simple REST API",
+  "output_dir": "test_output/disabled",
+  "created_at": "2025-10-05T10:41:47.988670",
+  "last_updated": "2025-10-05T10:41:47.988672",
+  "completed_personas": [],
+  "files_registry": {},
+  "persona_outputs": {}
+}

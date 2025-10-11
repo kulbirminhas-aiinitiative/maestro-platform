@@ -1,0 +1,95 @@
+# Local PostgreSQL for Minikube Testing
+# Used by: MLflow (backend store), Feast (registry)
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storage
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgresql-init
+  namespace: storage
+data:
+  init.sql: |
+    -- Create databases
+    CREATE DATABASE mlflow;
+    CREATE DATABASE feast_registry;
+
+    -- Grant permissions
+    GRANT ALL PRIVILEGES ON DATABASE mlflow TO maestro;
+    GRANT ALL PRIVILEGES ON DATABASE feast_registry TO maestro;
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  namespace: storage
+spec:
+  serviceName: postgresql
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+  template:
+    metadata:
+      labels:
+        app: postgresql
+    spec:
+      containers:
+      - name: postgresql
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        - name: POSTGRES_USER
+          value: "maestro"
+        - name: POSTGRES_PASSWORD
+          value: "maestro123"
+        - name: POSTGRES_DB
+          value: "maestro"
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+      volumes:
+      - name: init-scripts
+        configMap:
+          name: postgresql-init
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 5Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  namespace: storage
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgres
+  selector:
+    app: postgresql

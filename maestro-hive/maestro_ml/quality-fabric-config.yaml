@@ -1,0 +1,165 @@
+# Quality Fabric (TaaS) Test Configuration for Maestro ML Platform
+# This configuration defines comprehensive testing requirements for the platform
+
+test_suite:
+  name: "Maestro ML Platform Test Suite"
+  version: "1.0.0"
+  description: "Comprehensive testing for the ML development platform"
+
+test_types:
+  - unit_tests:
+      framework: pytest
+      test_files:
+        - "tests/test_api_projects.py"
+        - "tests/test_api_artifacts.py"
+        - "tests/test_end_to_end.py"
+        - "tests/test_comprehensive_quality_fabric.py"
+      coverage_target: 70%
+      required_pass_rate: 100%
+
+  - integration_tests:
+      framework: pytest
+      test_files:
+        - "tests/test_comprehensive_quality_fabric.py"
+      coverage_target: 60%
+      required_pass_rate: 100%
+
+  - api_tests:
+      base_url: "http://localhost:8000"
+      endpoints:
+        - path: "/"
+          method: GET
+          expected_status: 200
+        - path: "/api/v1/projects"
+          method: POST
+          expected_status: 200
+        - path: "/api/v1/artifacts"
+          method: POST
+          expected_status: 200
+        - path: "/api/v1/artifacts/search"
+          method: POST
+          expected_status: 200
+        - path: "/api/v1/metrics"
+          method: POST
+          expected_status: 200
+
+  - performance_tests:
+      scenarios:
+        - name: "Create 100 projects"
+          operations: 100
+          max_duration_seconds: 30
+          concurrent_users: 5
+        - name: "Create 200 artifacts"
+          operations: 200
+          max_duration_seconds: 60
+          concurrent_users: 10
+        - name: "Search artifacts with 50 concurrent users"
+          operations: 500
+          max_duration_seconds: 30
+          concurrent_users: 50
+
+  - security_tests:
+      checks:
+        - sql_injection_protection: true
+        - xss_protection: true
+        - cors_configuration: true
+        - input_validation: true
+        - authentication_required: false  # Phase 2 feature
+
+test_environment:
+  runtime: docker-compose
+  services:
+    - postgres:
+        image: "postgres:14-alpine"
+        health_check: "pg_isready"
+    - redis:
+        image: "redis:7-alpine"
+        health_check: "redis-cli ping"
+    - api:
+        build: "."
+        health_check: "curl http://localhost:8000/"
+
+  environment_variables:
+    - DATABASE_URL: "postgresql+asyncpg://maestro:maestro@postgres:5432/maestro_ml"
+    - REDIS_URL: "redis://redis:6379/0"
+    - DEBUG: "true"
+
+test_execution:
+  parallel: true
+  max_workers: 4
+  retry_failed: 2
+  timeout_seconds: 300
+
+  before_tests:
+    - "poetry install"
+    - "docker-compose up -d postgres redis"
+    - "sleep 5"  # Wait for services to be ready
+
+  after_tests:
+    - "docker-compose down"
+
+quality_gates:
+  code_coverage:
+    minimum: 60%
+    target: 75%
+
+  test_pass_rate:
+    minimum: 95%
+    target: 100%
+
+  performance:
+    max_response_time_ms: 500
+    max_error_rate: 1%
+
+  security:
+    no_critical_vulnerabilities: true
+    no_high_vulnerabilities: true
+
+reporting:
+  formats:
+    - junit_xml
+    - html
+    - json
+    - pdf
+
+  output_directory: "test-reports"
+
+  include:
+    - test_results
+    - code_coverage
+    - performance_metrics
+    - security_scan_results
+    - api_documentation
+
+  notifications:
+    on_failure:
+      - type: email
+        recipients: ["team@maestro-ml.com"]
+      - type: slack
+        channel: "#maestro-ml-tests"
+
+continuous_testing:
+  enabled: true
+  triggers:
+    - on_commit: true
+    - on_pull_request: true
+    - scheduled: "0 2 * * *"  # Daily at 2 AM
+
+  regression_tests:
+    enabled: true
+    baseline: "main"
+
+test_data:
+  fixtures:
+    - projects: 10
+    - artifacts: 50
+    - metrics: 100
+
+  cleanup_after_tests: true
+  seed_data_path: "tests/fixtures/"
+
+metadata:
+  team: "Maestro ML Engineering"
+  contact: "team@maestro-ml.com"
+  documentation: "https://docs.maestro-ml.com/testing"
+  jira_project: "MAESTRO"

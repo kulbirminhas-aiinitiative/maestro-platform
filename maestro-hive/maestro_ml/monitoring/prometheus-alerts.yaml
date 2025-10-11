@@ -1,0 +1,459 @@
+# Prometheus Alerting Rules for Maestro ML Platform
+#
+# Deploy with:
+#   kubectl apply -f prometheus-alerts.yaml
+#
+# Or mount in prometheus.yml:
+#   rule_files:
+#     - "/etc/prometheus/alerts.yaml"
+
+groups:
+  # ============================================================================
+  # Availability & SLO Alerts
+  # ============================================================================
+  - name: availability
+    interval: 30s
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) /
+          sum(rate(http_requests_total[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 1%)"
+          runbook: "https://docs.maestro-ml.com/runbooks/high-error-rate"
+
+      - alert: SLOViolation
+        expr: slo_http_request_success_rate{service="api"} < 0.999
+        for: 5m
+        labels:
+          severity: critical
+          category: slo
+        annotations:
+          summary: "SLO violation: Success rate below target"
+          description: "Success rate is {{ $value | humanizePercentage }} (target: 99.9%)"
+          runbook: "https://docs.maestro-ml.com/runbooks/slo-violation"
+
+      - alert: ServiceDown
+        expr: up{job="maestro-ml-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "Service is down"
+          description: "{{ $labels.instance }} has been down for more than 1 minute"
+          runbook: "https://docs.maestro-ml.com/runbooks/service-down"
+
+      - alert: LowAvailability
+        expr: slo_availability{service="api"} < 0.99
+        for: 10m
+        labels:
+          severity: warning
+          category: availability
+        annotations:
+          summary: "Low service availability"
+          description: "Availability is {{ $value | humanizePercentage }} (threshold: 99%)"
+
+  # ============================================================================
+  # Latency & Performance Alerts
+  # ============================================================================
+  - name: latency
+    interval: 30s
+    rules:
+      - alert: HighLatencyP99
+        expr: |
+          histogram_quantile(0.99,
+            rate(http_request_duration_seconds_bucket[5m])) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High p99 latency"
+          description: "P99 latency is {{ $value }}s (threshold: 1s)"
+          runbook: "https://docs.maestro-ml.com/runbooks/high-latency"
+
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket[5m])) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High p95 latency"
+          description: "P95 latency is {{ $value }}s (threshold: 0.5s)"
+
+      - alert: SLOLatencyViolation
+        expr: slo_http_request_latency_p99{service="api"} > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          category: slo
+        annotations:
+          summary: "SLO latency violation"
+          description: "P99 latency is {{ $value }}s (target: 1s)"
+          runbook: "https://docs.maestro-ml.com/runbooks/latency-slo"
+
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            rate(db_query_duration_seconds_bucket[5m])) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Slow database queries"
+          description: "P95 database query time is {{ $value }}s"
+
+  # ============================================================================
+  # Error Budget Alerts
+  # ============================================================================
+  - name: error_budget
+    interval: 1m
+    rules:
+      - alert: ErrorBudgetCritical
+        expr: slo_error_budget_remaining{service="api"} < 10
+        for: 5m
+        labels:
+          severity: critical
+          category: slo
+        annotations:
+          summary: "Error budget critically low"
+          description: "Only {{ $value }}% error budget remaining"
+          runbook: "https://docs.maestro-ml.com/runbooks/error-budget"
+
+      - alert: ErrorBudgetLow
+        expr: slo_error_budget_remaining{service="api"} < 25
+        for: 10m
+        labels:
+          severity: warning
+          category: slo
+        annotations:
+          summary: "Error budget running low"
+          description: "{{ $value }}% error budget remaining"
+
+      - alert: ErrorBudgetBurnRateHigh
+        expr: |
+          (1 - slo_http_request_success_rate{service="api"}) /
+          (1 - 0.999) > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: slo
+        annotations:
+          summary: "High error budget burn rate"
+          description: "Burning error budget {{ $value }}x faster than expected"
+
+  # ============================================================================
+  # Rate Limiting Alerts
+  # ============================================================================
+  - name: rate_limiting
+    interval: 30s
+    rules:
+      - alert: HighRateLimitHitRate
+        expr: rate(rate_limit_exceeded_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: rate_limiting
+        annotations:
+          summary: "High rate of rate limit hits"
+          description: "{{ $value }} rate limit hits per second"
+
+      - alert: TenantRateLimitExceeded
+        expr: rate(rate_limit_exceeded_total{tier="tenant"}[5m]) > 5
+        for: 3m
+        labels:
+          severity: info
+          category: rate_limiting
+        annotations:
+          summary: "Tenant hitting rate limits frequently"
+          description: "Tenant rate limits exceeded {{ $value }} times per second"
+
+  # ============================================================================
+  # Database Alerts
+  # ============================================================================
+  - name: database
+    interval: 30s
+    rules:
+      - alert: DatabaseConnectionPoolExhausted
+        expr: db_pool_size - db_connections_total{state="idle"} > db_pool_size * 0.9
+        for: 5m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "{{ $value | humanize }} connections in use (>90% of pool)"
+          runbook: "https://docs.maestro-ml.com/runbooks/db-pool"
+
+      - alert: DatabaseConnectionErrors
+        expr: rate(db_connection_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "Database connection errors"
+          description: "{{ $value }} connection errors per second"
+          runbook: "https://docs.maestro-ml.com/runbooks/db-errors"
+
+      - alert: HighDatabaseQueryErrorRate
+        expr: |
+          sum(rate(db_queries_total{status="error"}[5m])) /
+          sum(rate(db_queries_total[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "High database query error rate"
+          description: "{{ $value | humanizePercentage }} of queries failing"
+
+  # ============================================================================
+  # Business Metrics Alerts
+  # ============================================================================
+  - name: business_metrics
+    interval: 1m
+    rules:
+      - alert: NoModelsCreated
+        expr: |
+          rate(models_created_total[30m]) == 0
+        for: 30m
+        labels:
+          severity: info
+          category: business
+        annotations:
+          summary: "No models created recently"
+          description: "No models have been created in the last 30 minutes"
+
+      - alert: HighModelFailureRate
+        expr: |
+          sum(rate(experiments_total{status="failed"}[10m])) /
+          sum(rate(experiments_total[10m])) > 0.2
+        for: 10m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "High model training failure rate"
+          description: "{{ $value | humanizePercentage }} of training jobs failing"
+
+      - alert: PredictionLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            rate(prediction_latency_seconds_bucket[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "High prediction latency"
+          description: "P95 prediction latency is {{ $value }}s (threshold: 100ms)"
+
+  # ============================================================================
+  # Cache Alerts
+  # ============================================================================
+  - name: cache
+    interval: 1m
+    rules:
+      - alert: LowCacheHitRate
+        expr: |
+          sum(rate(cache_hits_total[5m])) /
+          (sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m]))) < 0.5
+        for: 10m
+        labels:
+          severity: info
+          category: cache
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} (threshold: 50%)"
+
+      - alert: HighCacheEvictionRate
+        expr: rate(cache_evictions_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: info
+          category: cache
+        annotations:
+          summary: "High cache eviction rate"
+          description: "{{ $value }} cache evictions per second"
+
+  # ============================================================================
+  # Tenant Alerts
+  # ============================================================================
+  - name: tenant_metrics
+    interval: 1m
+    rules:
+      - alert: TenantIsolationViolation
+        expr: increase(tenant_isolation_violations_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "CRITICAL: Tenant isolation violation detected"
+          description: "{{ $value }} isolation violations in last 5 minutes"
+          runbook: "https://docs.maestro-ml.com/runbooks/tenant-isolation"
+
+      - alert: TenantStorageQuotaExceeded
+        expr: tenant_storage_bytes / (100 * 1024 * 1024 * 1024) > 1
+        for: 5m
+        labels:
+          severity: warning
+          category: quota
+        annotations:
+          summary: "Tenant storage quota exceeded"
+          description: "Tenant {{ $labels.tenant_id }} using {{ $value | humanize }}GB"
+
+  # ============================================================================
+  # Resource Alerts
+  # ============================================================================
+  - name: resources
+    interval: 30s
+    rules:
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value | humanizePercentage }}"
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}%"
+
+      - alert: DiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} /
+           node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+          category: resources
+        annotations:
+          summary: "Disk space running low"
+          description: "Only {{ $value | humanizePercentage }} disk space available"
+
+  # ============================================================================
+  # Security Alerts
+  # ============================================================================
+  - name: security
+    interval: 30s
+    rules:
+      - alert: UnauthorizedAccessAttempts
+        expr: rate(http_requests_total{status="403"}[5m]) > 5
+        for: 3m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "High rate of unauthorized access attempts"
+          description: "{{ $value }} 403 responses per second"
+          runbook: "https://docs.maestro-ml.com/runbooks/unauthorized-access"
+
+      - alert: AuthenticationFailures
+        expr: rate(http_requests_total{status="401"}[5m]) > 10
+        for: 3m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "High rate of authentication failures"
+          description: "{{ $value }} 401 responses per second"
+
+  # ============================================================================
+  # Deployment Alerts
+  # ============================================================================
+  - name: deployment
+    interval: 1m
+    rules:
+      - alert: DeploymentFailureRate
+        expr: |
+          sum(rate(deployments_created_total{status="failed"}[10m])) /
+          sum(rate(deployments_created_total[10m])) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          category: deployment
+        annotations:
+          summary: "High deployment failure rate"
+          description: "{{ $value | humanizePercentage }} of deployments failing"
+
+      - alert: SlowDeployments
+        expr: |
+          histogram_quantile(0.95,
+            rate(deployment_duration_seconds_bucket[10m])) > 600
+        for: 10m
+        labels:
+          severity: info
+          category: deployment
+        annotations:
+          summary: "Slow deployments"
+          description: "P95 deployment time is {{ $value }}s (threshold: 10min)"
+
+# ============================================================================
+# Alert Severity Levels
+# ============================================================================
+#
+# critical:  Immediate action required, service degraded or down
+# warning:   Action required soon, service may degrade
+# info:      Informational, no immediate action needed
+#
+# ============================================================================
+# Alert Categories
+# ============================================================================
+#
+# availability:    Service up/down, error rates
+# performance:     Latency, throughput
+# slo:            SLO/SLI violations
+# rate_limiting:  Rate limit issues
+# database:       Database problems
+# business:       Business metric anomalies
+# cache:          Cache performance
+# security:       Security events
+# quota:          Resource quotas
+# resources:      System resources
+# deployment:     Deployment issues
+#
+# ============================================================================
+# Integration with AlertManager
+# ============================================================================
+#
+# Route alerts based on severity and category:
+#
+# alertmanager.yml:
+#   routes:
+#     - match:
+#         severity: critical
+#       receiver: pagerduty
+#       continue: true
+#
+#     - match:
+#         severity: warning
+#       receiver: slack
+#       continue: true
+#
+#     - match:
+#         severity: info
+#       receiver: email
+#
+# ============================================================================

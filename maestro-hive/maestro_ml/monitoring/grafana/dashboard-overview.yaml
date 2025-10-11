@@ -1,0 +1,300 @@
+# Maestro ML - Overview Dashboard
+#
+# Main operational dashboard showing key metrics
+#
+# Import via: Grafana UI > Dashboards > Import > Upload JSON file
+# Or provision via: /etc/grafana/provisioning/dashboards/
+
+dashboard:
+  title: "Maestro ML - Overview"
+  tags: ["maestro-ml", "overview"]
+  refresh: "30s"
+  time:
+    from: "now-6h"
+    to: "now"
+
+  # ========================================================================
+  # Row 1: SLO Summary
+  # ========================================================================
+  rows:
+    - title: "SLO Summary"
+      panels:
+        - title: "Availability SLO"
+          type: "gauge"
+          target: "slo_http_request_success_rate{service='api'}"
+          description: "Current availability vs 99.9% SLO target"
+          thresholds:
+            - value: 0.999
+              color: "green"
+            - value: 0.995
+              color: "yellow"
+            - value: 0
+              color: "red"
+          unit: "percentunit"
+
+        - title: "P99 Latency SLO"
+          type: "gauge"
+          target: "slo_http_request_latency_p99{service='api'}"
+          description: "P99 latency vs 1s SLO target"
+          thresholds:
+            - value: 1.0
+              color: "green"
+            - value: 2.0
+              color: "yellow"
+            - value: 5.0
+              color: "red"
+          unit: "s"
+
+        - title: "Error Budget Remaining"
+          type: "gauge"
+          target: "slo_error_budget_remaining{service='api'}"
+          description: "Percentage of error budget remaining"
+          thresholds:
+            - value: 25
+              color: "green"
+            - value: 10
+              color: "yellow"
+            - value: 0
+              color: "red"
+          unit: "percent"
+
+        - title: "Current Status"
+          type: "stat"
+          targets:
+            - expr: "up{job='maestro-ml-api'}"
+              legendFormat: "API Status"
+          description: "Service health status"
+          mappings:
+            - value: 1
+              text: "UP"
+              color: "green"
+            - value: 0
+              text: "DOWN"
+              color: "red"
+
+    # ========================================================================
+    # Row 2: Request Metrics (RED)
+    # ========================================================================
+    - title: "Request Metrics"
+      panels:
+        - title: "Request Rate"
+          type: "graph"
+          targets:
+            - expr: "sum(rate(http_requests_total[5m])) by (method)"
+              legendFormat: "{{method}}"
+          description: "HTTP requests per second by method"
+          yAxis:
+            unit: "reqps"
+            label: "Requests/sec"
+
+        - title: "Error Rate"
+          type: "graph"
+          targets:
+            - expr: "sum(rate(http_requests_total{status=~'5..'}[5m])) / sum(rate(http_requests_total[5m]))"
+              legendFormat: "5xx Error Rate"
+            - expr: "sum(rate(http_requests_total{status=~'4..'}[5m])) / sum(rate(http_requests_total[5m]))"
+              legendFormat: "4xx Error Rate"
+          description: "HTTP error rates (4xx client, 5xx server)"
+          yAxis:
+            unit: "percentunit"
+            label: "Error Rate"
+
+        - title: "Request Duration (P50, P95, P99)"
+          type: "graph"
+          targets:
+            - expr: "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))"
+              legendFormat: "P50"
+            - expr: "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))"
+              legendFormat: "P95"
+            - expr: "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))"
+              legendFormat: "P99"
+          description: "Request latency percentiles"
+          yAxis:
+            unit: "s"
+            label: "Duration"
+
+        - title: "Requests In Progress"
+          type: "graph"
+          targets:
+            - expr: "sum(http_requests_in_progress) by (endpoint)"
+              legendFormat: "{{endpoint}}"
+          description: "Current in-flight requests"
+          yAxis:
+            label: "Requests"
+
+    # ========================================================================
+    # Row 3: Business Metrics
+    # ========================================================================
+    - title: "Business Metrics"
+      panels:
+        - title: "Models Created (Rate)"
+          type: "graph"
+          targets:
+            - expr: "sum(rate(models_created_total[5m])) by (tenant_id)"
+              legendFormat: "{{tenant_id}}"
+          description: "Models created per second by tenant"
+          yAxis:
+            unit: "ops"
+            label: "Models/sec"
+
+        - title: "Total Active Models"
+          type: "stat"
+          targets:
+            - expr: "sum(models_total{status='active'})"
+              legendFormat: "Active Models"
+          description: "Total active models across all tenants"
+
+        - title: "Prediction Latency (P95)"
+          type: "graph"
+          targets:
+            - expr: "histogram_quantile(0.95, sum(rate(prediction_latency_seconds_bucket[5m])) by (le, tenant_id))"
+              legendFormat: "{{tenant_id}}"
+          description: "P95 prediction latency by tenant"
+          yAxis:
+            unit: "s"
+            label: "Latency"
+
+        - title: "Predictions/sec"
+          type: "graph"
+          targets:
+            - expr: "sum(rate(predictions_total[5m])) by (status)"
+              legendFormat: "{{status}}"
+          description: "Prediction requests per second"
+
+    # ========================================================================
+    # Row 4: Database & Infrastructure
+    # ========================================================================
+    - title: "Database & Infrastructure"
+      panels:
+        - title: "Database Connection Pool"
+          type: "graph"
+          targets:
+            - expr: "db_connections_total{state='active'}"
+              legendFormat: "Active"
+            - expr: "db_connections_total{state='idle'}"
+              legendFormat: "Idle"
+            - expr: "db_pool_size"
+              legendFormat: "Pool Size"
+          description: "Database connection pool utilization"
+
+        - title: "Database Query Duration (P95)"
+          type: "graph"
+          targets:
+            - expr: "histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket[5m])) by (le, operation))"
+              legendFormat: "{{operation}}"
+          description: "P95 database query duration by operation"
+          yAxis:
+            unit: "s"
+
+        - title: "Cache Hit Rate"
+          type: "graph"
+          targets:
+            - expr: "sum(rate(cache_hits_total[5m])) / (sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m])))"
+              legendFormat: "Hit Rate"
+          description: "Cache hit rate (higher is better)"
+          yAxis:
+            unit: "percentunit"
+            min: 0
+            max: 1
+
+        - title: "Rate Limit Hits/sec"
+          type: "graph"
+          targets:
+            - expr: "sum(rate(rate_limit_exceeded_total[5m])) by (tier)"
+              legendFormat: "{{tier}}"
+          description: "Rate limit exceeded events per second"
+
+    # ========================================================================
+    # Row 5: Tenant Metrics
+    # ========================================================================
+    - title: "Tenant Metrics"
+      panels:
+        - title: "Requests by Tenant"
+          type: "graph"
+          targets:
+            - expr: "topk(10, sum(rate(tenant_requests_total[5m])) by (tenant_id))"
+              legendFormat: "{{tenant_id}}"
+          description: "Top 10 tenants by request rate"
+          yAxis:
+            unit: "reqps"
+
+        - title: "Active Users by Tenant"
+          type: "graph"
+          targets:
+            - expr: "topk(10, sum(tenant_active_users) by (tenant_id))"
+              legendFormat: "{{tenant_id}}"
+          description: "Top 10 tenants by active users"
+
+        - title: "Storage by Tenant"
+          type: "graph"
+          targets:
+            - expr: "topk(10, sum(tenant_storage_bytes) by (tenant_id))"
+              legendFormat: "{{tenant_id}}"
+          description: "Top 10 tenants by storage usage"
+          yAxis:
+            unit: "bytes"
+            format: "IEC"
+
+# ========================================================================
+# Variables
+# ========================================================================
+variables:
+  - name: "tenant"
+    type: "query"
+    query: "label_values(tenant_requests_total, tenant_id)"
+    label: "Tenant"
+    multi: false
+    includeAll: true
+
+  - name: "endpoint"
+    type: "query"
+    query: "label_values(http_requests_total, endpoint)"
+    label: "Endpoint"
+    multi: true
+    includeAll: true
+
+  - name: "interval"
+    type: "interval"
+    query: "1m,5m,10m,30m,1h"
+    label: "Interval"
+    auto: true
+
+# ========================================================================
+# Annotations
+# ========================================================================
+annotations:
+  - name: "Deployments"
+    datasource: "Prometheus"
+    expr: "changes(maestro_ml_build_info[5m]) > 0"
+    titleFormat: "Deployment"
+    textFormat: "New version deployed"
+    tagsField: "version"
+    iconColor: "blue"
+
+  - name: "Alerts"
+    datasource: "Prometheus"
+    expr: "ALERTS{alertstate='firing'}"
+    titleFormat: "{{alertname}}"
+    textFormat: "{{summary}}"
+    iconColor: "red"
+
+# ========================================================================
+# Import Instructions
+# ========================================================================
+#
+# 1. Via Grafana UI:
+#    - Convert this YAML to JSON
+#    - Go to Dashboards > Import
+#    - Upload JSON file
+#
+# 2. Via Provisioning:
+#    - Place in /etc/grafana/dashboards/maestro-ml/overview.json
+#    - Configure provider in dashboards.yaml
+#
+# 3. Via API:
+#    curl -X POST http://grafana:3000/api/dashboards/db \
+#      -H "Content-Type: application/json" \
+#      -H "Authorization: Bearer $GRAFANA_API_KEY" \
+#      -d @dashboard.json
+#
+# ========================================================================

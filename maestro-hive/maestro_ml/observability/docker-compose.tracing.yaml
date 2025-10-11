@@ -1,0 +1,78 @@
+# Docker Compose for Local Tracing Development
+# Runs Jaeger all-in-one for local testing
+
+version: '3.8'
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.51
+    container_name: maestro-jaeger
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      # Jaeger UI
+      - "16686:16686"
+      # Collector HTTP
+      - "14268:14268"
+      # Collector gRPC
+      - "14250:14250"
+      # Agent Zipkin Thrift
+      - "5775:5775/udp"
+      # Agent Compact
+      - "6831:6831/udp"
+      # Agent Binary
+      - "6832:6832/udp"
+      # Agent Config
+      - "5778:5778"
+      # Zipkin compatible endpoint
+      - "9411:9411"
+      # OTLP gRPC
+      - "4317:4317"
+      # OTLP HTTP
+      - "4318:4318"
+    networks:
+      - ml-platform
+    restart: unless-stopped
+
+  # Example: Maestro ML API with tracing
+  maestro-api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: maestro-api
+    environment:
+      - TRACING_ENABLED=true
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=6831
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/maestro
+    ports:
+      - "8000:8000"
+    depends_on:
+      - jaeger
+      - postgres
+    networks:
+      - ml-platform
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: maestro-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=maestro
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - ml-platform
+    restart: unless-stopped
+
+networks:
+  ml-platform:
+    driver: bridge
+
+volumes:
+  postgres-data:

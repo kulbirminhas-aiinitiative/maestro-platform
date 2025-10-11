@@ -1,0 +1,90 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║  🚨 SUNDAY.COM WEBSOCKET AUTHENTICATION ERROR - QUICK FIX    ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+
+ERROR YOU'RE SEEING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[ERROR] WebSocket connection error: Error: Authentication failed
+[ERROR] Authentication failed - stopping reconnection attempts
+
+
+THE PROBLEM:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+You're not logged in. The WebSocket requires a valid JWT token.
+
+
+THE FIX (60 seconds):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Open the Sunday.com frontend in your browser
+   → http://localhost:3006 (or whatever port it's on)
+
+2. Log in with valid credentials
+   → Email: any valid email
+   → Password: must be 8+ characters
+
+3. That's it! WebSocket connects automatically after login.
+
+4. Verify in browser console:
+   → Press F12
+   → Type: webSocketService.isConnected()
+   → Should return: true
+
+
+ALTERNATIVE: USE THE DEBUG TOOL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open in browser:
+   file:///home/ec2-user/projects/shared/claude_team_sdk/examples/sdlc_team/sunday_com/websocket_debug.html
+
+Follow the wizard:
+   1. Check backend health
+   2. Login to get token  
+   3. Analyze token
+   4. Connect WebSocket
+
+
+WHY THIS HAPPENED:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ This is NORMAL behavior
+✅ The security system is working correctly
+✅ It's refusing unauthenticated connections
+✅ No bugs in the code
+
+
+CHECK IF YOU HAVE A TOKEN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+In browser console (F12):
+
+   localStorage.getItem('sunday_auth_token')
+
+If returns null → You need to log in
+If returns a long string → Check if expired (see docs)
+
+
+MORE HELP:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Read these files for detailed information:
+
+→ WEBSOCKET_ISSUE_RESOLUTION.md (start here)
+→ sunday_com_websocket_fix_action_plan.md  
+→ sunday_com_websocket_authentication_analysis.md
+
+Run diagnostic script:
+   ./check_websocket_auth.sh
+
+
+CONTACT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+If still having issues after logging in:
+→ Check backend logs for errors
+→ Use the websocket_debug.html tool
+→ Share the browser console logs
+
+
+╚═══════════════════════════════════════════════════════════════╝
+
+TL;DR: Just log in to the frontend. Problem solved.
+

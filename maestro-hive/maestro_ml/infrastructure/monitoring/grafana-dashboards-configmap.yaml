@@ -1,0 +1,217 @@
+# Maestro ML Platform - Grafana Dashboards ConfigMap
+# Phase 1.1.9 - Grafana dashboard deployment
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ml-grafana-dashboards
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  ml-platform-overview.json: |-
+    # Content from ml-platform-overview.json
+
+  gpu-monitoring.json: |-
+    # Content from gpu-monitoring.json
+
+---
+# Dashboard Provider Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: monitoring
+data:
+  ml-dashboards.yaml: |-
+    apiVersion: 1
+    providers:
+      - name: 'ML Platform Dashboards'
+        orgId: 1
+        folder: 'ML Platform'
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 30
+        allowUiUpdates: true
+        options:
+          path: /var/lib/grafana/dashboards/ml-platform
+
+---
+# README for dashboard deployment
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ml-dashboards-readme
+  namespace: monitoring
+data:
+  README.md: |
+    # Maestro ML Platform - Grafana Dashboards
+
+    ## Available Dashboards
+
+    ### 1. ML Platform Overview
+    **File**: `ml-platform-overview.json`
+    **Purpose**: High-level view of entire ML platform
+    **Panels**:
+    - Platform health status
+    - Active training jobs and inference services
+    - GPU utilization overview
+    - MLflow request rate
+    - Feast feature serving latency
+    - Model inference throughput
+    - Training job progress
+    - Resource utilization by component
+    - Cost metrics
+
+    **Alerts**:
+    - Feast high latency (p95 > 100ms)
+
+    ### 2. GPU Monitoring & Training Performance
+    **File**: `gpu-monitoring.json`
+    **Purpose**: Detailed GPU metrics and training job monitoring
+    **Panels**:
+    - GPU utilization by device
+    - GPU memory usage
+    - GPU temperature
+    - GPU power consumption
+    - GPU clock speed
+    - Training loss progression
+    - Training accuracy/metrics
+    - Training throughput
+    - Training step duration
+    - Active training jobs table
+    - GPU efficiency score
+    - Cost tracking and efficiency
+
+    ## Deployment
+
+    ### Option 1: Via Grafana UI
+    1. Navigate to Grafana UI
+    2. Go to Dashboards → Import
+    3. Upload JSON files from `infrastructure/monitoring/grafana/dashboards/`
+
+    ### Option 2: Via ConfigMap (Automated)
+    ```bash
+    kubectl apply -f infrastructure/monitoring/grafana-dashboards-configmap.yaml
+    ```
+
+    ### Option 3: Via Helm Values
+    Add to Grafana Helm values:
+    ```yaml
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+        - name: 'ML Platform'
+          orgId: 1
+          folder: 'ML Platform'
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/ml-platform
+
+    dashboards:
+      ml-platform:
+        ml-overview:
+          file: dashboards/ml-platform-overview.json
+        gpu-monitoring:
+          file: dashboards/gpu-monitoring.json
+    ```
+
+    ## Metrics Requirements
+
+    These dashboards expect the following metrics to be available:
+
+    ### Core Platform Metrics
+    - `up{job=~"mlflow-metrics|feast-metrics"}` - Service health
+    - `mlflow_requests_total` - MLflow request counter
+    - `mlflow_request_duration_seconds` - MLflow latency
+    - `feast_feature_request_duration_seconds` - Feast latency
+    - `feast_redis_cache_miss_total` - Cache performance
+
+    ### Training Metrics
+    - `training_job_status` - Job status (running/failed/completed)
+    - `training_metrics_loss` - Training loss
+    - `training_metrics_accuracy` - Model accuracy
+    - `training_metrics_f1_score` - F1 score
+    - `training_samples_processed_total` - Throughput
+    - `training_step_duration_seconds` - Step timing
+    - `training_job_epoch` - Current epoch
+    - `training_job_progress_percent` - Progress percentage
+
+    ### Inference Metrics
+    - `inference_requests_total` - Inference request counter
+    - `inference_request_duration_seconds` - Inference latency
+    - `inference_errors_total` - Error counter
+
+    ### GPU Metrics (DCGM)
+    - `DCGM_FI_DEV_GPU_UTIL` - GPU utilization %
+    - `DCGM_FI_DEV_FB_USED` - GPU memory used
+    - `DCGM_FI_DEV_FB_FREE` - GPU memory free
+    - `DCGM_FI_DEV_GPU_TEMP` - GPU temperature
+    - `DCGM_FI_DEV_POWER_USAGE` - Power consumption
+    - `DCGM_FI_DEV_SM_CLOCK` - SM clock speed
+    - `DCGM_FI_DEV_MEM_CLOCK` - Memory clock speed
+
+    ### Resource Metrics (Kubernetes)
+    - `container_cpu_usage_seconds_total` - CPU usage
+    - `container_memory_working_set_bytes` - Memory usage
+    - `kube_pod_info` - Pod information
+    - `kube_deployment_status_replicas` - Deployment status
+
+    ### Cost Metrics (Custom)
+    - `node_cpu_hourly_cost` - Node cost per hour
+    - `gpu_hourly_cost` - GPU cost per hour
+
+    ## Custom Metrics Implementation
+
+    Some metrics need to be instrumented in your training/inference code:
+
+    ### Python Example (Prometheus Client)
+    ```python
+    from prometheus_client import Counter, Histogram, Gauge, push_to_gateway
+
+    # Training metrics
+    TRAINING_LOSS = Gauge('training_metrics_loss', 'Training loss', ['job_name'])
+    TRAINING_ACCURACY = Gauge('training_metrics_accuracy', 'Training accuracy', ['job_name'])
+    SAMPLES_PROCESSED = Counter('training_samples_processed_total', 'Samples processed', ['job_name'])
+    STEP_DURATION = Histogram('training_step_duration_seconds', 'Step duration', ['job_name'])
+
+    # In training loop
+    TRAINING_LOSS.labels(job_name='task-assignment-v1').set(current_loss)
+    TRAINING_ACCURACY.labels(job_name='task-assignment-v1').set(current_accuracy)
+    SAMPLES_PROCESSED.labels(job_name='task-assignment-v1').inc(batch_size)
+
+    # Push to gateway for batch jobs
+    push_to_gateway('prometheus-pushgateway:9091', job='training', registry=registry)
+    ```
+
+    ## Variables
+
+    Dashboards support the following template variables:
+    - `$namespace` - Filter by Kubernetes namespace
+    - `$model` - Filter by model name
+    - `$job` - Filter by training job name
+    - `$gpu` - Filter by GPU device
+
+    ## Alerts
+
+    Prometheus alerts are configured in `infrastructure/monitoring/prometheus/alerts.yaml`
+
+    ## Troubleshooting
+
+    ### Dashboard not showing data
+    1. Verify Prometheus is scraping targets: `Status → Targets` in Prometheus UI
+    2. Check ServiceMonitor is created: `kubectl get servicemonitor -n ml-monitoring`
+    3. Verify metrics exist: Query in Prometheus UI
+
+    ### Missing GPU metrics
+    1. Ensure NVIDIA GPU Operator is installed
+    2. Verify DCGM exporter is running: `kubectl get pods -n gpu-operator`
+    3. Check DCGM exporter metrics: `curl http://<dcgm-exporter-pod>:9400/metrics`
+
+    ### High cardinality warnings
+    - Limit label values (e.g., use model_version, not full git SHA)
+    - Use recording rules for expensive queries
+    - Adjust scrape intervals for less critical metrics

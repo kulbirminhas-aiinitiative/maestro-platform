@@ -1,0 +1,10 @@
+{
+  "session_id": "test_gates",
+  "requirement": "Build e-commerce platform",
+  "output_dir": "test_output/gates",
+  "created_at": "2025-10-05T10:41:47.580955",
+  "last_updated": "2025-10-05T10:41:47.580957",
+  "completed_personas": [],
+  "files_registry": {},
+  "persona_outputs": {}
+}

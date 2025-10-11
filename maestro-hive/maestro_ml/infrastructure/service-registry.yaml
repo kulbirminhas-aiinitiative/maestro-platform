@@ -1,0 +1,256 @@
+# ML Platform Service Registry
+# Centralized port allocation and service discovery configuration
+# Used by CI/CD pipelines to dynamically allocate ports and configure services
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ml-platform-service-registry
+  namespace: kube-system
+data:
+  # Service Registry Configuration
+  registry.yaml: |
+    # ML Platform Services Registry
+    # Version: 1.0.0
+    # Updated: 2025-10-04
+
+    services:
+      # Storage Layer
+      postgresql:
+        namespace: storage
+        service_name: postgresql
+        internal_port: 5432
+        external_port: null  # Internal only
+        protocol: TCP
+        type: ClusterIP
+        health_check: /health
+        dependencies: []
+
+      redis:
+        namespace: storage
+        service_name: redis
+        internal_port: 6379
+        external_port: null  # Internal only
+        protocol: TCP
+        type: ClusterIP
+        health_check: PING
+        dependencies: []
+
+      minio:
+        namespace: storage
+        service_name: minio
+        internal_port: 9000
+        internal_console_port: 9001
+        external_port: null  # Internal only
+        protocol: TCP
+        type: ClusterIP
+        health_check: /minio/health/live
+        dependencies: []
+
+      # ML Services
+      mlflow:
+        namespace: mlflow
+        service_name: mlflow-service
+        internal_port: 5000
+        external_port: 30500  # NodePort for minikube
+        load_balancer_port: 80  # LoadBalancer/Ingress
+        protocol: HTTP
+        type: LoadBalancer
+        health_check: /health
+        metrics_port: 5000
+        metrics_path: /metrics
+        dependencies:
+          - postgresql
+          - minio
+        ingress:
+          enabled: true
+          host: mlflow.maestro-ml.example.com
+          tls: true
+
+      feast:
+        namespace: feast
+        service_name: feast-feature-server
+        internal_port: 6566
+        external_port: 30566  # NodePort for minikube
+        load_balancer_port: 80  # LoadBalancer/Ingress
+        protocol: HTTP
+        type: LoadBalancer
+        health_check: /health
+        metrics_port: 6566
+        metrics_path: /metrics
+        dependencies:
+          - postgresql
+          - redis
+        ingress:
+          enabled: true
+          host: feast.maestro-ml.example.com
+          tls: true
+
+      airflow:
+        namespace: airflow
+        service_name: airflow-webserver
+        internal_port: 8080
+        external_port: 30880  # NodePort for minikube
+        load_balancer_port: 80  # LoadBalancer/Ingress
+        protocol: HTTP
+        type: LoadBalancer
+        health_check: /health
+        metrics_port: 8080
+        metrics_path: /metrics
+        dependencies:
+          - postgresql
+          - redis
+          - mlflow
+          - feast
+        ingress:
+          enabled: true
+          host: airflow.maestro-ml.example.com
+          tls: true
+
+      airflow-flower:
+        namespace: airflow
+        service_name: airflow-flower
+        internal_port: 5555
+        external_port: null  # Internal only
+        protocol: HTTP
+        type: ClusterIP
+        health_check: /
+        dependencies:
+          - airflow
+
+      airflow-postgresql:
+        namespace: airflow
+        service_name: airflow-postgresql
+        internal_port: 5432
+        external_port: null  # Internal only
+        protocol: TCP
+        type: ClusterIP
+        health_check: pg_isready
+        dependencies: []
+
+      # Monitoring
+      prometheus:
+        namespace: monitoring
+        service_name: kube-prometheus-stack-prometheus
+        internal_port: 9090
+        external_port: 30909  # NodePort for minikube
+        load_balancer_port: 80
+        protocol: HTTP
+        type: LoadBalancer
+        health_check: /-/healthy
+        dependencies: []
+        ingress:
+          enabled: true
+          host: prometheus.maestro-ml.example.com
+          tls: true
+
+      grafana:
+        namespace: monitoring
+        service_name: kube-prometheus-stack-grafana
+        internal_port: 3000
+        external_port: 30300  # NodePort for minikube
+        load_balancer_port: 80
+        protocol: HTTP
+        type: LoadBalancer
+        health_check: /api/health
+        dependencies:
+          - prometheus
+        ingress:
+          enabled: true
+          host: grafana.maestro-ml.example.com
+          tls: true
+
+    # Port Ranges
+    port_ranges:
+      internal_services: 5000-9999
+      node_ports: 30000-32767
+      load_balancer: 80-443
+      metrics: 8000-9999
+
+    # Environment-specific overrides
+    environments:
+      minikube:
+        default_service_type: NodePort
+        use_node_ports: true
+        use_load_balancer: false
+        ingress_enabled: false
+
+      development:
+        default_service_type: LoadBalancer
+        use_node_ports: false
+        use_load_balancer: true
+        ingress_enabled: true
+
+      production:
+        default_service_type: ClusterIP
+        use_node_ports: false
+        use_load_balancer: false
+        ingress_enabled: true
+        ingress_class: nginx
+        cert_manager: true
+
+    # Service Discovery
+    discovery:
+      dns_suffix: .svc.cluster.local
+      consul_enabled: false
+      eureka_enabled: false
+      kubernetes_native: true
+
+    # CI/CD Integration
+    cicd:
+      port_allocation_strategy: dynamic  # static, dynamic, or range
+      service_mesh: istio  # none, istio, linkerd
+      auto_tls: true
+      secret_management: external-secrets  # kubernetes, vault, external-secrets
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ml-platform-endpoints
+  namespace: kube-system
+data:
+  # Auto-generated service endpoints (updated by CI/CD)
+  endpoints.json: |
+    {
+      "services": {
+        "mlflow": {
+          "internal": "http://mlflow-service.mlflow.svc.cluster.local:5000",
+          "external": "https://mlflow.maestro-ml.example.com",
+          "metrics": "http://mlflow-service.mlflow.svc.cluster.local:5000/metrics"
+        },
+        "feast": {
+          "internal": "http://feast-feature-server.feast.svc.cluster.local:6566",
+          "external": "https://feast.maestro-ml.example.com",
+          "metrics": "http://feast-feature-server.feast.svc.cluster.local:6566/metrics"
+        },
+        "airflow": {
+          "internal": "http://airflow-webserver.airflow.svc.cluster.local:8080",
+          "external": "https://airflow.maestro-ml.example.com",
+          "metrics": "http://airflow-webserver.airflow.svc.cluster.local:8080/metrics"
+        },
+        "postgresql": {
+          "internal": "postgresql://maestro:maestro123@postgresql.storage.svc.cluster.local:5432",
+          "mlflow_db": "postgresql://maestro:maestro123@postgresql.storage.svc.cluster.local:5432/mlflow",
+          "feast_db": "postgresql://maestro:maestro123@postgresql.storage.svc.cluster.local:5432/feast_registry",
+          "airflow_db": "postgresql://maestro:maestro123@airflow-postgresql.airflow.svc.cluster.local:5432/airflow"
+        },
+        "redis": {
+          "internal": "redis://redis.storage.svc.cluster.local:6379"
+        },
+        "minio": {
+          "internal": "http://minio.storage.svc.cluster.local:9000",
+          "console": "http://minio.storage.svc.cluster.local:9001"
+        },
+        "prometheus": {
+          "internal": "http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090",
+          "external": "https://prometheus.maestro-ml.example.com"
+        },
+        "grafana": {
+          "internal": "http://kube-prometheus-stack-grafana.monitoring.svc.cluster.local:3000",
+          "external": "https://grafana.maestro-ml.example.com"
+        }
+      },
+      "environment": "production",
+      "last_updated": "2025-10-04T00:00:00Z"
+    }

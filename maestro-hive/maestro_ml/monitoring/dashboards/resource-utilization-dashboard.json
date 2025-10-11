@@ -1,0 +1,234 @@
+{
+  "dashboard": {
+    "title": "ML Resource Utilization",
+    "tags": ["ml", "resources", "infrastructure"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "CPU Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"ml-serving\",container=\"model-server\"}[5m])) by (pod)",
+            "legendFormat": "{{pod}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percentunit", "label": "CPU Usage"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [0.9], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "message": "CPU usage exceeded 90%",
+          "name": "High CPU Usage"
+        }
+      },
+      {
+        "id": 2,
+        "title": "Memory Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(container_memory_working_set_bytes{namespace=\"ml-serving\",container=\"model-server\"}) by (pod) / sum(container_spec_memory_limit_bytes{namespace=\"ml-serving\",container=\"model-server\"}) by (pod)",
+            "legendFormat": "{{pod}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percentunit", "label": "Memory Usage"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [0.85], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "message": "Memory usage exceeded 85%",
+          "name": "High Memory Usage"
+        }
+      },
+      {
+        "id": 3,
+        "title": "Pod Count",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "count(kube_pod_info{namespace=\"ml-serving\"}) by (deployment)",
+            "legendFormat": "{{deployment}} pods",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Pod Count"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Network I/O",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"ml-serving\"}[5m])) by (pod)",
+            "legendFormat": "{{pod}} RX",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"ml-serving\"}[5m])) by (pod)",
+            "legendFormat": "{{pod}} TX",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "Bps", "label": "Network I/O"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Avg CPU Utilization",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "avg(rate(container_cpu_usage_seconds_total{namespace=\"ml-serving\",container=\"model-server\"}[5m]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "orientation": "auto",
+          "textMode": "auto",
+          "unit": "percentunit"
+        }
+      },
+      {
+        "id": 6,
+        "title": "Avg Memory Utilization",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 16},
+        "targets": [
+          {
+            "expr": "avg(container_memory_working_set_bytes{namespace=\"ml-serving\",container=\"model-server\"} / container_spec_memory_limit_bytes{namespace=\"ml-serving\",container=\"model-server\"})",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "orientation": "auto",
+          "textMode": "auto",
+          "unit": "percentunit"
+        }
+      },
+      {
+        "id": 7,
+        "title": "Total Pods",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "count(kube_pod_info{namespace=\"ml-serving\"})",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "orientation": "auto",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 8,
+        "title": "Network Throughput",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"ml-serving\"}[5m])) + sum(rate(container_network_transmit_bytes_total{namespace=\"ml-serving\"}[5m]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "orientation": "auto",
+          "textMode": "auto",
+          "unit": "Bps"
+        }
+      },
+      {
+        "id": 9,
+        "title": "Disk I/O",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+        "targets": [
+          {
+            "expr": "sum(rate(container_fs_reads_bytes_total{namespace=\"ml-serving\"}[5m])) by (pod)",
+            "legendFormat": "{{pod}} reads",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(container_fs_writes_bytes_total{namespace=\"ml-serving\"}[5m])) by (pod)",
+            "legendFormat": "{{pod}} writes",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "Bps", "label": "Disk I/O"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 10,
+        "title": "HPA Status",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+        "targets": [
+          {
+            "expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"ml-serving\"}",
+            "legendFormat": "Current replicas - {{horizontalpodautoscaler}}",
+            "refId": "A"
+          },
+          {
+            "expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=\"ml-serving\"}",
+            "legendFormat": "Desired replicas - {{horizontalpodautoscaler}}",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Replicas"},
+          {"format": "short"}
+        ]
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 27,
+    "style": "dark",
+    "time": {"from": "now-6h", "to": "now"},
+    "timepicker": {}
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "session_id": "test_todo_app",
+  "requirement": "Create a simple TODO application with user authentication",
+  "output_dir": "test_output",
+  "created_at": "2025-10-04T11:23:01.595257",
+  "last_updated": "2025-10-04T11:23:01.598226",
+  "completed_personas": [
+    "requirement_analyst",
+    "solution_architect",
+    "backend_developer",
+    "frontend_developer",
+    "database_administrator"
+  ],
+  "files_registry": {
+    "requirement_analyst_output.md": {
+      "created_by": "requirement_analyst",
+      "created_at": "2025-10-04T11:23:01.598190"
+    },
+    "solution_architect_reused_artifact.md": {
+      "created_by": "solution_architect",
+      "created_at": "2025-10-04T11:23:01.598199"
+    },
+    "backend_developer_output.md": {
+      "created_by": "backend_developer",
+      "created_at": "2025-10-04T11:23:01.598206"
+    },
+    "frontend_developer_reused_artifact.md": {
+      "created_by": "frontend_developer",
+      "created_at": "2025-10-04T11:23:01.598213"
+    },
+    "database_administrator_output.md": {
+      "created_by": "database_administrator",
+      "created_at": "2025-10-04T11:23:01.598224"
+    }
+  },
+  "persona_outputs": {
+    "requirement_analyst": {
+      "files_created": [
+        "requirement_analyst_output.md"
+      ],
+      "deliverables": {},
+      "duration": 165.0,
+      "success": true,
+      "executed_at": "2025-10-04T11:23:01.598185"
+    },
+    "solution_architect": {
+      "files_created": [
+        "solution_architect_reused_artifact.md"
+      ],
+      "deliverables": {},
+      "duration": 0,
+      "success": true,
+      "executed_at": "2025-10-04T11:23:01.598198"
+    },
+    "backend_developer": {
+      "files_created": [
+        "backend_developer_output.md"
+      ],
+      "deliverables": {},
+      "duration": 165.0,
+      "success": true,
+      "executed_at": "2025-10-04T11:23:01.598205"
+    },
+    "frontend_developer": {
+      "files_created": [
+        "frontend_developer_reused_artifact.md"
+      ],
+      "deliverables": {},
+      "duration": 0,
+      "success": true,
+      "executed_at": "2025-10-04T11:23:01.598211"
+    },
+    "database_administrator": {
+      "files_created": [
+        "database_administrator_output.md"
+      ],
+      "deliverables": {},
+      "duration": 165.0,
+      "success": true,
+      "executed_at": "2025-10-04T11:23:01.598221"
+    }
+  }
+}

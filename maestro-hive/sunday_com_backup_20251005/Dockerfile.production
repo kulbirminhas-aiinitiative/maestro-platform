@@ -1,0 +1,104 @@
+# Production Multi-Service Docker Build
+# This is a production-ready Dockerfile that builds both backend and frontend
+# in a single image for simplified deployment scenarios
+
+# =============================================================================
+# Base Images
+# =============================================================================
+
+FROM node:20-alpine AS node-base
+RUN apk add --no-cache libc6-compat curl
+WORKDIR /app
+
+# =============================================================================
+# Backend Build Stage
+# =============================================================================
+
+FROM node-base AS backend-deps
+WORKDIR /app/backend
+COPY backend/package*.json ./
+COPY backend/prisma ./prisma/
+RUN npm ci --only=production && npm cache clean --force
+
+FROM node-base AS backend-builder
+WORKDIR /app/backend
+COPY --from=backend-deps /app/backend/node_modules ./node_modules
+COPY backend/ .
+RUN npx prisma generate
+RUN npm run build
+
+# =============================================================================
+# Frontend Build Stage
+# =============================================================================
+
+FROM node-base AS frontend-deps
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+
+FROM node-base AS frontend-builder
+WORKDIR /app/frontend
+COPY --from=frontend-deps /app/frontend/node_modules ./node_modules
+COPY frontend/ .
+ENV NODE_ENV=production
+RUN npm run build
+
+# =============================================================================
+# Production Runtime
+# =============================================================================
+
+FROM nginx:alpine AS production
+
+# Install Node.js and process manager
+RUN apk add --no-cache nodejs npm supervisor curl
+
+# Create application directory
+WORKDIR /app
+
+# Copy backend application
+COPY --from=backend-builder /app/backend/dist ./backend/dist
+COPY --from=backend-builder /app/backend/node_modules ./backend/node_modules
+COPY --from=backend-builder /app/backend/package.json ./backend/package.json
+COPY --from=backend-builder /app/backend/prisma ./backend/prisma
+
+# Copy frontend application
+COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY deployment/nginx/production.conf /etc/nginx/conf.d/default.conf
+
+# Copy supervisor configuration
+COPY deployment/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Create non-root user
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -S -u 1001 -G appgroup appuser
+
+# Set permissions
+RUN chown -R appuser:appgroup /app && \
+    chown -R appuser:appgroup /usr/share/nginx/html && \
+    chown -R appuser:appgroup /var/cache/nginx && \
+    chown -R appuser:appgroup /var/log/nginx && \
+    chown -R appuser:appgroup /etc/nginx/conf.d && \
+    touch /var/run/nginx.pid && \
+    chown appuser:appgroup /var/run/nginx.pid
+
+# Health check script
+COPY deployment/scripts/health-check.sh /usr/local/bin/health-check.sh
+RUN chmod +x /usr/local/bin/health-check.sh
+
+# Expose ports
+EXPOSE 80 3000
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD /usr/local/bin/health-check.sh
+
+USER appuser
+
+# Start supervisor to manage both nginx and node processes
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

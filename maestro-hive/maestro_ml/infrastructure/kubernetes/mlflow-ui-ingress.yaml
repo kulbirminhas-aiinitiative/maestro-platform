@@ -1,0 +1,50 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mlflow-ui
+  namespace: ml-platform
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+  labels:
+    app: mlflow-ui
+    component: model-registry
+spec:
+  tls:
+  - hosts:
+    - mlflow.maestro-ml.local
+    secretName: mlflow-ui-tls
+  rules:
+  - host: mlflow.maestro-ml.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mlflow-tracking
+            port:
+              number: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-ui-nodeport
+  namespace: ml-platform
+  labels:
+    app: mlflow-ui
+spec:
+  type: NodePort
+  selector:
+    app: mlflow-tracking
+  ports:
+  - name: http
+    port: 5000
+    targetPort: 5000
+    nodePort: 30500
+    protocol: TCP

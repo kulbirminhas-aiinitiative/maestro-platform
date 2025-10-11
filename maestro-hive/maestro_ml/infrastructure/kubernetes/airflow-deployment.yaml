@@ -1,0 +1,593 @@
+# Apache Airflow for ML Workflow Orchestration
+# Production deployment with CeleryExecutor for distributed task execution
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: airflow
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airflow-config
+  namespace: airflow
+data:
+  AIRFLOW__CORE__EXECUTOR: "CeleryExecutor"
+  AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "True"
+  AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+  AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
+  AIRFLOW__WEBSERVER__RBAC: "True"
+  AIRFLOW__CELERY__BROKER_URL: "redis://redis.storage.svc.cluster.local:6379/0"
+  AIRFLOW__CELERY__RESULT_BACKEND: "db+postgresql://maestro:maestro123@airflow-postgresql.airflow.svc.cluster.local:5432/airflow"
+  AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: "postgresql+psycopg2://maestro:maestro123@airflow-postgresql.airflow.svc.cluster.local:5432/airflow"
+  AIRFLOW__LOGGING__REMOTE_LOGGING: "True"
+  AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: "s3://mlflow/airflow-logs"
+  AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID: "aws_default"
+  AIRFLOW__METRICS__STATSD_ON: "True"
+  AIRFLOW__METRICS__STATSD_HOST: "statsd-exporter.monitoring.svc.cluster.local"
+  AIRFLOW__METRICS__STATSD_PORT: "9125"
+  AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: "30"
+  AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT: "False"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: airflow-secrets
+  namespace: airflow
+type: Opaque
+stringData:
+  AIRFLOW__CORE__FERNET_KEY: "zP3KvUiHVh3dQwGxN3xKvJ7hK3iZvL3xKvJ7hK3iZvL="  # Replace with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+  AIRFLOW__WEBSERVER__SECRET_KEY: "airflow_webserver_secret_key_change_me"
+
+---
+# PostgreSQL for Airflow Metadata
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: airflow-postgresql
+  namespace: airflow
+spec:
+  serviceName: airflow-postgresql
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airflow-postgresql
+  template:
+    metadata:
+      labels:
+        app: airflow-postgresql
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: postgresql
+        image: postgres:15-alpine
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        env:
+        - name: POSTGRES_USER
+          value: "maestro"
+        - name: POSTGRES_PASSWORD
+          value: "maestro123"
+        - name: POSTGRES_DB
+          value: "airflow"
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        ports:
+        - containerPort: 5432
+          name: postgresql
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: postgresql-data
+          mountPath: /var/lib/postgresql/data
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - maestro
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - maestro
+          initialDelaySeconds: 5
+          periodSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: postgresql-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: airflow-postgresql
+  namespace: airflow
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgresql
+  selector:
+    app: airflow-postgresql
+
+---
+# Airflow Webserver
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow-webserver
+  namespace: airflow
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: airflow
+      component: webserver
+  template:
+    metadata:
+      labels:
+        app: airflow
+        component: webserver
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 50000
+        runAsGroup: 0
+        fsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+      - name: wait-for-db
+        image: postgres:15-alpine
+        command: ['sh', '-c', 'until pg_isready -h airflow-postgresql -U maestro; do sleep 2; done']
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      - name: init-db
+        image: apache/airflow:2.7.3-python3.11
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        envFrom:
+        - configMapRef:
+            name: airflow-config
+        - secretRef:
+            name: airflow-secrets
+        command: ['bash', '-c']
+        args:
+        - |
+          airflow db init || airflow db upgrade
+          airflow users create \
+            --username admin \
+            --password admin \
+            --firstname Admin \
+            --lastname User \
+            --role Admin \
+            --email admin@maestro.ml || true
+      containers:
+      - name: webserver
+        image: apache/airflow:2.7.3-python3.11
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        envFrom:
+        - configMapRef:
+            name: airflow-config
+        - secretRef:
+            name: airflow-secrets
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          value: "admin"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "minioadmin"
+        - name: MLFLOW_S3_ENDPOINT_URL
+          value: "http://minio.storage.svc.cluster.local:9000"
+        ports:
+        - containerPort: 8080
+          name: http
+        command: ['bash', '-c']
+        args:
+        - |
+          # Install additional Python packages
+          pip install apache-airflow-providers-amazon==8.11.0 \
+                      apache-airflow-providers-cncf-kubernetes==7.9.0 \
+                      mlflow==2.8.1 \
+                      feast==0.35.0 \
+                      scikit-learn==1.3.2 \
+                      pandas==2.1.4
+
+          # Start webserver
+          airflow webserver
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: dags
+        persistentVolumeClaim:
+          claimName: airflow-dags-pvc
+
+---
+# Airflow Scheduler
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow-scheduler
+  namespace: airflow
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: airflow
+      component: scheduler
+  template:
+    metadata:
+      labels:
+        app: airflow
+        component: scheduler
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 50000
+        runAsGroup: 0
+        fsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+      - name: wait-for-db
+        image: postgres:15-alpine
+        command: ['sh', '-c', 'until pg_isready -h airflow-postgresql -U maestro; do sleep 2; done']
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      containers:
+      - name: scheduler
+        image: apache/airflow:2.7.3-python3.11
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        envFrom:
+        - configMapRef:
+            name: airflow-config
+        - secretRef:
+            name: airflow-secrets
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          value: "admin"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "minioadmin"
+        - name: MLFLOW_S3_ENDPOINT_URL
+          value: "http://minio.storage.svc.cluster.local:9000"
+        command: ['bash', '-c']
+        args:
+        - |
+          pip install apache-airflow-providers-amazon==8.11.0 \
+                      apache-airflow-providers-cncf-kubernetes==7.9.0 \
+                      mlflow==2.8.1 \
+                      feast==0.35.0 \
+                      scikit-learn==1.3.2 \
+                      pandas==2.1.4
+          airflow scheduler
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+        livenessProbe:
+          exec:
+            command:
+            - bash
+            - -c
+            - airflow jobs check --job-type SchedulerJob --hostname $(hostname)
+          initialDelaySeconds: 60
+          periodSeconds: 30
+      volumes:
+      - name: dags
+        persistentVolumeClaim:
+          claimName: airflow-dags-pvc
+
+---
+# Airflow Celery Worker
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow-worker
+  namespace: airflow
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: airflow
+      component: worker
+  template:
+    metadata:
+      labels:
+        app: airflow
+        component: worker
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 50000
+        runAsGroup: 0
+        fsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+      - name: wait-for-db
+        image: postgres:15-alpine
+        command: ['sh', '-c', 'until pg_isready -h airflow-postgresql -U maestro; do sleep 2; done']
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      containers:
+      - name: worker
+        image: apache/airflow:2.7.3-python3.11
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        envFrom:
+        - configMapRef:
+            name: airflow-config
+        - secretRef:
+            name: airflow-secrets
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          value: "admin"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "minioadmin"
+        - name: MLFLOW_S3_ENDPOINT_URL
+          value: "http://minio.storage.svc.cluster.local:9000"
+        command: ['bash', '-c']
+        args:
+        - |
+          pip install apache-airflow-providers-amazon==8.11.0 \
+                      apache-airflow-providers-cncf-kubernetes==7.9.0 \
+                      mlflow==2.8.1 \
+                      feast==0.35.0 \
+                      scikit-learn==1.3.2 \
+                      pandas==2.1.4
+          airflow celery worker
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+        livenessProbe:
+          exec:
+            command:
+            - bash
+            - -c
+            - celery -A airflow.executors.celery_executor.app inspect ping -d celery@$(hostname)
+          initialDelaySeconds: 60
+          periodSeconds: 30
+      volumes:
+      - name: dags
+        persistentVolumeClaim:
+          claimName: airflow-dags-pvc
+
+---
+# Airflow Flower (Celery monitoring)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow-flower
+  namespace: airflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airflow
+      component: flower
+  template:
+    metadata:
+      labels:
+        app: airflow
+        component: flower
+    spec:
+      containers:
+      - name: flower
+        image: apache/airflow:2.7.3-python3.11
+        envFrom:
+        - configMapRef:
+            name: airflow-config
+        - secretRef:
+            name: airflow-secrets
+        command: ['airflow', 'celery', 'flower']
+        ports:
+        - containerPort: 5555
+          name: http
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+---
+# Persistent Volume Claim for DAGs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: airflow-dags-pvc
+  namespace: airflow
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+# Services
+apiVersion: v1
+kind: Service
+metadata:
+  name: airflow-webserver
+  namespace: airflow
+  labels:
+    app: airflow
+    component: webserver
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  selector:
+    app: airflow
+    component: webserver
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: airflow-flower
+  namespace: airflow
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5555
+    targetPort: 5555
+    name: http
+  selector:
+    app: airflow
+    component: flower
+
+---
+# HorizontalPodAutoscaler for workers
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: airflow-worker-hpa
+  namespace: airflow
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: airflow-worker
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+
+---
+# Ingress for Airflow Webserver
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: airflow-ingress
+  namespace: airflow
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - airflow.maestro-ml.example.com
+    secretName: airflow-tls
+  rules:
+  - host: airflow.maestro-ml.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: airflow-webserver
+            port:
+              number: 80

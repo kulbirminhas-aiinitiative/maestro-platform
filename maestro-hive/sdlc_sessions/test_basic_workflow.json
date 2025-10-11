@@ -1,0 +1,10 @@
+{
+  "session_id": "test_basic_workflow",
+  "requirement": "Build a simple blog platform with user authentication",
+  "output_dir": "test_output/basic",
+  "created_at": "2025-10-05T10:41:46.459384",
+  "last_updated": "2025-10-05T10:41:46.459387",
+  "completed_personas": [],
+  "files_registry": {},
+  "persona_outputs": {}
+}

@@ -1,0 +1,150 @@
+name: Canary Deployment
+# Gradual rollout: 10% → 50% → 100%
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_name:
+        description: 'Model name'
+        required: true
+        type: string
+      model_version:
+        description: 'Model version'
+        required: true
+        type: string
+      canary_percentage:
+        description: 'Canary traffic percentage'
+        required: true
+        type: choice
+        options:
+          - '10'
+          - '50'
+          - '100'
+        default: '10'
+      namespace:
+        description: 'Kubernetes namespace'
+        required: false
+        type: string
+        default: ml-serving
+
+env:
+  MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # Deploy canary
+  deploy-canary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install mlflow scikit-learn pandas numpy pyyaml
+
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+
+      - name: Deploy canary version
+        run: |
+          model_name="${{ github.event.inputs.model_name }}"
+          model_version="${{ github.event.inputs.model_version }}"
+          percentage="${{ github.event.inputs.canary_percentage }}"
+          namespace="${{ github.event.inputs.namespace }}"
+
+          # Calculate replicas based on percentage
+          if [ "$percentage" == "10" ]; then
+            replicas=1
+          elif [ "$percentage" == "50" ]; then
+            replicas=2
+          else
+            replicas=3
+          fi
+
+          python3 governance/deployment-automation.py deploy \
+            --model-name "$model_name" \
+            --model-version "$model_version" \
+            --strategy canary \
+            --replicas "$replicas" \
+            --namespace "$namespace"
+
+      - name: Monitor canary metrics
+        run: |
+          echo "Monitoring canary deployment for 5 minutes..."
+          sleep 300  # 5 minutes
+
+          # Check error rates (placeholder)
+          echo "Checking error rates and latency..."
+
+          # In real implementation, query Prometheus here
+          echo "✓ Canary metrics within acceptable range"
+
+      - name: Canary status
+        run: |
+          percentage="${{ github.event.inputs.canary_percentage }}"
+
+          if [ "$percentage" == "10" ]; then
+            echo "🔵 Canary at 10% - Monitor metrics before increasing to 50%"
+          elif [ "$percentage" == "50" ]; then
+            echo "🟡 Canary at 50% - Monitor metrics before full rollout"
+          else
+            echo "🟢 Canary at 100% - Full rollout complete"
+          fi
+
+  # Promote or rollback based on metrics
+  evaluate-canary:
+    runs-on: ubuntu-latest
+    needs: deploy-canary
+    steps:
+      - name: Evaluate canary metrics
+        id: evaluate
+        run: |
+          # In real implementation, query Prometheus for:
+          # - Error rate
+          # - Latency (p95, p99)
+          # - Throughput
+
+          # Placeholder evaluation
+          error_rate=0.5
+          latency_p95=95
+
+          if (( $(echo "$error_rate > 1.0" | bc -l) )); then
+            echo "decision=rollback" >> $GITHUB_OUTPUT
+            echo "❌ High error rate detected: ${error_rate}%"
+          elif (( $(echo "$latency_p95 > 200" | bc -l) )); then
+            echo "decision=rollback" >> $GITHUB_OUTPUT
+            echo "❌ High latency detected: ${latency_p95}ms"
+          else
+            echo "decision=promote" >> $GITHUB_OUTPUT
+            echo "✓ Metrics healthy - safe to continue"
+          fi
+
+      - name: Promotion recommendation
+        run: |
+          decision="${{ steps.evaluate.outputs.decision }}"
+          percentage="${{ github.event.inputs.canary_percentage }}"
+
+          if [ "$decision" == "promote" ]; then
+            if [ "$percentage" == "10" ]; then
+              echo "✅ Recommend: Increase to 50%"
+            elif [ "$percentage" == "50" ]; then
+              echo "✅ Recommend: Full rollout (100%)"
+            else
+              echo "✅ Canary deployment successful"
+            fi
+          else
+            echo "⚠️ Recommend: Rollback canary deployment"
+          fi

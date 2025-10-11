@@ -1,0 +1,232 @@
+#!/usr/bin/env python3
+"""
+Test Configuration Loader
+Purpose: Validate centralized configuration loading
+"""
+
+import sys
+import os
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+try:
+    from config.config_loader import ConfigLoader, get_config, get_config_value
+    print("✅ Successfully imported config_loader")
+except ImportError as e:
+    print(f"❌ Failed to import config_loader: {e}")
+    sys.exit(1)
+
+
+def test_config_loading():
+    """Test basic configuration loading"""
+    print("\n📋 Test 1: Configuration Loading")
+    try:
+        config = ConfigLoader()
+        assert config.config is not None, "Config should not be None"
+        print("✅ Configuration loaded successfully")
+        return True
+    except Exception as e:
+        print(f"❌ Configuration loading failed: {e}")
+        return False
+
+
+def test_get_config_value():
+    """Test getting specific configuration values"""
+    print("\n📋 Test 2: Get Configuration Values")
+    try:
+        config = get_config()
+
+        # Test MLflow config
+        mlflow_uri = config.get('mlflow.tracking_uri')
+        assert mlflow_uri is not None, "MLflow tracking URI should exist"
+        print(f"  ✓ MLflow Tracking URI: {mlflow_uri}")
+
+        # Test database config
+        db_host = config.get('database.host')
+        assert db_host is not None, "Database host should exist"
+        print(f"  ✓ Database Host: {db_host}")
+
+        # Test resource limits
+        cpu_limit = config.get('resources.serving.cpu_limit')
+        assert cpu_limit is not None, "CPU limit should exist"
+        print(f"  ✓ Serving CPU Limit: {cpu_limit}")
+
+        # Test governance thresholds
+        min_accuracy = config.get('governance.approval.min_accuracy')
+        assert min_accuracy is not None, "Min accuracy should exist"
+        print(f"  ✓ Min Accuracy Threshold: {min_accuracy}")
+
+        print("✅ All configuration values retrieved successfully")
+        return True
+    except Exception as e:
+        print(f"❌ Get configuration values failed: {e}")
+        return False
+
+
+def test_mlflow_config():
+    """Test MLflow-specific configuration"""
+    print("\n📋 Test 3: MLflow Configuration")
+    try:
+        config = get_config()
+        mlflow_config = config.get_mlflow_config()
+
+        assert 'tracking_uri' in mlflow_config, "tracking_uri missing"
+        assert 'registry_uri' in mlflow_config, "registry_uri missing"
+        assert 'artifact_location' in mlflow_config, "artifact_location missing"
+
+        print("  MLflow Configuration:")
+        for key, value in mlflow_config.items():
+            print(f"    {key}: {value}")
+
+        print("✅ MLflow configuration valid")
+        return True
+    except Exception as e:
+        print(f"❌ MLflow configuration test failed: {e}")
+        return False
+
+
+def test_resource_limits():
+    """Test resource limit configuration"""
+    print("\n📋 Test 4: Resource Limits")
+    try:
+        config = get_config()
+
+        # Test TensorFlow training resources
+        tf_resources = config.get_resource_limits('training', 'tensorflow')
+        assert 'cpu_request' in tf_resources, "cpu_request missing"
+        assert 'memory_limit' in tf_resources, "memory_limit missing"
+
+        print("  TensorFlow Training Resources:")
+        for key, value in tf_resources.items():
+            print(f"    {key}: {value}")
+
+        # Test serving resources
+        serving_resources = config.get_resource_limits('serving')
+        assert 'cpu_request' in serving_resources, "serving cpu_request missing"
+
+        print("  Serving Resources:")
+        for key, value in serving_resources.items():
+            print(f"    {key}: {value}")
+
+        print("✅ Resource limits configuration valid")
+        return True
+    except Exception as e:
+        print(f"❌ Resource limits test failed: {e}")
+        return False
+
+
+def test_section_retrieval():
+    """Test retrieving entire configuration sections"""
+    print("\n📋 Test 5: Section Retrieval")
+    try:
+        config = get_config()
+
+        # Get kubernetes section
+        k8s_config = config.get_section('kubernetes')
+        assert k8s_config is not None, "Kubernetes section missing"
+        assert 'namespace' in k8s_config, "namespace config missing"
+
+        print("  Kubernetes Namespaces:")
+        for key, value in k8s_config.get('namespace', {}).items():
+            print(f"    {key}: {value}")
+
+        # Get monitoring section
+        monitoring_config = config.get_section('monitoring')
+        assert monitoring_config is not None, "Monitoring section missing"
+
+        print("✅ Section retrieval successful")
+        return True
+    except Exception as e:
+        print(f"❌ Section retrieval test failed: {e}")
+        return False
+
+
+def test_default_values():
+    """Test default value handling"""
+    print("\n📋 Test 6: Default Values")
+    try:
+        config = get_config()
+
+        # Get non-existent key with default
+        value = config.get('non.existent.key', 'default_value')
+        assert value == 'default_value', "Default value not returned"
+
+        print("  ✓ Default value returned for non-existent key")
+
+        # Get non-existent key without default
+        value = config.get('another.non.existent.key')
+        assert value is None, "Should return None for non-existent key"
+
+        print("  ✓ None returned for non-existent key without default")
+
+        print("✅ Default value handling works correctly")
+        return True
+    except Exception as e:
+        print(f"❌ Default values test failed: {e}")
+        return False
+
+
+def test_validation():
+    """Test configuration validation"""
+    print("\n📋 Test 7: Configuration Validation")
+    try:
+        config = get_config()
+        is_valid = config.validate()
+
+        if is_valid:
+            print("✅ Configuration validation passed")
+        else:
+            print("⚠️  Configuration validation found issues (expected in dev)")
+
+        return True
+    except Exception as e:
+        print(f"❌ Configuration validation test failed: {e}")
+        return False
+
+
+def main():
+    """Run all configuration tests"""
+    print("=" * 60)
+    print("Maestro ML Platform - Configuration Tests")
+    print("=" * 60)
+
+    tests = [
+        test_config_loading,
+        test_get_config_value,
+        test_mlflow_config,
+        test_resource_limits,
+        test_section_retrieval,
+        test_default_values,
+        test_validation,
+    ]
+
+    results = []
+    for test in tests:
+        try:
+            result = test()
+            results.append(result)
+        except Exception as e:
+            print(f"❌ Test crashed: {e}")
+            results.append(False)
+
+    print("\n" + "=" * 60)
+    print("Test Summary")
+    print("=" * 60)
+    print(f"Total Tests: {len(results)}")
+    print(f"Passed: {sum(results)}")
+    print(f"Failed: {len(results) - sum(results)}")
+    print("=" * 60)
+
+    if all(results):
+        print("✅ All configuration tests passed!")
+        return 0
+    else:
+        print("❌ Some configuration tests failed!")
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

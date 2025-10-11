@@ -1,0 +1,27 @@
+# Maestro ML Feature Store Configuration
+# Phase 1.1.5 - Feature Store Setup
+# Phase 1.2.5 - Feature materialization jobs
+
+project: maestro_ml
+provider: aws
+registry:
+  registry_type: sql
+  path: postgresql://maestro:password@maestro-ml-rds.default.svc.cluster.local:5432/feast_registry
+  sqlalchemy_config_kwargs:
+    echo: false
+    pool_pre_ping: true
+
+online_store:
+  type: redis
+  connection_string: "feast-redis.feast.svc.cluster.local:6379,password="
+  key_ttl_seconds: 86400  # 24 hours
+
+offline_store:
+  type: file  # TODO: Migrate to Redshift or Athena for production
+  path: s3://maestro-ml-artifacts/feast/offline
+
+entity_key_serialization_version: 2
+
+flags:
+  alpha_features: true
+  beta_features: true

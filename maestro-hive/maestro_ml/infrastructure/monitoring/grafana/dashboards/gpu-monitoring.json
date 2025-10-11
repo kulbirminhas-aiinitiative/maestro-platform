@@ -1,0 +1,340 @@
+{
+  "dashboard": {
+    "title": "GPU Monitoring & Training Performance",
+    "uid": "gpu-monitoring",
+    "tags": ["ml-platform", "gpu", "training"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "10s",
+
+    "panels": [
+      {
+        "id": 1,
+        "title": "GPU Utilization by Device",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_GPU_UTIL",
+            "legendFormat": "GPU {{gpu}} - {{pod}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "GPU Utilization", "min": 0, "max": 100}
+        ],
+        "thresholds": [
+          {"value": 30, "colorMode": "critical", "op": "lt", "fill": true, "line": true},
+          {"value": 80, "colorMode": "custom", "op": "gt", "fill": false, "line": true}
+        ]
+      },
+      {
+        "id": 2,
+        "title": "GPU Memory Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_FB_USED / 1024 / 1024",
+            "legendFormat": "Used - GPU {{gpu}}"
+          },
+          {
+            "expr": "DCGM_FI_DEV_FB_FREE / 1024 / 1024",
+            "legendFormat": "Free - GPU {{gpu}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "decmbytes", "label": "Memory"}
+        ]
+      },
+
+      {
+        "id": 3,
+        "title": "GPU Temperature",
+        "type": "graph",
+        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_GPU_TEMP",
+            "legendFormat": "GPU {{gpu}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "celsius", "label": "Temperature"}
+        ],
+        "thresholds": [
+          {"value": 85, "colorMode": "critical", "op": "gt", "fill": true, "line": true}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "GPU Power Consumption",
+        "type": "graph",
+        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 8},
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_POWER_USAGE",
+            "legendFormat": "GPU {{gpu}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "watt", "label": "Power"}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "GPU Clock Speed",
+        "type": "graph",
+        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 8},
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_SM_CLOCK",
+            "legendFormat": "SM Clock - GPU {{gpu}}"
+          },
+          {
+            "expr": "DCGM_FI_DEV_MEM_CLOCK",
+            "legendFormat": "Mem Clock - GPU {{gpu}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "hertz", "label": "Clock Speed"}
+        ]
+      },
+
+      {
+        "id": 6,
+        "title": "Training Loss by Job",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+        "targets": [
+          {
+            "expr": "training_metrics_loss{job_name=~\"$job\"}",
+            "legendFormat": "{{job_name}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Loss", "logBase": 10}
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Training Accuracy/Metrics",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+        "targets": [
+          {
+            "expr": "training_metrics_accuracy{job_name=~\"$job\"}",
+            "legendFormat": "Accuracy - {{job_name}}"
+          },
+          {
+            "expr": "training_metrics_f1_score{job_name=~\"$job\"}",
+            "legendFormat": "F1 - {{job_name}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "percentunit", "label": "Score", "min": 0, "max": 1}
+        ]
+      },
+
+      {
+        "id": 8,
+        "title": "Training Throughput (samples/sec)",
+        "type": "graph",
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 22},
+        "targets": [
+          {
+            "expr": "rate(training_samples_processed_total{job_name=~\"$job\"}[1m])",
+            "legendFormat": "{{job_name}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Samples/sec"}
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Training Step Duration",
+        "type": "graph",
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 22},
+        "targets": [
+          {
+            "expr": "training_step_duration_seconds{job_name=~\"$job\"}",
+            "legendFormat": "{{job_name}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Duration"}
+        ]
+      },
+
+      {
+        "id": 10,
+        "title": "Active Training Jobs",
+        "type": "table",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 28},
+        "targets": [
+          {
+            "expr": "training_job_status",
+            "format": "table",
+            "instant": true
+          },
+          {
+            "expr": "training_job_epoch",
+            "format": "table",
+            "instant": true
+          },
+          {
+            "expr": "training_job_progress_percent",
+            "format": "table",
+            "instant": true
+          },
+          {
+            "expr": "sum(DCGM_FI_DEV_GPU_UTIL) by (pod)",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "merge"
+          },
+          {
+            "id": "organize",
+            "options": {
+              "renameByName": {
+                "job_name": "Job Name",
+                "status": "Status",
+                "Value #A": "Epoch",
+                "Value #B": "Progress %",
+                "Value #C": "GPU Util %"
+              }
+            }
+          }
+        ]
+      },
+
+      {
+        "id": 11,
+        "title": "GPU Efficiency Score",
+        "type": "gauge",
+        "gridPos": {"h": 6, "w": 6, "x": 0, "y": 36},
+        "targets": [
+          {
+            "expr": "avg(DCGM_FI_DEV_GPU_UTIL) * avg(training_job_status{status=\"running\"})"
+          }
+        ],
+        "options": {
+          "min": 0,
+          "max": 100,
+          "showThresholdLabels": false,
+          "showThresholdMarkers": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 50, "color": "yellow"},
+                {"value": 70, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 12,
+        "title": "Total GPU Hours (Today)",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 6, "y": 36},
+        "targets": [
+          {
+            "expr": "sum(count_over_time(DCGM_FI_DEV_GPU_UTIL[24h])) / 3600"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "textMode": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "h"
+          }
+        }
+      },
+      {
+        "id": 13,
+        "title": "Estimated GPU Cost (Today)",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 12, "y": 36},
+        "targets": [
+          {
+            "expr": "sum(gpu_hourly_cost) * 24"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "textMode": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD"
+          }
+        }
+      },
+      {
+        "id": 14,
+        "title": "Training Cost Efficiency (samples/$)",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 18, "y": 36},
+        "targets": [
+          {
+            "expr": "sum(rate(training_samples_processed_total[24h])) / (sum(gpu_hourly_cost) * 24)"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "textMode": "auto"
+        }
+      }
+    ],
+
+    "templating": {
+      "list": [
+        {
+          "name": "job",
+          "type": "query",
+          "query": "label_values(training_job_status, job_name)",
+          "multi": true,
+          "includeAll": true,
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          }
+        },
+        {
+          "name": "gpu",
+          "type": "query",
+          "query": "label_values(DCGM_FI_DEV_GPU_UTIL, gpu)",
+          "multi": true,
+          "includeAll": true
+        }
+      ]
+    },
+
+    "annotations": {
+      "list": [
+        {
+          "name": "Training Start/Stop",
+          "datasource": "Prometheus",
+          "expr": "changes(training_job_status[5m]) != 0",
+          "titleFormat": "{{job_name}} {{status}}"
+        }
+      ]
+    }
+  }
+}

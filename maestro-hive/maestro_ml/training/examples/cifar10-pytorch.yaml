@@ -1,0 +1,363 @@
+# CIFAR-10 PyTorch Training Job Example
+# Demonstrates distributed PyTorch DDP training with MLflow integration
+
+---
+# ConfigMap with training script
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cifar10-pytorch-training-code
+  namespace: kubeflow-training
+data:
+  train.py: |
+    import argparse
+    import os
+    import torch
+    import torch.nn as nn
+    import torch.distributed as dist
+    from torch.nn.parallel import DistributedDataParallel as DDP
+    from torch.utils.data import DataLoader, DistributedSampler
+    import torchvision
+    import torchvision.transforms as transforms
+    import mlflow
+    import mlflow.pytorch
+
+    class SimpleCNN(nn.Module):
+        def __init__(self):
+            super(SimpleCNN, self).__init__()
+            self.conv1 = nn.Conv2d(3, 32, 3, padding=1)
+            self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
+            self.conv3 = nn.Conv2d(64, 64, 3, padding=1)
+            self.pool = nn.MaxPool2d(2, 2)
+            self.fc1 = nn.Linear(64 * 4 * 4, 256)
+            self.fc2 = nn.Linear(256, 10)
+            self.relu = nn.ReLU()
+            self.dropout = nn.Dropout(0.5)
+
+        def forward(self, x):
+            x = self.pool(self.relu(self.conv1(x)))
+            x = self.pool(self.relu(self.conv2(x)))
+            x = self.pool(self.relu(self.conv3(x)))
+            x = x.view(-1, 64 * 4 * 4)
+            x = self.dropout(self.relu(self.fc1(x)))
+            x = self.fc2(x)
+            return x
+
+    def setup_distributed():
+        """Initialize distributed training"""
+        dist.init_process_group(backend='gloo')  # Use 'nccl' for GPU
+        rank = dist.get_rank()
+        world_size = dist.get_world_size()
+        return rank, world_size
+
+    def cleanup_distributed():
+        """Clean up distributed training"""
+        dist.destroy_process_group()
+
+    def train_epoch(model, dataloader, criterion, optimizer, device, rank):
+        """Train for one epoch"""
+        model.train()
+        running_loss = 0.0
+        correct = 0
+        total = 0
+
+        for i, (inputs, labels) in enumerate(dataloader):
+            inputs, labels = inputs.to(device), labels.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+            _, predicted = outputs.max(1)
+            total += labels.size(0)
+            correct += predicted.eq(labels).sum().item()
+
+        epoch_loss = running_loss / len(dataloader)
+        epoch_acc = 100. * correct / total
+        return epoch_loss, epoch_acc
+
+    def validate(model, dataloader, criterion, device):
+        """Validate model"""
+        model.eval()
+        val_loss = 0.0
+        correct = 0
+        total = 0
+
+        with torch.no_grad():
+            for inputs, labels in dataloader:
+                inputs, labels = inputs.to(device), labels.to(device)
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+
+                val_loss += loss.item()
+                _, predicted = outputs.max(1)
+                total += labels.size(0)
+                correct += predicted.eq(labels).sum().item()
+
+        val_loss = val_loss / len(dataloader)
+        val_acc = 100. * correct / total
+        return val_loss, val_acc
+
+    def main(args):
+        # Setup distributed training
+        rank, world_size = setup_distributed()
+        device = torch.device(f'cuda:{rank}' if torch.cuda.is_available() else 'cpu')
+
+        print(f"Rank {rank}/{world_size} using device {device}")
+
+        # Data transforms
+        transform_train = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ])
+
+        transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ])
+
+        # Load CIFAR-10 dataset
+        trainset = torchvision.datasets.CIFAR10(
+            root='/data', train=True, download=True, transform=transform_train
+        )
+        testset = torchvision.datasets.CIFAR10(
+            root='/data', train=False, download=True, transform=transform_test
+        )
+
+        # Create distributed samplers
+        train_sampler = DistributedSampler(trainset, num_replicas=world_size, rank=rank)
+        test_sampler = DistributedSampler(testset, num_replicas=world_size, rank=rank)
+
+        # Create data loaders
+        trainloader = DataLoader(
+            trainset, batch_size=args.batch_size, sampler=train_sampler, num_workers=2
+        )
+        testloader = DataLoader(
+            testset, batch_size=args.batch_size, sampler=test_sampler, num_workers=2
+        )
+
+        # Create model and wrap with DDP
+        model = SimpleCNN().to(device)
+        model = DDP(model)
+
+        criterion = nn.CrossEntropyLoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+
+        # MLflow tracking (only on rank 0)
+        if rank == 0:
+            mlflow.set_tracking_uri(os.environ.get('MLFLOW_TRACKING_URI'))
+            mlflow.set_experiment(os.environ.get('MLFLOW_EXPERIMENT_NAME', 'cifar10-experiment'))
+            mlflow.start_run(run_name=os.environ.get('MLFLOW_RUN_NAME', args.model_name))
+
+            mlflow.log_params({
+                'model': 'SimpleCNN',
+                'optimizer': 'Adam',
+                'scheduler': 'CosineAnnealingLR',
+                'epochs': args.epochs,
+                'batch_size': args.batch_size,
+                'learning_rate': args.learning_rate,
+                'world_size': world_size,
+                'backend': args.backend
+            })
+
+        # Training loop
+        for epoch in range(args.epochs):
+            train_sampler.set_epoch(epoch)  # Shuffle data differently each epoch
+
+            train_loss, train_acc = train_epoch(
+                model, trainloader, criterion, optimizer, device, rank
+            )
+            val_loss, val_acc = validate(model, testloader, criterion, device)
+
+            scheduler.step()
+
+            # Log metrics (only on rank 0)
+            if rank == 0:
+                print(f'Epoch {epoch+1}/{args.epochs}:')
+                print(f'  Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%')
+                print(f'  Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%')
+
+                mlflow.log_metrics({
+                    'train_loss': train_loss,
+                    'train_accuracy': train_acc,
+                    'val_loss': val_loss,
+                    'val_accuracy': val_acc,
+                    'learning_rate': scheduler.get_last_lr()[0]
+                }, step=epoch)
+
+        # Save model (only on rank 0)
+        if rank == 0:
+            mlflow.log_metrics({
+                'final_val_accuracy': val_acc,
+                'final_val_loss': val_loss
+            })
+
+            # Log model
+            mlflow.pytorch.log_model(
+                model.module,  # Unwrap DDP
+                "model",
+                registered_model_name=args.model_name
+            )
+
+            mlflow.end_run()
+            print(f"Training complete! Final validation accuracy: {val_acc:.2f}%")
+
+        cleanup_distributed()
+
+    if __name__ == '__main__':
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--backend', default='gloo', choices=['gloo', 'nccl'])
+        parser.add_argument('--epochs', type=int, default=10)
+        parser.add_argument('--batch-size', type=int, default=128)
+        parser.add_argument('--learning-rate', type=float, default=0.001)
+        parser.add_argument('--model-name', default='cifar10-cnn')
+        parser.add_argument('--experiment-name', default='cifar10-experiment')
+        args = parser.parse_args()
+        main(args)
+
+---
+# PyTorchJob for CIFAR-10 training
+apiVersion: kubeflow.org/v1
+kind: PyTorchJob
+metadata:
+  name: cifar10-pytorch-training
+  namespace: kubeflow-training
+  labels:
+    app: pytorch-training
+    experiment: cifar10-experiment
+    model: cifar10-cnn
+spec:
+  runPolicy:
+    cleanPodPolicy: Running
+    ttlSecondsAfterFinished: 3600
+    activeDeadlineSeconds: 3600  # 1 hour
+    backoffLimit: 2
+
+  pytorchReplicaSpecs:
+    # Master (rank 0)
+    Master:
+      replicas: 1
+      restartPolicy: OnFailure
+      template:
+        spec:
+          containers:
+          - name: pytorch
+            image: pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime
+            command:
+            - python3
+            - /app/train.py
+            args:
+            - --backend=gloo
+            - --epochs=10
+            - --batch-size=128
+            - --learning-rate=0.001
+            - --model-name=cifar10-cnn
+            - --experiment-name=cifar10-experiment
+            env:
+            - name: MLFLOW_TRACKING_URI
+              value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+            - name: MLFLOW_EXPERIMENT_NAME
+              value: "cifar10-experiment"
+            - name: MLFLOW_RUN_NAME
+              value: "cifar10-pytorch-ddp"
+            - name: NCCL_DEBUG
+              value: "INFO"
+            resources:
+              requests:
+                cpu: "2"
+                memory: "4Gi"
+              limits:
+                cpu: "4"
+                memory: "8Gi"
+            volumeMounts:
+            - name: training-code
+              mountPath: /app
+              readOnly: true
+            - name: data-volume
+              mountPath: /data
+            - name: shm
+              mountPath: /dev/shm
+          volumes:
+          - name: training-code
+            configMap:
+              name: cifar10-pytorch-training-code
+          - name: data-volume
+            emptyDir: {}  # CIFAR-10 will be downloaded
+          - name: shm
+            emptyDir:
+              medium: Memory
+              sizeLimit: 2Gi
+
+    # Workers (rank 1, 2, ...)
+    Worker:
+      replicas: 1  # Start with 1 worker (total 2 nodes)
+      restartPolicy: OnFailure
+      template:
+        spec:
+          containers:
+          - name: pytorch
+            image: pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime
+            command:
+            - python3
+            - /app/train.py
+            args:
+            - --backend=gloo
+            - --epochs=10
+            - --batch-size=128
+            - --learning-rate=0.001
+            - --model-name=cifar10-cnn
+            - --experiment-name=cifar10-experiment
+            env:
+            - name: MLFLOW_TRACKING_URI
+              value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+            - name: MLFLOW_EXPERIMENT_NAME
+              value: "cifar10-experiment"
+            - name: NCCL_DEBUG
+              value: "INFO"
+            resources:
+              requests:
+                cpu: "2"
+                memory: "4Gi"
+              limits:
+                cpu: "4"
+                memory: "8Gi"
+            volumeMounts:
+            - name: training-code
+              mountPath: /app
+              readOnly: true
+            - name: data-volume
+              mountPath: /data
+            - name: shm
+              mountPath: /dev/shm
+          volumes:
+          - name: training-code
+            configMap:
+              name: cifar10-pytorch-training-code
+          - name: data-volume
+            emptyDir: {}
+          - name: shm
+            emptyDir:
+              medium: Memory
+              sizeLimit: 2Gi
+
+---
+# How to deploy:
+# kubectl apply -f cifar10-pytorch.yaml
+#
+# How to monitor:
+# kubectl get pytorchjobs -n kubeflow-training
+# kubectl logs -n kubeflow-training cifar10-pytorch-training-master-0 -f
+#
+# How to check progress in MLflow:
+# http://<minikube-ip>:30500
+# Look for experiment "cifar10-experiment"
+#
+# How to scale workers:
+# kubectl patch pytorchjob cifar10-pytorch-training -n kubeflow-training \
+#   --type='json' -p='[{"op": "replace", "path": "/spec/pytorchReplicaSpecs/Worker/replicas", "value":2}]'

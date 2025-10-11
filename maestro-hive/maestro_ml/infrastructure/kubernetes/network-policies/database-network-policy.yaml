@@ -1,0 +1,184 @@
+# Database Network Policy
+# Isolates PostgreSQL and Redis to only allow authorized connections
+
+---
+# PostgreSQL Network Policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgresql-policy
+  namespace: ml-platform
+spec:
+  podSelector:
+    matchLabels:
+      app: postgresql
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow from maestro-api
+  - from:
+    - podSelector:
+        matchLabels:
+          app: maestro-api
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow from maestro-worker
+  - from:
+    - podSelector:
+        matchLabels:
+          app: maestro-worker
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow from MLflow
+  - from:
+    - podSelector:
+        matchLabels:
+          app: mlflow
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow from Airflow
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: airflow
+    - podSelector:
+        matchLabels:
+          app: airflow
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow metrics scraping
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 9187  # postgres_exporter
+  egress:
+  # Allow DNS only
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    - podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+# Redis Network Policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-policy
+  namespace: ml-platform
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow from maestro-api (caching)
+  - from:
+    - podSelector:
+        matchLabels:
+          app: maestro-api
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow from maestro-worker (task queue)
+  - from:
+    - podSelector:
+        matchLabels:
+          app: maestro-worker
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow from Airflow (Celery broker)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: airflow
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow metrics scraping
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 9121  # redis_exporter
+  egress:
+  # Allow DNS only
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    - podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow Redis cluster communication (if clustered)
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+    - protocol: TCP
+      port: 16379  # Redis cluster bus
+
+---
+# Airflow PostgreSQL Network Policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: airflow-postgresql-policy
+  namespace: airflow
+spec:
+  podSelector:
+    matchLabels:
+      app: airflow-postgresql
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow from Airflow components only
+  - from:
+    - podSelector:
+        matchLabels:
+          app: airflow
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow metrics scraping
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 9187
+  egress:
+  # Allow DNS only
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53

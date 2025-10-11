@@ -1,0 +1,323 @@
+# Maestro ML Platform - Feast Feature Store
+# Phase 1.1.5 - Set up feature store (Feast)
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: feast
+  labels:
+    name: feast
+    component: ml-platform
+
+---
+# Feast Online Store (Redis)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: feast-redis
+  namespace: feast
+spec:
+  serviceName: feast-redis
+  replicas: 3
+  selector:
+    matchLabels:
+      app: feast-redis
+  template:
+    metadata:
+      labels:
+        app: feast-redis
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: redis
+        image: redis:7.2-alpine
+        ports:
+        - containerPort: 6379
+          name: redis
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        command:
+        - redis-server
+        - --appendonly
+        - "yes"
+        - --maxmemory
+        - "4gb"
+        - --maxmemory-policy
+        - "allkeys-lru"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: gp3
+      resources:
+        requests:
+          storage: 50Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: feast-redis
+  namespace: feast
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: redis
+  selector:
+    app: feast-redis
+
+---
+# Feast Registry (PostgreSQL-backed via existing RDS)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: feast-config
+  namespace: feast
+data:
+  feature_store.yaml: |
+    project: maestro_ml
+    provider: aws
+    registry:
+      registry_type: sql
+      path: postgresql://maestro:${DB_PASSWORD}@maestro-ml-rds.default.svc.cluster.local:5432/feast_registry
+    online_store:
+      type: redis
+      connection_string: "feast-redis.feast.svc.cluster.local:6379"
+    offline_store:
+      type: file  # Will be updated to use Redshift/Athena in production
+      path: s3://maestro-ml-artifacts/feast/offline
+    entity_key_serialization_version: 2
+
+---
+# Feast Feature Server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: feast-feature-server
+  namespace: feast
+  labels:
+    app: feast
+    component: feature-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: feast
+      component: feature-server
+  template:
+    metadata:
+      labels:
+        app: feast
+        component: feature-server
+    spec:
+      serviceAccountName: feast
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: feature-server
+        image: feastdev/feature-server:0.35.0
+        ports:
+        - containerPort: 6566
+          name: http
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        command:
+        - feast
+        - serve
+        - -h
+        - "0.0.0.0"
+        - -p
+        - "6566"
+        env:
+        - name: FEAST_FEATURE_STORE_YAML
+          value: "/feast/feature_store.yaml"
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: feast-secrets
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: feast-secrets
+              key: AWS_SECRET_ACCESS_KEY
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: feast-config
+          mountPath: /feast
+        - name: tmp
+          mountPath: /tmp
+        - name: cache
+          mountPath: /.cache
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 6566
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 6566
+          initialDelaySeconds: 15
+          periodSeconds: 5
+      volumes:
+      - name: feast-config
+        configMap:
+          name: feast-config
+      - name: tmp
+        emptyDir: {}
+      - name: cache
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: feast-feature-server
+  namespace: feast
+  labels:
+    app: feast
+    component: feature-server
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 6566
+    protocol: TCP
+    name: http
+  selector:
+    app: feast
+    component: feature-server
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: feast-secrets
+  namespace: feast
+type: Opaque
+stringData:
+  AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
+  AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
+  DB_PASSWORD: "${DB_PASSWORD}"
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: feast
+  namespace: feast
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::${AWS_ACCOUNT_ID}:role/feast-s3-access
+
+---
+# HorizontalPodAutoscaler for Feast Feature Server
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: feast-feature-server-hpa
+  namespace: feast
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: feast-feature-server
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Pods
+    pods:
+      metric:
+        name: http_requests_per_second
+      target:
+        type: AverageValue
+        averageValue: "1000"
+
+---
+# NetworkPolicy for Feast
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: feast-network-policy
+  namespace: feast
+spec:
+  podSelector:
+    matchLabels:
+      app: feast
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ml-training
+    - namespaceSelector:
+        matchLabels:
+          name: ml-inference
+    ports:
+    - protocol: TCP
+      port: 6566
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: feast-redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 5432  # PostgreSQL

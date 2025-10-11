@@ -1,0 +1,251 @@
+# MNIST TensorFlow Training Job Example
+# Demonstrates distributed TensorFlow training with MLflow integration
+
+---
+# ConfigMap with training script
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mnist-tensorflow-training-code
+  namespace: kubeflow-training
+data:
+  train.py: |
+    import argparse
+    import os
+    import json
+    import tensorflow as tf
+    import mlflow
+    import mlflow.tensorflow
+    from tensorflow import keras
+    from tensorflow.keras import layers
+
+    def get_strategy(strategy_name):
+        """Get distributed training strategy"""
+        if strategy_name == 'multi_worker_mirrored':
+            return tf.distribute.MultiWorkerMirroredStrategy()
+        elif strategy_name == 'mirrored':
+            return tf.distribute.MirroredStrategy()
+        else:
+            return tf.distribute.get_strategy()  # Default strategy
+
+    def create_model():
+        """Create simple CNN for MNIST"""
+        model = keras.Sequential([
+            layers.Input(shape=(28, 28, 1)),
+            layers.Conv2D(32, kernel_size=(3, 3), activation="relu"),
+            layers.MaxPooling2D(pool_size=(2, 2)),
+            layers.Conv2D(64, kernel_size=(3, 3), activation="relu"),
+            layers.MaxPooling2D(pool_size=(2, 2)),
+            layers.Flatten(),
+            layers.Dropout(0.5),
+            layers.Dense(10, activation="softmax"),
+        ])
+        return model
+
+    def main(args):
+        # Set up MLflow
+        mlflow.set_tracking_uri(os.environ.get('MLFLOW_TRACKING_URI'))
+        mlflow.set_experiment(os.environ.get('MLFLOW_EXPERIMENT_NAME', 'mnist-experiment'))
+
+        # Get distributed strategy
+        strategy = get_strategy(args.strategy)
+
+        print(f"Number of devices: {strategy.num_replicas_in_sync}")
+
+        # Load MNIST data
+        (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+        x_train = x_train.reshape(-1, 28, 28, 1).astype("float32") / 255
+        x_test = x_test.reshape(-1, 28, 28, 1).astype("float32") / 255
+
+        # Create datasets
+        train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+        train_dataset = train_dataset.shuffle(60000).batch(args.batch_size)
+
+        test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test))
+        test_dataset = test_dataset.batch(args.batch_size)
+
+        # Start MLflow run
+        with mlflow.start_run(run_name=os.environ.get('MLFLOW_RUN_NAME', args.model_name)):
+            # Log parameters
+            mlflow.log_params({
+                'strategy': args.strategy,
+                'epochs': args.epochs,
+                'batch_size': args.batch_size,
+                'learning_rate': args.learning_rate,
+                'num_replicas': strategy.num_replicas_in_sync,
+                'model_name': args.model_name
+            })
+
+            # Create and compile model within strategy scope
+            with strategy.scope():
+                model = create_model()
+                model.compile(
+                    optimizer=keras.optimizers.Adam(learning_rate=args.learning_rate),
+                    loss=keras.losses.SparseCategoricalCrossentropy(),
+                    metrics=[keras.metrics.SparseCategoricalAccuracy()]
+                )
+
+            # Custom callback for MLflow logging
+            class MLflowCallback(keras.callbacks.Callback):
+                def on_epoch_end(self, epoch, logs=None):
+                    if logs:
+                        mlflow.log_metrics({
+                            'train_loss': logs.get('loss'),
+                            'train_accuracy': logs.get('sparse_categorical_accuracy'),
+                            'val_loss': logs.get('val_loss'),
+                            'val_accuracy': logs.get('val_sparse_categorical_accuracy')
+                        }, step=epoch)
+
+            # Train model
+            history = model.fit(
+                train_dataset,
+                epochs=args.epochs,
+                validation_data=test_dataset,
+                callbacks=[MLflowCallback()]
+            )
+
+            # Evaluate
+            test_loss, test_acc = model.evaluate(test_dataset)
+
+            # Log final metrics
+            mlflow.log_metrics({
+                'test_loss': test_loss,
+                'test_accuracy': test_acc
+            })
+
+            # Save model to MLflow
+            mlflow.tensorflow.log_model(
+                model,
+                "model",
+                registered_model_name=args.model_name
+            )
+
+            print(f"Training complete! Test accuracy: {test_acc:.4f}")
+
+    if __name__ == '__main__':
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--strategy', default='multi_worker_mirrored')
+        parser.add_argument('--epochs', type=int, default=5)
+        parser.add_argument('--batch-size', type=int, default=128)
+        parser.add_argument('--learning-rate', type=float, default=0.001)
+        parser.add_argument('--model-name', default='mnist-cnn')
+        parser.add_argument('--experiment-name', default='mnist-experiment')
+        args = parser.parse_args()
+        main(args)
+
+---
+# TFJob for MNIST training
+apiVersion: kubeflow.org/v1
+kind: TFJob
+metadata:
+  name: mnist-tensorflow-training
+  namespace: kubeflow-training
+  labels:
+    app: tensorflow-training
+    experiment: mnist-experiment
+    model: mnist-cnn
+spec:
+  runPolicy:
+    cleanPodPolicy: Running
+    ttlSecondsAfterFinished: 3600
+    activeDeadlineSeconds: 1800  # 30 minutes
+    backoffLimit: 2
+
+  tfReplicaSpecs:
+    # Chief worker
+    Chief:
+      replicas: 1
+      restartPolicy: OnFailure
+      template:
+        spec:
+          containers:
+          - name: tensorflow
+            image: tensorflow/tensorflow:2.15.0
+            command:
+            - python3
+            - /app/train.py
+            args:
+            - --strategy=multi_worker_mirrored
+            - --epochs=5
+            - --batch-size=128
+            - --learning-rate=0.001
+            - --model-name=mnist-cnn
+            - --experiment-name=mnist-experiment
+            env:
+            - name: MLFLOW_TRACKING_URI
+              value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+            - name: MLFLOW_EXPERIMENT_NAME
+              value: "mnist-experiment"
+            - name: MLFLOW_RUN_NAME
+              value: "mnist-tf-distributed"
+            - name: TF_CPP_MIN_LOG_LEVEL
+              value: "1"
+            resources:
+              requests:
+                cpu: "2"
+                memory: "4Gi"
+              limits:
+                cpu: "4"
+                memory: "8Gi"
+            volumeMounts:
+            - name: training-code
+              mountPath: /app
+              readOnly: true
+          volumes:
+          - name: training-code
+            configMap:
+              name: mnist-tensorflow-training-code
+
+    # Worker replicas
+    Worker:
+      replicas: 1  # Start with 1 worker (total 2 nodes including chief)
+      restartPolicy: OnFailure
+      template:
+        spec:
+          containers:
+          - name: tensorflow
+            image: tensorflow/tensorflow:2.15.0
+            command:
+            - python3
+            - /app/train.py
+            args:
+            - --strategy=multi_worker_mirrored
+            - --epochs=5
+            - --batch-size=128
+            - --learning-rate=0.001
+            - --model-name=mnist-cnn
+            - --experiment-name=mnist-experiment
+            env:
+            - name: MLFLOW_TRACKING_URI
+              value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+            - name: MLFLOW_EXPERIMENT_NAME
+              value: "mnist-experiment"
+            - name: TF_CPP_MIN_LOG_LEVEL
+              value: "1"
+            resources:
+              requests:
+                cpu: "2"
+                memory: "4Gi"
+              limits:
+                cpu: "4"
+                memory: "8Gi"
+            volumeMounts:
+            - name: training-code
+              mountPath: /app
+              readOnly: true
+          volumes:
+          - name: training-code
+            configMap:
+              name: mnist-tensorflow-training-code
+
+---
+# How to deploy:
+# kubectl apply -f mnist-tensorflow.yaml
+#
+# How to monitor:
+# kubectl get tfjobs -n kubeflow-training
+# kubectl logs -n kubeflow-training mnist-tensorflow-training-chief-0 -f
+#
+# How to check MLflow:
+# http://<minikube-ip>:30500 (or your MLflow URL)
+# Look for experiment "mnist-experiment"

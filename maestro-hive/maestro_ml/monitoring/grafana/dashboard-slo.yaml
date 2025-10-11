@@ -1,0 +1,364 @@
+# Maestro ML - SLO Dashboard
+#
+# Service Level Objective tracking dashboard
+# Based on Google SRE best practices
+
+dashboard:
+  title: "Maestro ML - SLO Tracking"
+  tags: ["maestro-ml", "slo", "sre"]
+  refresh: "1m"
+  time:
+    from: "now-30d"
+    to: "now"
+
+  rows:
+    # ========================================================================
+    # Row 1: SLO Summary
+    # ========================================================================
+    - title: "SLO Summary"
+      panels:
+        - title: "Availability - 30 Day"
+          type: "singlestat"
+          targets:
+            - expr: "slo_http_request_success_rate{service='api'}"
+          description: "Current 30-day availability"
+          format: "percentunit"
+          decimals: 3
+          sparkline: true
+          thresholds: "0.995,0.999"
+          colors: ["red", "yellow", "green"]
+          gaugeShow: true
+          gaugeMin: 0.99
+          gaugeMax: 1.0
+
+        - title: "Error Budget Remaining"
+          type: "singlestat"
+          targets:
+            - expr: "slo_error_budget_remaining{service='api'}"
+          description: "Percentage of error budget remaining for 30-day window"
+          format: "percent"
+          sparkline: true
+          thresholds: "10,25"
+          colors: ["red", "yellow", "green"]
+          gaugeShow: true
+          gaugeMin: 0
+          gaugeMax: 100
+
+        - title: "P99 Latency vs SLO"
+          type: "singlestat"
+          targets:
+            - expr: "slo_http_request_latency_p99{service='api'}"
+          description: "Current P99 latency (target: 1s)"
+          format: "s"
+          sparkline: true
+          thresholds: "1.0,2.0"
+          colors: ["green", "yellow", "red"]
+
+        - title: "SLO Status"
+          type: "table"
+          targets:
+            - expr: "slo_http_request_success_rate"
+              format: "table"
+          description: "All SLO statuses"
+          columns:
+            - field: "service"
+              title: "Service"
+            - field: "Value"
+              title: "Availability"
+              format: "percentunit"
+
+    # ========================================================================
+    # Row 2: Multi-Window Error Budget
+    # ========================================================================
+    - title: "Multi-Window Error Budget (Google SRE)"
+      panels:
+        - title: "1 Hour Window (Fast Burn)"
+          type: "graph"
+          targets:
+            - expr: |
+                1 - (
+                  sum(rate(http_requests_total{status!~"5.."}[1h])) /
+                  sum(rate(http_requests_total[1h]))
+                )
+              legendFormat: "Error Rate"
+            - expr: "1 - 0.999"
+              legendFormat: "SLO Target (0.1%)"
+          description: "Error rate in 1-hour window (fast burn detection)"
+          yAxis:
+            format: "percentunit"
+            logBase: 10
+
+        - title: "6 Hour Window (Medium Burn)"
+          type: "graph"
+          targets:
+            - expr: |
+                1 - (
+                  sum(rate(http_requests_total{status!~"5.."}[6h])) /
+                  sum(rate(http_requests_total[6h]))
+                )
+              legendFormat: "Error Rate"
+            - expr: "1 - 0.999"
+              legendFormat: "SLO Target (0.1%)"
+          description: "Error rate in 6-hour window"
+          yAxis:
+            format: "percentunit"
+
+        - title: "3 Day Window (Slow Burn)"
+          type: "graph"
+          targets:
+            - expr: |
+                1 - (
+                  sum(rate(http_requests_total{status!~"5.."}[3d])) /
+                  sum(rate(http_requests_total[3d]))
+                )
+              legendFormat: "Error Rate"
+            - expr: "1 - 0.999"
+              legendFormat: "SLO Target (0.1%)"
+          description: "Error rate in 3-day window"
+          yAxis:
+            format: "percentunit"
+
+        - title: "30 Day Window (Overall Budget)"
+          type: "graph"
+          targets:
+            - expr: |
+                1 - (
+                  sum(rate(http_requests_total{status!~"5.."}[30d])) /
+                  sum(rate(http_requests_total[30d]))
+                )
+              legendFormat: "Error Rate"
+            - expr: "1 - 0.999"
+              legendFormat: "SLO Target (0.1%)"
+          description: "Error rate in 30-day window (full SLO period)"
+          yAxis:
+            format: "percentunit"
+
+    # ========================================================================
+    # Row 3: Availability Trend
+    # ========================================================================
+    - title: "Availability Trend"
+      panels:
+        - title: "Success Rate Over Time"
+          type: "graph"
+          targets:
+            - expr: |
+                sum(rate(http_requests_total{status!~"5.."}[5m])) /
+                sum(rate(http_requests_total[5m]))
+              legendFormat: "Success Rate"
+            - expr: "0.999"
+              legendFormat: "SLO Target (99.9%)"
+            - expr: "0.995"
+              legendFormat: "Warning (99.5%)"
+          description: "Request success rate over time"
+          yAxis:
+            format: "percentunit"
+            min: 0.99
+            max: 1.0
+
+        - title: "Error Budget Burn Rate"
+          type: "graph"
+          targets:
+            - expr: |
+                (1 - (sum(rate(http_requests_total{status!~"5.."}[1h])) / sum(rate(http_requests_total[1h])))) /
+                (1 - 0.999)
+              legendFormat: "1h Burn Rate"
+            - expr: |
+                (1 - (sum(rate(http_requests_total{status!~"5.."}[6h])) / sum(rate(http_requests_total[6h])))) /
+                (1 - 0.999)
+              legendFormat: "6h Burn Rate"
+            - expr: "1.0"
+              legendFormat: "Normal Burn Rate"
+            - expr: "10.0"
+              legendFormat: "Critical Threshold"
+          description: "Error budget burn rate (>1.0 = burning faster than expected)"
+          yAxis:
+            label: "Burn Rate Multiplier"
+            logBase: 2
+
+    # ========================================================================
+    # Row 4: Latency SLO
+    # ========================================================================
+    - title: "Latency SLO"
+      panels:
+        - title: "Request Latency Distribution"
+          type: "graph"
+          targets:
+            - expr: "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))"
+              legendFormat: "P50"
+            - expr: "histogram_quantile(0.90, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))"
+              legendFormat: "P90"
+            - expr: "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))"
+              legendFormat: "P95"
+            - expr: "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))"
+              legendFormat: "P99"
+            - expr: "1.0"
+              legendFormat: "SLO Target (1s)"
+          description: "Request latency percentiles vs SLO"
+          yAxis:
+            format: "s"
+            label: "Duration"
+
+        - title: "% Requests Under SLO"
+          type: "graph"
+          targets:
+            - expr: |
+                sum(rate(http_request_duration_seconds_bucket{le="0.5"}[5m])) /
+                sum(rate(http_request_duration_seconds_count[5m]))
+              legendFormat: "< 500ms"
+            - expr: |
+                sum(rate(http_request_duration_seconds_bucket{le="1.0"}[5m])) /
+                sum(rate(http_request_duration_seconds_count[5m]))
+              legendFormat: "< 1s"
+            - expr: "0.99"
+              legendFormat: "SLO Target (99%)"
+          description: "Percentage of requests meeting latency SLO"
+          yAxis:
+            format: "percentunit"
+            min: 0.9
+            max: 1.0
+
+    # ========================================================================
+    # Row 5: Error Budget Details
+    # ========================================================================
+    - title: "Error Budget Details"
+      panels:
+        - title: "Error Budget Timeline"
+          type: "graph"
+          targets:
+            - expr: "slo_error_budget_remaining{service='api'}"
+              legendFormat: "Budget Remaining %"
+          description: "Error budget remaining over time"
+          yAxis:
+            format: "percent"
+            min: 0
+            max: 100
+          fill: 2
+          alert:
+            name: "Low Error Budget"
+            conditions:
+              - expr: "slo_error_budget_remaining{service='api'} < 10"
+                for: "5m"
+                severity: "critical"
+
+        - title: "Total Allowed Errors (30d)"
+          type: "singlestat"
+          targets:
+            - expr: "sum(increase(http_requests_total[30d])) * (1 - 0.999)"
+          description: "Total errors allowed in 30-day window to meet SLO"
+          format: "short"
+
+        - title: "Actual Errors (30d)"
+          type: "singlestat"
+          targets:
+            - expr: "sum(increase(http_requests_total{status=~'5..'}[30d]))"
+          description: "Actual errors in 30-day window"
+          format: "short"
+
+        - title: "Time to SLO Breach"
+          type: "singlestat"
+          targets:
+            - expr: |
+                (slo_error_budget_remaining{service='api'} / 100) * 30 * 24
+              instantExpression: true
+          description: "Estimated hours until SLO breach at current error rate"
+          format: "h"
+          valueName: "current"
+
+    # ========================================================================
+    # Row 6: Per-Endpoint SLO
+    # ========================================================================
+    - title: "Per-Endpoint Performance"
+      panels:
+        - title: "Success Rate by Endpoint"
+          type: "graph"
+          targets:
+            - expr: |
+                sum(rate(http_requests_total{status!~"5..", endpoint=~"$endpoint"}[5m])) by (endpoint) /
+                sum(rate(http_requests_total{endpoint=~"$endpoint"}[5m])) by (endpoint)
+              legendFormat: "{{endpoint}}"
+          description: "Success rate per endpoint"
+          yAxis:
+            format: "percentunit"
+            min: 0.99
+
+        - title: "P99 Latency by Endpoint"
+          type: "graph"
+          targets:
+            - expr: |
+                histogram_quantile(0.99,
+                  sum(rate(http_request_duration_seconds_bucket{endpoint=~"$endpoint"}[5m])) by (le, endpoint))
+              legendFormat: "{{endpoint}}"
+            - expr: "1.0"
+              legendFormat: "SLO Target"
+          description: "P99 latency per endpoint"
+          yAxis:
+            format: "s"
+
+# ========================================================================
+# Variables
+# ========================================================================
+variables:
+  - name: "service"
+    type: "query"
+    query: "label_values(slo_http_request_success_rate, service)"
+    label: "Service"
+    includeAll: false
+    current: "api"
+
+  - name: "window"
+    type: "custom"
+    query: "1h,6h,1d,3d,7d,30d"
+    label: "Time Window"
+    current: "30d"
+
+  - name: "endpoint"
+    type: "query"
+    query: "label_values(http_requests_total, endpoint)"
+    label: "Endpoint"
+    multi: true
+    includeAll: true
+
+# ========================================================================
+# Alerts (Grafana Alerts)
+# ========================================================================
+alerts:
+  - name: "SLO Violation"
+    panel: "Availability - 30 Day"
+    conditions:
+      - expr: "slo_http_request_success_rate{service='api'} < 0.999"
+        for: "5m"
+    notifications:
+      - uid: "pagerduty"
+      - uid: "slack"
+
+  - name: "Error Budget Critical"
+    panel: "Error Budget Remaining"
+    conditions:
+      - expr: "slo_error_budget_remaining{service='api'} < 10"
+        for: "5m"
+    notifications:
+      - uid: "pagerduty"
+
+# ========================================================================
+# SLO Calculations Reference
+# ========================================================================
+#
+# 99.9% SLO (3 nines):
+#   - Allows 0.1% error rate
+#   - 43.2 minutes downtime per month
+#   - 72 minutes downtime per 50 days
+#
+# 99.95% SLO:
+#   - Allows 0.05% error rate
+#   - 21.6 minutes downtime per month
+#
+# 99.99% SLO (4 nines):
+#   - Allows 0.01% error rate
+#   - 4.32 minutes downtime per month
+#
+# Multi-Window Burn Rate Thresholds (Google SRE):
+#   - 1h window:  Burn rate > 14.4 = alert (2% of 30d budget in 1h)
+#   - 6h window:  Burn rate > 6.0  = alert (10% of 30d budget in 6h)
+#   - 3d window:  Burn rate > 1.0  = normal consumption
+#
+# ========================================================================

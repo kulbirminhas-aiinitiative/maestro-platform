@@ -1,0 +1,347 @@
+# Maestro ML Platform - Centralized Configuration
+# Purpose: Consolidate all platform configurations to eliminate hardcoding
+# Usage: Load via environment variables or ConfigMap in Kubernetes
+
+# MLflow Configuration
+mlflow:
+  tracking_uri: "${MLFLOW_TRACKING_URI:-http://mlflow-tracking:5000}"
+  artifact_location: "${MLFLOW_ARTIFACT_LOCATION:-s3://mlflow-artifacts}"
+  registry_uri: "${MLFLOW_REGISTRY_URI:-http://mlflow-tracking:5000}"
+  model_serving_port: 8080
+  ui_port: 5000
+
+# Feast Configuration
+feast:
+  registry_path: "${FEAST_REGISTRY_PATH:-s3://feast-registry/registry.pb}"
+  online_store_type: "${FEAST_ONLINE_STORE_TYPE:-redis}"
+  online_store_host: "${FEAST_ONLINE_STORE_HOST:-redis.ml-platform.svc.cluster.local}"
+  online_store_port: 6379
+  offline_store_type: "${FEAST_OFFLINE_STORE_TYPE:-file}"
+  offline_store_path: "${FEAST_OFFLINE_STORE_PATH:-/data/feast}"
+
+# Database Configuration
+database:
+  host: "${DB_HOST:-postgresql.ml-platform.svc.cluster.local}"
+  port: 5432
+  name: "${DB_NAME:-mlflow}"
+  user: "${DB_USER:-mlflow}"
+  password: "${DB_PASSWORD}"  # Must be provided via secret
+  connection_pool_size: 20
+  max_overflow: 10
+
+# Kubernetes Configuration
+kubernetes:
+  namespace:
+    platform: "ml-platform"
+    serving: "ml-serving"
+    training: "kubeflow-training"
+    observability: "observability"
+    security: "security"
+
+  service_account: "ml-platform-sa"
+
+  training:
+    max_concurrent_jobs: 3
+    default_workers: 2
+    max_workers: 4
+
+  serving:
+    min_replicas: 1
+    max_replicas: 3
+    target_cpu_utilization: 70
+    target_memory_utilization: 80
+
+# Resource Limits
+resources:
+  training:
+    tensorflow:
+      cpu_request: "2"
+      cpu_limit: "4"
+      memory_request: "4Gi"
+      memory_limit: "8Gi"
+    pytorch:
+      cpu_request: "2"
+      cpu_limit: "4"
+      memory_request: "4Gi"
+      memory_limit: "8Gi"
+    xgboost:
+      cpu_request: "1"
+      cpu_limit: "2"
+      memory_request: "2Gi"
+      memory_limit: "4Gi"
+
+  serving:
+    cpu_request: "500m"
+    cpu_limit: "1"
+    memory_request: "1Gi"
+    memory_limit: "2Gi"
+
+  monitoring:
+    prometheus:
+      cpu_request: "500m"
+      cpu_limit: "1"
+      memory_request: "2Gi"
+      memory_limit: "4Gi"
+    grafana:
+      cpu_request: "250m"
+      cpu_limit: "500m"
+      memory_request: "512Mi"
+      memory_limit: "1Gi"
+
+# Monitoring Configuration
+monitoring:
+  prometheus:
+    url: "${PROMETHEUS_URL:-http://prometheus-server.ml-platform.svc.cluster.local:9090}"
+    scrape_interval: "15s"
+    retention_period: "30d"
+
+  grafana:
+    url: "${GRAFANA_URL:-http://grafana.ml-platform.svc.cluster.local:3000}"
+    admin_user: "${GRAFANA_ADMIN_USER:-admin}"
+    admin_password: "${GRAFANA_ADMIN_PASSWORD}"  # Must be provided via secret
+
+  jaeger:
+    agent_host: "${JAEGER_AGENT_HOST:-jaeger.observability.svc.cluster.local}"
+    agent_port: 6831
+    collector_endpoint: "${JAEGER_COLLECTOR_ENDPOINT:-http://jaeger.observability.svc.cluster.local:14268/api/traces}"
+    ui_url: "${JAEGER_UI_URL:-http://jaeger.observability.svc.cluster.local:16686}"
+
+  loki:
+    url: "${LOKI_URL:-http://loki.ml-platform.svc.cluster.local:3100}"
+
+# Model Governance Thresholds
+governance:
+  approval:
+    min_accuracy: 0.85
+    min_f1_score: 0.80
+    min_precision: 0.75
+    min_recall: 0.75
+    max_prediction_time_ms: 100
+    min_test_samples: 1000
+
+  drift_detection:
+    threshold: 0.05
+    monitoring_interval_hours: 6
+    alert_on_drift: true
+
+  ab_testing:
+    min_traffic_percentage: 10
+    max_traffic_percentage: 50
+    min_duration_hours: 24
+    confidence_level: 0.95
+
+# Auto-scaling Configuration
+autoscaling:
+  metrics:
+    request_rate_threshold: 100
+    latency_p95_threshold_ms: 100
+    latency_p99_threshold_ms: 200
+    error_rate_threshold: 0.01
+
+  behavior:
+    scale_up_stabilization_seconds: 30
+    scale_down_stabilization_seconds: 300
+    scale_up_percent: 50
+    scale_down_percent: 25
+
+# Security Configuration
+security:
+  vault:
+    address: "${VAULT_ADDR:-http://vault.security.svc.cluster.local:8200}"
+    token: "${VAULT_TOKEN}"  # Must be provided via secret
+    secret_path: "secret/ml-platform"
+    kubernetes_role: "ml-platform"
+
+  rbac:
+    enabled: true
+    admin_role: "ml-platform-admin"
+    developer_role: "ml-platform-developer"
+    viewer_role: "ml-platform-viewer"
+
+  mtls:
+    enabled: true
+    cert_path: "/etc/certs"
+    ca_cert: "ca.crt"
+    server_cert: "server.crt"
+    server_key: "server.key"
+
+# Cost Optimization
+cost:
+  optimization:
+    enabled: true
+    target_reduction_percentage: 35
+    analysis_interval_hours: 24
+
+  caching:
+    enabled: true
+    ttl_seconds: 3600
+    max_cache_size_mb: 1024
+
+  spot_instances:
+    enabled: true
+    max_spot_percentage: 80
+    fallback_to_ondemand: true
+
+# Advanced ML Features
+advanced_ml:
+  multi_model_serving:
+    enabled: true
+    max_models_per_pod: 5
+
+  ensembles:
+    enabled: true
+    default_strategy: "weighted"
+    strategies:
+      - "voting"
+      - "weighted"
+      - "stacking"
+
+  shadow_deployments:
+    enabled: true
+    max_shadow_traffic_percentage: 100
+
+# SLA Configuration
+sla:
+  availability_target: 0.999  # 99.9%
+  latency_p95_target_ms: 100
+  latency_p99_target_ms: 200
+  error_rate_target: 0.001  # 0.1%
+  mttr_target_minutes: 30
+  rto_target_minutes: 15
+  rpo_target_minutes: 60
+
+# Operational Configuration
+operations:
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    retention_days: 30
+    storage_location: "${BACKUP_STORAGE:-s3://ml-platform-backups}"
+
+  disaster_recovery:
+    enabled: true
+    multi_region: false
+    failover_enabled: true
+
+  incident_response:
+    detection_time_target_minutes: 5
+    triage_time_target_minutes: 10
+    resolution_time_target_minutes: 30
+    postmortem_required: true
+
+  alerting:
+    enabled: true
+    channels:
+      - slack
+      - email
+      - pagerduty
+    severity_levels:
+      - critical
+      - warning
+      - info
+
+# Logging Configuration
+logging:
+  level: "${LOG_LEVEL:-INFO}"
+  format: "json"
+  outputs:
+    - "stdout"
+    - "loki"
+
+  retention:
+    hot_tier_days: 7
+    warm_tier_days: 30
+    cold_tier_days: 90
+
+# Feature Engineering
+features:
+  max_features_per_model: 100
+  feature_validation: true
+  schema_enforcement: true
+  versioning_enabled: true
+
+# Training Configuration
+training:
+  distributed:
+    enabled: true
+    frameworks:
+      - tensorflow
+      - pytorch
+      - xgboost
+      - mxnet
+
+  hyperparameter_optimization:
+    enabled: true
+    framework: "optuna"
+    max_trials: 50
+    timeout_hours: 24
+    cost_aware: true
+    multi_objective: true
+
+  checkpointing:
+    enabled: true
+    interval_steps: 1000
+    max_checkpoints: 5
+
+# Deployment Configuration
+deployment:
+  strategies:
+    default: "rolling"
+    available:
+      - "rolling"
+      - "blue-green"
+      - "canary"
+
+  canary:
+    initial_percentage: 10
+    increment_percentage: 20
+    interval_minutes: 15
+    max_percentage: 100
+
+  rollback:
+    enabled: true
+    automatic: true
+    failure_threshold: 0.05
+
+# API Configuration
+api:
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 1000
+    burst_size: 100
+
+  authentication:
+    enabled: true
+    type: "jwt"
+    token_expiry_hours: 24
+
+  cors:
+    enabled: true
+    allowed_origins:
+      - "*"
+
+# Storage Configuration
+storage:
+  type: "${STORAGE_TYPE:-s3}"
+  bucket: "${STORAGE_BUCKET:-ml-platform-storage}"
+  region: "${STORAGE_REGION:-us-west-2}"
+  lifecycle_policies:
+    enabled: true
+    transition_to_infrequent_access_days: 30
+    transition_to_glacier_days: 90
+    expiration_days: 365
+
+# Compliance
+compliance:
+  soc2_enabled: true
+  gdpr_enabled: true
+  iso27001_enabled: true
+  audit_logging_enabled: true
+  data_encryption_at_rest: true
+  data_encryption_in_transit: true
+
+# Environment-specific Overrides
+# Use separate files for dev, staging, production:
+# - platform-config-dev.yaml
+# - platform-config-staging.yaml
+# - platform-config-prod.yaml

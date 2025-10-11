@@ -1,0 +1,248 @@
+# Maestro ML Platform - MLflow Tracking Server
+# Phase 1.1.3 - Set up MLflow tracking server
+# Phase 1.1.4 - Configure model registry (MLflow)
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mlflow
+  labels:
+    name: mlflow
+    component: ml-platform
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mlflow-secrets
+  namespace: mlflow
+type: Opaque
+stringData:
+  # Database connection (from RDS)
+  DB_URI: "postgresql://maestro:${DB_PASSWORD}@maestro-ml-rds.default.svc.cluster.local:5432/mlflow"
+  # S3 artifact store credentials
+  AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
+  AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
+  # Default artifact root
+  MLFLOW_ARTIFACT_ROOT: "s3://maestro-ml-artifacts/mlflow"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mlflow-config
+  namespace: mlflow
+data:
+  backend-store-uri: "postgresql://maestro:password@maestro-ml-rds.default.svc.cluster.local:5432/mlflow"
+  default-artifact-root: "s3://maestro-ml-artifacts/mlflow"
+  host: "0.0.0.0"
+  port: "5000"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-server
+  namespace: mlflow
+  labels:
+    app: mlflow
+    component: tracking-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mlflow
+      component: tracking-server
+  template:
+    metadata:
+      labels:
+        app: mlflow
+        component: tracking-server
+    spec:
+      serviceAccountName: mlflow
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: mlflow
+        image: ghcr.io/mlflow/mlflow:v2.8.1
+        ports:
+        - containerPort: 5000
+          name: http
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        command:
+        - mlflow
+        - server
+        - --host=0.0.0.0
+        - --port=5000
+        - --backend-store-uri=$(DB_URI)
+        - --default-artifact-root=$(MLFLOW_ARTIFACT_ROOT)
+        - --serve-artifacts
+        env:
+        - name: DB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-secrets
+              key: DB_URI
+        - name: MLFLOW_ARTIFACT_ROOT
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-secrets
+              key: MLFLOW_ARTIFACT_ROOT
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-secrets
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-secrets
+              key: AWS_SECRET_ACCESS_KEY
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: mlflow-data
+          mountPath: /mlflow
+        - name: tmp
+          mountPath: /tmp
+        - name: cache
+          mountPath: /.cache
+      volumes:
+      - name: mlflow-data
+        persistentVolumeClaim:
+          claimName: mlflow-pvc
+      - name: tmp
+        emptyDir: {}
+      - name: cache
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-service
+  namespace: mlflow
+  labels:
+    app: mlflow
+    component: tracking-server
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 5000
+    protocol: TCP
+    name: http
+  selector:
+    app: mlflow
+    component: tracking-server
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mlflow-pvc
+  namespace: mlflow
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: gp3
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mlflow
+  namespace: mlflow
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::${AWS_ACCOUNT_ID}:role/mlflow-s3-access
+
+---
+# Ingress for external access
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mlflow-ingress
+  namespace: mlflow
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - mlflow.maestro-ml.com
+    secretName: mlflow-tls
+  rules:
+  - host: mlflow.maestro-ml.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mlflow-service
+            port:
+              number: 80
+
+---
+# HorizontalPodAutoscaler for MLflow
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: mlflow-hpa
+  namespace: mlflow
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: mlflow-server
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

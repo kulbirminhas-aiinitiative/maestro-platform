@@ -1,0 +1,287 @@
+# KubeFlow Training Operator - Minikube Deployment
+# Lightweight configuration for local testing
+# Supports TensorFlow, PyTorch, and generic training jobs
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubeflow-training
+
+---
+# ServiceAccount for Training Operator
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: training-operator
+  namespace: kubeflow-training
+
+---
+# ClusterRole for Training Operator
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubeflow-training-operator
+rules:
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - tfjobs
+  - tfjobs/status
+  - tfjobs/finalizers
+  - pytorchjobs
+  - pytorchjobs/status
+  - pytorchjobs/finalizers
+  - mxjobs
+  - mxjobs/status
+  - mxjobs/finalizers
+  - xgboostjobs
+  - xgboostjobs/status
+  - xgboostjobs/finalizers
+  - paddlejobs
+  - paddlejobs/status
+  - paddlejobs/finalizers
+  verbs:
+  - "*"
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - services
+  - events
+  - configmaps
+  verbs:
+  - "*"
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - "*"
+
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubeflow-training-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubeflow-training-operator
+subjects:
+- kind: ServiceAccount
+  name: training-operator
+  namespace: kubeflow-training
+
+---
+# Training Operator Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: training-operator
+  namespace: kubeflow-training
+  labels:
+    app: training-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: training-operator
+  template:
+    metadata:
+      labels:
+        app: training-operator
+    spec:
+      serviceAccountName: training-operator
+      containers:
+      - name: training-operator
+        image: kubeflow/training-operator:v1-855e096
+        imagePullPolicy: IfNotPresent
+        command:
+        - /manager
+        env:
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+---
+# ConfigMap for Training Operator
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: training-operator-config
+  namespace: kubeflow-training
+data:
+  # MLflow tracking URI (from Phase 1)
+  MLFLOW_TRACKING_URI: "http://mlflow.ml-platform.svc.cluster.local:5000"
+  # Feast feature store (from Phase 1)
+  FEAST_REPO_PATH: "/feast/feature_repo"
+  # Default resource limits for minikube
+  DEFAULT_CPU_LIMIT: "4"
+  DEFAULT_MEMORY_LIMIT: "8Gi"
+  DEFAULT_GPU_LIMIT: "1"
+
+---
+# CRDs (Custom Resource Definitions) - Inline definitions
+
+# TFJob CRD
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: tfjobs.kubeflow.org
+spec:
+  group: kubeflow.org
+  names:
+    kind: TFJob
+    plural: tfjobs
+    singular: tfjob
+    shortNames:
+    - tfj
+  scope: Namespaced
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              tfReplicaSpecs:
+                type: object
+              runPolicy:
+                type: object
+          status:
+            type: object
+    subresources:
+      status: {}
+    additionalPrinterColumns:
+    - name: State
+      type: string
+      jsonPath: .status.conditions[-1:].type
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+
+---
+# PyTorchJob CRD
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: pytorchjobs.kubeflow.org
+spec:
+  group: kubeflow.org
+  names:
+    kind: PyTorchJob
+    plural: pytorchjobs
+    singular: pytorchjob
+    shortNames:
+    - pyj
+  scope: Namespaced
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              pytorchReplicaSpecs:
+                type: object
+              runPolicy:
+                type: object
+          status:
+            type: object
+    subresources:
+      status: {}
+    additionalPrinterColumns:
+    - name: State
+      type: string
+      jsonPath: .status.conditions[-1:].type
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+
+---
+# Service for Training Operator (for webhooks if needed)
+apiVersion: v1
+kind: Service
+metadata:
+  name: training-operator
+  namespace: kubeflow-training
+  labels:
+    app: training-operator
+spec:
+  type: ClusterIP
+  ports:
+  - name: webhook
+    port: 443
+    targetPort: 9443
+    protocol: TCP
+  selector:
+    app: training-operator
+
+---
+# PodMonitor for Prometheus (if using)
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: training-operator
+  namespace: kubeflow-training
+  labels:
+    app: training-operator
+spec:
+  selector:
+    matchLabels:
+      app: training-operator
+  podMetricsEndpoints:
+  - port: metrics
+    interval: 30s
+
+---
+# Default ResourceQuota for training jobs (minikube limits)
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: training-jobs-quota
+  namespace: kubeflow-training
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    limits.cpu: "12"
+    limits.memory: 24Gi
+    # Max 3 concurrent training jobs
+    count/tfjobs.kubeflow.org: "3"
+    count/pytorchjobs.kubeflow.org: "3"

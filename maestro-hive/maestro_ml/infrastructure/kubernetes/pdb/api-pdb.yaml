@@ -1,0 +1,14 @@
+# Pod Disruption Budget for Maestro API
+# Ensures at least 1 API pod remains available during voluntary disruptions
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: maestro-api-pdb
+  namespace: ml-platform
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: maestro-api
+  unhealthyPodEvictionPolicy: IfHealthyBudget

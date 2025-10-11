@@ -1,0 +1,192 @@
+# Patroni Configuration for Maestro ML Platform
+# High Availability PostgreSQL Setup
+#
+# This configuration provides:
+# - Automatic failover
+# - Synchronous replication
+# - Health checking
+# - REST API for cluster management
+#
+# Prerequisites:
+# - etcd cluster running
+# - PostgreSQL 13+ installed
+# - Patroni installed (pip install patroni[etcd])
+#
+# Usage:
+#   patroni patroni.yaml
+
+scope: maestro_ml_cluster
+namespace: /maestro_ml/
+name: postgres1  # Change for each node (postgres1, postgres2, postgres3)
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: ${PATRONI_HOST_IP}:8008
+  authentication:
+    username: patroni
+    password: ${PATRONI_API_PASSWORD}
+  # SSL configuration (recommended for production)
+  # certfile: /etc/patroni/ssl/server.crt
+  # keyfile: /etc/patroni/ssl/server.key
+
+# etcd configuration
+etcd:
+  hosts:
+    - ${ETCD_HOST_1}:2379
+    - ${ETCD_HOST_2}:2379
+    - ${ETCD_HOST_3}:2379
+  # Authentication (if etcd has auth enabled)
+  # username: patroni
+  # password: ${ETCD_PASSWORD}
+
+bootstrap:
+  # This section is executed only once during cluster initialization
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576  # 1 MB
+    master_start_timeout: 300
+    synchronous_mode: true
+    synchronous_mode_strict: false
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+        # Performance tuning
+        max_connections: 500
+        shared_buffers: 4GB
+        effective_cache_size: 12GB
+        maintenance_work_mem: 1GB
+        checkpoint_completion_target: 0.9
+        wal_buffers: 16MB
+        default_statistics_target: 100
+        random_page_cost: 1.1
+        effective_io_concurrency: 200
+        work_mem: 16MB
+        min_wal_size: 2GB
+        max_wal_size: 8GB
+        max_worker_processes: 8
+        max_parallel_workers_per_gather: 4
+        max_parallel_workers: 8
+        max_parallel_maintenance_workers: 4
+
+        # Replication settings
+        wal_level: replica
+        max_wal_senders: 10
+        max_replication_slots: 10
+        hot_standby: 'on'
+        wal_keep_size: 1024  # 1GB
+
+        # Logging
+        log_destination: 'stderr'
+        logging_collector: 'on'
+        log_directory: 'pg_log'
+        log_filename: 'postgresql-%Y-%m-%d_%H%M%S.log'
+        log_rotation_age: 1d
+        log_rotation_size: 100MB
+        log_line_prefix: '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+        log_checkpoints: 'on'
+        log_connections: 'on'
+        log_disconnections: 'on'
+        log_lock_waits: 'on'
+        log_temp_files: 0
+        log_autovacuum_min_duration: 0
+        log_min_duration_statement: 1000  # Log queries > 1s
+
+        # Security
+        password_encryption: scram-sha-256
+        ssl: 'on'
+        ssl_cert_file: '/var/lib/postgresql/ssl/server.crt'
+        ssl_key_file: '/var/lib/postgresql/ssl/server.key'
+
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+
+  pg_hba:
+    # Local connections
+    - local all all trust
+    # Replication connections
+    - host replication replicator 0.0.0.0/0 scram-sha-256
+    # Application connections
+    - host maestro_ml maestro_ml_user 0.0.0.0/0 scram-sha-256
+    - host all all 0.0.0.0/0 scram-sha-256
+
+  users:
+    maestro_ml_user:
+      password: ${MAESTRO_ML_DB_PASSWORD}
+      options:
+        - createrole
+        - createdb
+    replicator:
+      password: ${REPLICATOR_PASSWORD}
+      options:
+        - replication
+
+  post_bootstrap: /etc/patroni/scripts/post_bootstrap.sh
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: ${PATRONI_HOST_IP}:5432
+  data_dir: /var/lib/postgresql/13/main
+  bin_dir: /usr/lib/postgresql/13/bin
+  pgpass: /tmp/pgpass0
+  authentication:
+    replication:
+      username: replicator
+      password: ${REPLICATOR_PASSWORD}
+    superuser:
+      username: postgres
+      password: ${POSTGRES_PASSWORD}
+    rewind:
+      username: rewind_user
+      password: ${REWIND_PASSWORD}
+  parameters:
+    unix_socket_directories: '/var/run/postgresql'
+
+  # Custom scripts
+  callbacks:
+    on_start: /etc/patroni/scripts/on_start.sh
+    on_stop: /etc/patroni/scripts/on_stop.sh
+    on_restart: /etc/patroni/scripts/on_restart.sh
+    on_role_change: /etc/patroni/scripts/on_role_change.sh
+
+  create_replica_methods:
+    - basebackup
+  basebackup:
+    max-rate: '100M'
+    checkpoint: 'fast'
+
+  # Recovery settings
+  recovery_conf:
+    restore_command: 'cp /var/lib/postgresql/wal_archive/%f %p'
+
+  # Custom parameters
+  pg_ctl_timeout: 60
+
+# Watchdog configuration (optional, requires kernel module)
+# watchdog:
+#   mode: automatic
+#   device: /dev/watchdog
+#   safety_margin: 5
+
+tags:
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false
+  nosync: false
+  # Custom tags for monitoring
+  datacenter: us-east-1
+  environment: production
+  version: "1.0"
+
+# Logging
+log:
+  level: INFO
+  format: '%(asctime)s %(levelname)s: %(message)s'
+  dateformat: '%Y-%m-%d %H:%M:%S'
+  max_queue_size: 1000
+  dir: /var/log/patroni
+  file_num: 10
+  file_size: 25000000  # 25MB

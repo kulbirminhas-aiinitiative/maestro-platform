@@ -1,0 +1,10 @@
+{
+  "session_id": "test_boundaries",
+  "requirement": "Build mobile app with cloud backend",
+  "output_dir": "test_output/boundaries",
+  "created_at": "2025-10-05T10:41:47.274468",
+  "last_updated": "2025-10-05T10:41:47.274469",
+  "completed_personas": [],
+  "files_registry": {},
+  "persona_outputs": {}
+}

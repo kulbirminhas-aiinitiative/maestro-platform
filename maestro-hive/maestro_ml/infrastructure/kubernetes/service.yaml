@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: maestro-api
+  namespace: maestro-ml
+  labels:
+    app: maestro-api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: maestro-api
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: maestro-postgres
+  namespace: maestro-ml
+  labels:
+    app: maestro-postgres
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  selector:
+    app: maestro-postgres
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: maestro-redis
+  namespace: maestro-ml
+  labels:
+    app: maestro-redis
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+    name: redis
+  selector:
+    app: maestro-redis
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: maestro-mlflow
+  namespace: maestro-ml
+  labels:
+    app: maestro-mlflow
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+    name: http
+  selector:
+    app: maestro-mlflow

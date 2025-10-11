@@ -1,0 +1,107 @@
+# Feast Feature Store for Minikube Testing
+# Scaled-down configuration for local development
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: feast
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: feast-config
+  namespace: feast
+data:
+  feature_store.yaml: |
+    project: maestro_ml
+    provider: local
+    registry:
+      registry_type: sql
+      path: postgresql://maestro:maestro123@postgresql.storage.svc.cluster.local:5432/feast_registry
+    online_store:
+      type: redis
+      connection_string: "redis.storage.svc.cluster.local:6379"
+    offline_store:
+      type: file
+      path: /feast/offline
+    entity_key_serialization_version: 2
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: feast-feature-server
+  namespace: feast
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: feast
+  template:
+    metadata:
+      labels:
+        app: feast
+    spec:
+      containers:
+      - name: feature-server
+        image: feastdev/feature-server:0.35.0
+        ports:
+        - containerPort: 6566
+          name: http
+        command:
+        - feast
+        - serve
+        - -h
+        - "0.0.0.0"
+        - -p
+        - "6566"
+        env:
+        - name: FEAST_FEATURE_STORE_YAML
+          value: "/feast/feature_store.yaml"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: feast-config
+          mountPath: /feast
+        - name: feast-offline
+          mountPath: /feast/offline
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 6566
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 6566
+          initialDelaySeconds: 15
+          periodSeconds: 5
+      volumes:
+      - name: feast-config
+        configMap:
+          name: feast-config
+      - name: feast-offline
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: feast-feature-server
+  namespace: feast
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 6566
+    nodePort: 30501  # Allocated via port registry
+    name: http
+  selector:
+    app: feast

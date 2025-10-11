@@ -1,0 +1,233 @@
+name: Model Deployment
+# Automated model deployment to Kubernetes
+# Triggers on MLflow model promotion to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_name:
+        description: 'Model name'
+        required: true
+        type: string
+      model_version:
+        description: 'Model version'
+        required: true
+        type: string
+      deployment_strategy:
+        description: 'Deployment strategy'
+        required: true
+        type: choice
+        options:
+          - rolling
+          - blue-green
+          - canary
+        default: rolling
+      replicas:
+        description: 'Number of replicas'
+        required: false
+        type: number
+        default: 2
+      namespace:
+        description: 'Kubernetes namespace'
+        required: false
+        type: string
+        default: ml-serving
+
+  # Can also be triggered via repository dispatch for MLflow webhook integration
+  repository_dispatch:
+    types: [model-promoted]
+
+env:
+  MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # Job 1: Validate model
+  validate-model:
+    runs-on: ubuntu-latest
+    outputs:
+      validation_status: ${{ steps.validate.outputs.status }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install mlflow scikit-learn pandas numpy
+
+      - name: Validate model exists
+        id: validate
+        run: |
+          python3 << 'PYTHON_EOF'
+          import os
+          import mlflow
+          from mlflow.tracking import MlflowClient
+
+          mlflow.set_tracking_uri(os.environ['MLFLOW_TRACKING_URI'])
+          client = MlflowClient()
+
+          model_name = "${{ github.event.inputs.model_name || github.event.client_payload.model_name }}"
+          model_version = "${{ github.event.inputs.model_version || github.event.client_payload.model_version }}"
+
+          try:
+              model_version_obj = client.get_model_version(model_name, model_version)
+              print(f"✓ Model validated: {model_name} v{model_version}")
+              print(f"  Stage: {model_version_obj.current_stage}")
+              print(f"  Run ID: {model_version_obj.run_id}")
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write("status=success\n")
+          except Exception as e:
+              print(f"✗ Validation failed: {e}")
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write("status=failed\n")
+              exit(1)
+          PYTHON_EOF
+
+  # Job 2: Run automated tests
+  automated-tests:
+    runs-on: ubuntu-latest
+    needs: validate-model
+    if: needs.validate-model.outputs.validation_status == 'success'
+    outputs:
+      test_status: ${{ steps.test.outputs.status }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install mlflow scikit-learn pandas numpy
+
+      - name: Run approval tests
+        id: test
+        run: |
+          model_name="${{ github.event.inputs.model_name || github.event.client_payload.model_name }}"
+          model_version="${{ github.event.inputs.model_version || github.event.client_payload.model_version }}"
+
+          python3 governance/approval-workflow.py test \
+            --model-name "$model_name" \
+            --model-version "$model_version"
+
+          if [ $? -eq 0 ]; then
+            echo "✓ All tests passed"
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "✗ Tests failed"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+  # Job 3: Deploy model
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [validate-model, automated-tests]
+    if: needs.automated-tests.outputs.test_status == 'success'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install mlflow scikit-learn pandas numpy pyyaml
+
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+
+      - name: Deploy model
+        run: |
+          model_name="${{ github.event.inputs.model_name || github.event.client_payload.model_name }}"
+          model_version="${{ github.event.inputs.model_version || github.event.client_payload.model_version }}"
+          strategy="${{ github.event.inputs.deployment_strategy || 'rolling' }}"
+          replicas="${{ github.event.inputs.replicas || 2 }}"
+          namespace="${{ github.event.inputs.namespace || 'ml-serving' }}"
+
+          python3 governance/deployment-automation.py deploy \
+            --model-name "$model_name" \
+            --model-version "$model_version" \
+            --strategy "$strategy" \
+            --replicas "$replicas" \
+            --namespace "$namespace"
+
+      - name: Verify deployment
+        run: |
+          deployment_name="${{ github.event.inputs.model_name || github.event.client_payload.model_name }}-${{ github.event.inputs.model_version || github.event.client_payload.model_version }}"
+          deployment_name=$(echo "$deployment_name" | tr '[:upper:]_' '[:lower:]-')
+          namespace="${{ github.event.inputs.namespace || 'ml-serving' }}"
+
+          kubectl wait --for=condition=available --timeout=300s \
+            deployment/"$deployment_name" -n "$namespace"
+
+          echo "✓ Deployment ready"
+          kubectl get deployment "$deployment_name" -n "$namespace"
+
+  # Job 4: Smoke tests
+  smoke-tests:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run smoke tests
+        run: |
+          deployment_name="${{ github.event.inputs.model_name || github.event.client_payload.model_name }}-${{ github.event.inputs.model_version || github.event.client_payload.model_version }}"
+          deployment_name=$(echo "$deployment_name" | tr '[:upper:]_' '[:lower:]-')
+          namespace="${{ github.event.inputs.namespace || 'ml-serving' }}"
+
+          # Get pod
+          pod=$(kubectl get pods -n "$namespace" -l app=mlflow-serving -o jsonpath='{.items[0].metadata.name}')
+
+          # Port forward
+          kubectl port-forward -n "$namespace" "$pod" 8080:8080 &
+          sleep 5
+
+          # Health check
+          response=$(curl -s http://localhost:8080/health)
+          echo "Health check: $response"
+
+          # Test prediction
+          curl -X POST http://localhost:8080/predict \
+            -H "Content-Type: application/json" \
+            -d '{"instances": [[1,2,3,4,5,6,7,8,9,10]]}'
+
+          echo "✓ Smoke tests passed"
+
+  # Job 5: Notify deployment
+  notify:
+    runs-on: ubuntu-latest
+    needs: [deploy, smoke-tests]
+    if: always()
+    steps:
+      - name: Deployment notification
+        run: |
+          if [ "${{ needs.smoke-tests.result }}" == "success" ]; then
+            echo "🚀 Deployment successful!"
+            echo "Model: ${{ github.event.inputs.model_name || github.event.client_payload.model_name }}"
+            echo "Version: ${{ github.event.inputs.model_version || github.event.client_payload.model_version }}"
+            echo "Strategy: ${{ github.event.inputs.deployment_strategy || 'rolling' }}"
+          else
+            echo "❌ Deployment failed"
+            exit 1
+          fi

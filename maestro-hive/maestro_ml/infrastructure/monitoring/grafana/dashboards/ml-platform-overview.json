@@ -1,0 +1,246 @@
+{
+  "dashboard": {
+    "title": "ML Platform Overview",
+    "uid": "ml-platform-overview",
+    "tags": ["ml-platform", "overview"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+
+    "panels": [
+      {
+        "id": 1,
+        "title": "Platform Health Status",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "up{job=~\"mlflow-metrics|feast-metrics\"}"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 2,
+        "title": "Active Training Jobs",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+        "targets": [
+          {
+            "expr": "count(training_job_status{status=\"running\"})"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Active Inference Services",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "count(up{job=\"ml-inference-metrics\"} == 1)"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "GPU Utilization",
+        "type": "gauge",
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+        "targets": [
+          {
+            "expr": "avg(DCGM_FI_DEV_GPU_UTIL)"
+          }
+        ],
+        "options": {
+          "min": 0,
+          "max": 100,
+          "showThresholdLabels": false,
+          "showThresholdMarkers": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 30, "color": "yellow"},
+                {"value": 60, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+
+      {
+        "id": 5,
+        "title": "MLflow Request Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+        "targets": [
+          {
+            "expr": "rate(mlflow_requests_total[5m])",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Requests/sec"}
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Feast Feature Serving Latency (p95)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(feast_feature_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Latency"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [0.1], "type": "gt"},
+              "query": {"params": ["A", "5m", "now"]}
+            }
+          ],
+          "frequency": "60s",
+          "name": "Feast High Latency"
+        }
+      },
+
+      {
+        "id": 7,
+        "title": "Model Inference Throughput",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+        "targets": [
+          {
+            "expr": "sum(rate(inference_requests_total[5m])) by (model_name)",
+            "legendFormat": "{{model_name}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Requests/sec"}
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Training Job Progress",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+        "targets": [
+          {
+            "expr": "training_metrics_loss",
+            "legendFormat": "{{job_name}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Loss"}
+        ]
+      },
+
+      {
+        "id": 9,
+        "title": "Resource Utilization by Component",
+        "type": "table",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20},
+        "targets": [
+          {
+            "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=~\"ml-.*|feast|mlflow\"}[5m])) by (namespace, pod)",
+            "format": "table",
+            "instant": true
+          },
+          {
+            "expr": "sum(container_memory_working_set_bytes{namespace=~\"ml-.*|feast|mlflow\"}) by (namespace, pod)",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "merge"
+          },
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "renameByName": {
+                "namespace": "Namespace",
+                "pod": "Pod",
+                "Value #A": "CPU",
+                "Value #B": "Memory"
+              }
+            }
+          }
+        ]
+      },
+
+      {
+        "id": 10,
+        "title": "Cost Metrics (Estimated Daily)",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 24, "x": 0, "y": 28},
+        "targets": [
+          {
+            "expr": "sum(node_cpu_hourly_cost) * 24",
+            "legendFormat": "Compute Cost"
+          },
+          {
+            "expr": "sum(gpu_hourly_cost) * 24",
+            "legendFormat": "GPU Cost"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "textMode": "value_and_name"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD"
+          }
+        }
+      }
+    ],
+
+    "templating": {
+      "list": [
+        {
+          "name": "namespace",
+          "type": "query",
+          "query": "label_values(kube_pod_info{namespace=~\"ml-.*|feast|mlflow\"}, namespace)",
+          "multi": true,
+          "includeAll": true
+        },
+        {
+          "name": "model",
+          "type": "query",
+          "query": "label_values(inference_requests_total, model_name)",
+          "multi": true,
+          "includeAll": true
+        }
+      ]
+    },
+
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "Prometheus",
+          "expr": "changes(kube_deployment_status_replicas{namespace=~\"ml-.*|feast|mlflow\"}[5m]) > 0"
+        }
+      ]
+    }
+  }
+}

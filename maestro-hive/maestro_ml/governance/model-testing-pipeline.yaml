@@ -1,0 +1,476 @@
+# Model Testing Pipeline
+# Automated testing before production deployment
+# Runs performance, accuracy, bias, integration, and load tests
+
+---
+# Namespace for testing
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ml-testing
+  labels:
+    app: ml-platform
+    component: testing
+
+---
+# ConfigMap with testing scripts
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: model-testing-scripts
+  namespace: ml-testing
+data:
+  run_tests.py: |
+    #!/usr/bin/env python3
+    """
+    Model Testing Pipeline
+    Runs comprehensive tests before production deployment
+    """
+
+    import os
+    import sys
+    import json
+    import time
+    import mlflow
+    from mlflow.tracking import MlflowClient
+    import pandas as pd
+    import numpy as np
+    from datetime import datetime
+
+
+    class ModelTestingPipeline:
+        """Comprehensive model testing pipeline"""
+
+        def __init__(self, model_name, model_version):
+            self.model_name = model_name
+            self.model_version = model_version
+            self.mlflow_uri = os.environ.get('MLFLOW_TRACKING_URI', 'http://mlflow.ml-platform.svc.cluster.local:5000')
+            mlflow.set_tracking_uri(self.mlflow_uri)
+            self.client = MlflowClient()
+            self.test_results = {
+                'model_name': model_name,
+                'model_version': model_version,
+                'test_time': datetime.now().isoformat(),
+                'tests': {}
+            }
+
+        def run_all_tests(self):
+            """Run all test suites"""
+            print(f"Running tests for {self.model_name} v{self.model_version}")
+            print("="*80)
+
+            # Load model
+            model_uri = f"models:/{self.model_name}/{self.model_version}"
+            try:
+                self.model = mlflow.pyfunc.load_model(model_uri)
+                print("✓ Model loaded successfully")
+            except Exception as e:
+                print(f"✗ Failed to load model: {e}")
+                self.test_results['tests']['model_loading'] = {'passed': False, 'error': str(e)}
+                return self.test_results
+
+            # Run test suites
+            self.test_performance()
+            self.test_accuracy()
+            self.test_bias()
+            self.test_integration()
+            self.test_load()
+
+            # Calculate overall results
+            self._calculate_results()
+
+            # Log to MLflow
+            self._log_to_mlflow()
+
+            return self.test_results
+
+        def test_performance(self):
+            """Test model performance (latency, throughput)"""
+            print("\n1. Performance Tests")
+            print("-" * 60)
+
+            results = {
+                'passed': True,
+                'metrics': {}
+            }
+
+            try:
+                # Create sample input
+                sample_input = np.random.rand(1, 10)
+
+                # Latency test
+                latencies = []
+                for _ in range(100):
+                    start = time.time()
+                    _ = self.model.predict(sample_input)
+                    latencies.append(time.time() - start)
+
+                p50 = np.percentile(latencies, 50) * 1000
+                p95 = np.percentile(latencies, 95) * 1000
+                p99 = np.percentile(latencies, 99) * 1000
+
+                results['metrics']['latency_p50_ms'] = round(p50, 2)
+                results['metrics']['latency_p95_ms'] = round(p95, 2)
+                results['metrics']['latency_p99_ms'] = round(p99, 2)
+
+                # Check thresholds
+                if p95 > 100:  # p95 should be < 100ms
+                    results['passed'] = False
+                    results['error'] = f'P95 latency {p95:.2f}ms exceeds 100ms threshold'
+                    print(f"  ✗ Latency test FAILED: P95 {p95:.2f}ms > 100ms")
+                else:
+                    print(f"  ✓ Latency: P50={p50:.2f}ms, P95={p95:.2f}ms, P99={p99:.2f}ms")
+
+                # Throughput test
+                batch_sizes = [1, 10, 100]
+                for batch_size in batch_sizes:
+                    batch_input = np.random.rand(batch_size, 10)
+                    start = time.time()
+                    _ = self.model.predict(batch_input)
+                    duration = time.time() - start
+                    throughput = batch_size / duration
+                    results['metrics'][f'throughput_batch_{batch_size}'] = round(throughput, 2)
+                    print(f"  ✓ Throughput (batch {batch_size}): {throughput:.2f} req/sec")
+
+            except Exception as e:
+                results['passed'] = False
+                results['error'] = str(e)
+                print(f"  ✗ Performance test failed: {e}")
+
+            self.test_results['tests']['performance'] = results
+
+        def test_accuracy(self):
+            """Test model accuracy on test dataset"""
+            print("\n2. Accuracy Tests")
+            print("-" * 60)
+
+            results = {
+                'passed': True,
+                'metrics': {}
+            }
+
+            try:
+                # Get metrics from training run
+                model_version_obj = self.client.get_model_version(self.model_name, self.model_version)
+                run = self.client.get_run(model_version_obj.run_id)
+                metrics = run.data.metrics
+
+                # Check accuracy threshold
+                if 'accuracy' in metrics:
+                    accuracy = metrics['accuracy']
+                    results['metrics']['accuracy'] = accuracy
+
+                    if accuracy < 0.70:  # Minimum 70% accuracy
+                        results['passed'] = False
+                        results['error'] = f'Accuracy {accuracy:.2%} below 70% threshold'
+                        print(f"  ✗ Accuracy test FAILED: {accuracy:.2%} < 70%")
+                    else:
+                        print(f"  ✓ Accuracy: {accuracy:.2%}")
+
+                # Check other metrics
+                for metric_name in ['precision', 'recall', 'f1', 'auc']:
+                    if metric_name in metrics:
+                        results['metrics'][metric_name] = metrics[metric_name]
+                        print(f"  ✓ {metric_name.capitalize()}: {metrics[metric_name]:.4f}")
+
+            except Exception as e:
+                results['passed'] = False
+                results['error'] = str(e)
+                print(f"  ✗ Accuracy test failed: {e}")
+
+            self.test_results['tests']['accuracy'] = results
+
+        def test_bias(self):
+            """Test model for bias and fairness"""
+            print("\n3. Bias & Fairness Tests")
+            print("-" * 60)
+
+            results = {
+                'passed': True,
+                'metrics': {},
+                'note': 'Basic bias tests - expand based on use case'
+            }
+
+            try:
+                # Create synthetic data for bias testing
+                # This is a placeholder - real implementation should use actual test data
+                sample_input = np.random.rand(100, 10)
+                predictions = self.model.predict(sample_input)
+
+                # Check prediction distribution
+                if hasattr(predictions, 'dtype'):
+                    if predictions.dtype in [np.float32, np.float64]:
+                        mean_pred = np.mean(predictions)
+                        std_pred = np.std(predictions)
+                        results['metrics']['prediction_mean'] = float(mean_pred)
+                        results['metrics']['prediction_std'] = float(std_pred)
+                        print(f"  ✓ Prediction distribution: mean={mean_pred:.4f}, std={std_pred:.4f}")
+
+                # Check for extreme predictions
+                if isinstance(predictions, np.ndarray):
+                    extreme_count = np.sum((predictions < 0.01) | (predictions > 0.99))
+                    extreme_ratio = extreme_count / len(predictions)
+                    results['metrics']['extreme_prediction_ratio'] = float(extreme_ratio)
+
+                    if extreme_ratio > 0.5:
+                        results['passed'] = False
+                        results['error'] = f'High extreme prediction ratio: {extreme_ratio:.2%}'
+                        print(f"  ✗ Bias test WARNING: {extreme_ratio:.2%} extreme predictions")
+                    else:
+                        print(f"  ✓ Extreme predictions: {extreme_ratio:.2%}")
+
+                print("  ⚠  Comprehensive bias testing requires domain-specific fairness metrics")
+
+            except Exception as e:
+                results['passed'] = False
+                results['error'] = str(e)
+                print(f"  ✗ Bias test failed: {e}")
+
+            self.test_results['tests']['bias'] = results
+
+        def test_integration(self):
+            """Test model integration (end-to-end)"""
+            print("\n4. Integration Tests")
+            print("-" * 60)
+
+            results = {
+                'passed': True,
+                'checks': []
+            }
+
+            try:
+                # Check 1: Model metadata
+                model_version_obj = self.client.get_model_version(self.model_name, self.model_version)
+                if model_version_obj:
+                    results['checks'].append('model_metadata_exists')
+                    print(f"  ✓ Model metadata exists")
+
+                # Check 2: Model artifacts
+                artifacts = self.client.list_artifacts(model_version_obj.run_id)
+                if artifacts:
+                    results['checks'].append('model_artifacts_exist')
+                    print(f"  ✓ Model artifacts exist ({len(artifacts)} artifacts)")
+
+                # Check 3: Input/output compatibility
+                sample_input = np.random.rand(1, 10)
+                output = self.model.predict(sample_input)
+                if output is not None:
+                    results['checks'].append('input_output_compatible')
+                    print(f"  ✓ Input/output compatible")
+
+                # Check 4: Batch prediction
+                batch_input = np.random.rand(10, 10)
+                batch_output = self.model.predict(batch_input)
+                if len(batch_output) == 10:
+                    results['checks'].append('batch_prediction_works')
+                    print(f"  ✓ Batch prediction works")
+
+            except Exception as e:
+                results['passed'] = False
+                results['error'] = str(e)
+                print(f"  ✗ Integration test failed: {e}")
+
+            self.test_results['tests']['integration'] = results
+
+        def test_load(self):
+            """Test model under load (stress test)"""
+            print("\n5. Load Tests")
+            print("-" * 60)
+
+            results = {
+                'passed': True,
+                'metrics': {}
+            }
+
+            try:
+                # Stress test with concurrent requests simulation
+                num_requests = 1000
+                batch_size = 10
+
+                print(f"  Running {num_requests} predictions...")
+                start_time = time.time()
+
+                for i in range(num_requests // batch_size):
+                    sample_input = np.random.rand(batch_size, 10)
+                    _ = self.model.predict(sample_input)
+
+                total_time = time.time() - start_time
+                throughput = num_requests / total_time
+
+                results['metrics']['total_requests'] = num_requests
+                results['metrics']['total_time_sec'] = round(total_time, 2)
+                results['metrics']['average_throughput'] = round(throughput, 2)
+
+                # Check if throughput meets threshold (> 50 req/sec)
+                if throughput < 50:
+                    results['passed'] = False
+                    results['error'] = f'Throughput {throughput:.2f} req/sec below 50 req/sec threshold'
+                    print(f"  ✗ Load test FAILED: {throughput:.2f} req/sec < 50 req/sec")
+                else:
+                    print(f"  ✓ Load test passed: {throughput:.2f} req/sec")
+
+            except Exception as e:
+                results['passed'] = False
+                results['error'] = str(e)
+                print(f"  ✗ Load test failed: {e}")
+
+            self.test_results['tests']['load'] = results
+
+        def _calculate_results(self):
+            """Calculate overall test results"""
+            total_tests = len(self.test_results['tests'])
+            passed_tests = sum(1 for t in self.test_results['tests'].values() if t.get('passed', False))
+
+            self.test_results['summary'] = {
+                'total_tests': total_tests,
+                'passed_tests': passed_tests,
+                'failed_tests': total_tests - passed_tests,
+                'success_rate': round(passed_tests / total_tests * 100, 2) if total_tests > 0 else 0,
+                'all_passed': passed_tests == total_tests
+            }
+
+            print("\n" + "="*80)
+            print("TEST SUMMARY")
+            print("="*80)
+            print(f"Total tests: {total_tests}")
+            print(f"Passed: {passed_tests}")
+            print(f"Failed: {total_tests - passed_tests}")
+            print(f"Success rate: {self.test_results['summary']['success_rate']}%")
+
+            if self.test_results['summary']['all_passed']:
+                print("\n✓ ALL TESTS PASSED - Model ready for production")
+            else:
+                print("\n✗ SOME TESTS FAILED - Model NOT ready for production")
+                print("\nFailed tests:")
+                for test_name, result in self.test_results['tests'].items():
+                    if not result.get('passed', False):
+                        error = result.get('error', 'Unknown error')
+                        print(f"  - {test_name}: {error}")
+
+        def _log_to_mlflow(self):
+            """Log test results to MLflow"""
+            model_version_obj = self.client.get_model_version(self.model_name, self.model_version)
+            run_id = model_version_obj.run_id
+
+            with mlflow.start_run(run_id=run_id):
+                # Log summary metrics
+                mlflow.log_metric('test_total', self.test_results['summary']['total_tests'])
+                mlflow.log_metric('test_passed', self.test_results['summary']['passed_tests'])
+                mlflow.log_metric('test_failed', self.test_results['summary']['failed_tests'])
+                mlflow.log_metric('test_success_rate', self.test_results['summary']['success_rate'])
+
+                # Log detailed results
+                mlflow.log_dict(self.test_results, 'testing/test_results.json')
+
+                # Log tag
+                mlflow.set_tag('testing_complete', 'true')
+                mlflow.set_tag('all_tests_passed', str(self.test_results['summary']['all_passed']))
+
+
+    if __name__ == '__main__':
+        if len(sys.argv) < 3:
+            print("Usage: python run_tests.py <model_name> <model_version>")
+            sys.exit(1)
+
+        model_name = sys.argv[1]
+        model_version = sys.argv[2]
+
+        pipeline = ModelTestingPipeline(model_name, model_version)
+        results = pipeline.run_all_tests()
+
+        # Exit with error code if tests failed
+        if not results['summary']['all_passed']:
+            sys.exit(1)
+
+---
+# Kubernetes Job for running tests
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: model-testing-{{ .ModelName }}-{{ .ModelVersion }}
+  namespace: ml-testing
+  labels:
+    app: model-testing
+    model: {{ .ModelName }}
+    version: {{ .ModelVersion }}
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        app: model-testing
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: test-runner
+        image: python:3.11-slim
+        command:
+        - /bin/bash
+        - -c
+        - |
+          pip install -q mlflow scikit-learn pandas numpy
+          python3 /scripts/run_tests.py {{ .ModelName }} {{ .ModelVersion }}
+        env:
+        - name: MLFLOW_TRACKING_URI
+          value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+        - name: MODEL_NAME
+          value: "{{ .ModelName }}"
+        - name: MODEL_VERSION
+          value: "{{ .ModelVersion }}"
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+        volumeMounts:
+        - name: testing-scripts
+          mountPath: /scripts
+      volumes:
+      - name: testing-scripts
+        configMap:
+          name: model-testing-scripts
+
+---
+# CronJob for scheduled testing (optional)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: model-testing-production
+  namespace: ml-testing
+spec:
+  # Run daily at 2 AM
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: test-production-model
+            image: python:3.11-slim
+            command:
+            - /bin/bash
+            - -c
+            - |
+              pip install -q mlflow scikit-learn pandas numpy
+              # Test current production model
+              python3 /scripts/run_tests.py production-model Production
+            env:
+            - name: MLFLOW_TRACKING_URI
+              value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "2"
+                memory: "4Gi"
+            volumeMounts:
+            - name: testing-scripts
+              mountPath: /scripts
+          volumes:
+          - name: testing-scripts
+            configMap:
+              name: model-testing-scripts

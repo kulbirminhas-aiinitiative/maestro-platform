@@ -1,0 +1,116 @@
+{
+  "success": true,
+  "session_id": "sdlc_e07fe3b5_20251009_031746",
+  "requirement": "\nBuild an e-commerce product catalog system with the following features:\n\n1. Backend API (Node.js/Express):\n   - GET /api/products - List all products with pagination\n   - GET /api/products/:id - Get product details\n   - POST /api/products - Create new product (admin only)\n   - PUT /api/products/:id - Update product (admin only)\n   - DELETE /api/products/:id - Delete product (admin only)\n   - GET /api/products/search?q=<query> - Search products\n   - Product fields: id, name, description, price, category, imageUrl, stock, createdAt\n\n2. Database:\n   - PostgreSQL schema with products table\n   - Indexes on name and category for search performance\n   - Migration scripts\n\n3. Frontend (React):\n   - Product listing page with grid layout\n   - Product detail page\n   - Search functionality\n   - Admin panel for product management\n   - Shopping cart interface\n\n4. Testing:\n   - Backend: API integration tests (Jest/Supertest)\n   - Frontend: Component tests (React Testing Library)\n   - E2E tests (Playwright)\n\n5. Documentation:\n   - OpenAPI/Swagger spec for API\n   - README with setup instructions\n   - Architecture diagram\n\nTimeline: 2 weeks\nTeam size: 3-4 developers\nQuality: Production-ready with 80%+ test coverage\n",
+  "classification": {
+    "type": "feature_development",
+    "complexity": "complex",
+    "parallelizability": "fully_parallel",
+    "effort_hours": 8.0,
+    "confidence": 0.6
+  },
+  "blueprint": {
+    "id": "sequential-basic",
+    "name": "Basic Sequential Team",
+    "match_score": 0.6,
+    "execution_mode": "sequential",
+    "estimated_time_savings": 0.0
+  },
+  "team": {
+    "personas": [
+      "requirement_analyst",
+      "backend_developer",
+      "frontend_developer",
+      "qa_engineer"
+    ],
+    "size": 4
+  },
+  "contracts": [
+    {
+      "id": "contract_e763311a0918",
+      "name": "Requirement Analyst Contract",
+      "provider": "requirement_analyst",
+      "consumers": [
+        "backend_developer"
+      ],
+      "type": "Deliverable",
+      "mock_available": false
+    },
+    {
+      "id": "contract_52c52728db32",
+      "name": "Backend Developer Contract",
+      "provider": "backend_developer",
+      "consumers": [
+        "frontend_developer"
+      ],
+      "type": "Deliverable",
+      "mock_available": false
+    },
+    {
+      "id": "contract_a60cce0dd02d",
+      "name": "Frontend Developer Contract",
+      "provider": "frontend_developer",
+      "consumers": [
+        "qa_engineer"
+      ],
+      "type": "Deliverable",
+      "mock_available": false
+    },
+    {
+      "id": "contract_cd21e91f9ccd",
+      "name": "Qa Engineer Contract",
+      "provider": "qa_engineer",
+      "consumers": [],
+      "type": "Deliverable",
+      "mock_available": false
+    }
+  ],
+  "execution": {
+    "total_duration": 0.005095,
+    "sequential_duration": 0.002078,
+    "time_savings_percent": -1.4518768046198267,
+    "parallelization_achieved": 1.0,
+    "personas_executed": 4,
+    "groups_executed": 4
+  },
+  "deliverables": {
+    "requirement_analyst": {
+      "files_created": [],
+      "deliverables": {},
+      "contract_fulfilled": false,
+      "quality_score": 0.08000000000000002
+    },
+    "backend_developer": {
+      "files_created": [],
+      "deliverables": {},
+      "contract_fulfilled": false,
+      "quality_score": 0.08000000000000002
+    },
+    "frontend_developer": {
+      "files_created": [],
+      "deliverables": {},
+      "contract_fulfilled": false,
+      "quality_score": 0.08000000000000002
+    },
+    "qa_engineer": {
+      "files_created": [],
+      "deliverables": {},
+      "contract_fulfilled": false,
+      "quality_score": 0.08000000000000002
+    }
+  },
+  "quality": {
+    "overall_quality_score": 0.08000000000000002,
+    "quality_by_persona": {
+      "requirement_analyst": 0.08000000000000002,
+      "backend_developer": 0.08000000000000002,
+      "frontend_developer": 0.08000000000000002,
+      "qa_engineer": 0.08000000000000002
+    },
+    "contracts_fulfilled": 0,
+    "contracts_total": 4,
+    "integration_issues": 4
+  },
+  "duration_seconds": 0.153229,
+  "project_dir": "generated_project_v2"
+}

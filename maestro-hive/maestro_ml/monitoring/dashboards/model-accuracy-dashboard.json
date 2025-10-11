@@ -1,0 +1,172 @@
+{
+  "dashboard": {
+    "title": "ML Model Accuracy & Quality",
+    "tags": ["ml", "accuracy", "model-quality"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Prediction Distribution",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(prediction_value_bucket{namespace=\"ml-serving\"}[5m]))",
+            "legendFormat": "p50 prediction - {{model}}",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.90, rate(prediction_value_bucket{namespace=\"ml-serving\"}[5m]))",
+            "legendFormat": "p90 prediction - {{model}}",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Prediction Value"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Model Confidence Score",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "avg(model_confidence_score{namespace=\"ml-serving\"})",
+            "legendFormat": "{{model}} confidence",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percentunit", "label": "Confidence", "max": 1, "min": 0},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Data Drift Score",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "mlflow_drift_score{model=\"production-model\"}",
+            "legendFormat": "{{feature}} drift",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Drift Score"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [0.05], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "5m",
+          "handler": 1,
+          "message": "Data drift detected",
+          "name": "Data Drift Alert"
+        }
+      },
+      {
+        "id": 4,
+        "title": "Feature Distribution Shift",
+        "type": "heatmap",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "feature_distribution_shift{namespace=\"ml-serving\"}",
+            "legendFormat": "{{feature}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "calculate": false,
+          "cellGap": 2
+        }
+      },
+      {
+        "id": 5,
+        "title": "Model Version",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "model_version_info{namespace=\"ml-serving\"}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "none",
+          "orientation": "auto",
+          "textMode": "name"
+        }
+      },
+      {
+        "id": 6,
+        "title": "Avg Confidence",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 16},
+        "targets": [
+          {
+            "expr": "avg(model_confidence_score{namespace=\"ml-serving\"})",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "orientation": "auto",
+          "textMode": "auto",
+          "unit": "percentunit"
+        }
+      },
+      {
+        "id": 7,
+        "title": "Drift Features Count",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "count(mlflow_drift_score{model=\"production-model\"} > 0.05)",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "orientation": "auto",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 8,
+        "title": "Predictions Today",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(increase(model_predictions_total{namespace=\"ml-serving\"}[24h]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "orientation": "auto",
+          "textMode": "auto"
+        }
+      }
+    ],
+    "refresh": "1m",
+    "schemaVersion": 27,
+    "style": "dark",
+    "time": {"from": "now-24h", "to": "now"},
+    "timepicker": {}
+  }
+}

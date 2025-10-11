@@ -1,0 +1,87 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: maestro-ml
+  EKS_CLUSTER: maestro-ml
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
+
+      - name: Run Database Migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          kubectl create job maestro-migrate-${{ github.sha }} \
+            --from=cronjob/maestro-migrations \
+            --namespace=maestro-ml
+          kubectl wait --for=condition=complete \
+            --timeout=300s \
+            job/maestro-migrate-${{ github.sha }} \
+            --namespace=maestro-ml
+
+      - name: Deploy to EKS
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          kubectl set image deployment/maestro-api \
+            api=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            --namespace=maestro-ml
+          kubectl set image deployment/maestro-worker \
+            worker=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            --namespace=maestro-ml
+
+      - name: Verify Deployment
+        run: |
+          kubectl rollout status deployment/maestro-api --namespace=maestro-ml
+          kubectl rollout status deployment/maestro-worker --namespace=maestro-ml
+
+      - name: Run Smoke Tests
+        run: |
+          EXTERNAL_IP=$(kubectl get svc maestro-api -n maestro-ml -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          curl -f http://$EXTERNAL_IP/ || exit 1
+
+      - name: Notify Slack
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: 'Deployment to production: ${{ job.status }}'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}

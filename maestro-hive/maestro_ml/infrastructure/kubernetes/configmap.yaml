@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: maestro-config
+  namespace: maestro-ml
+data:
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  DEBUG: "false"
+  ENVIRONMENT: "production"
+  REDIS_URL: "redis://maestro-redis:6379/0"
+  S3_BUCKET: "maestro-artifacts"
+  MLFLOW_TRACKING_URI: "http://maestro-mlflow:5000"
+  METRICS_COLLECTION_INTERVAL: "300"
+  META_MODEL_RETRAIN_DAYS: "7"

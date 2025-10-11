@@ -1,0 +1,75 @@
+Traceback (most recent call last):
+  File "/home/ec2-user/projects/shared/claude_team_sdk/examples/sdlc_team/maestro_ml/tests/conftest.py", line 32, in <module>
+    from maestro_ml.models.database import Base
+ModuleNotFoundError: No module named 'maestro_ml.models.database'
+/home/ec2-user/projects/shared/claude_team_sdk/examples/sdlc_team/maestro_ml/.venv/lib/python3.11/site-packages/_pytest/config/__init__.py:331: PluggyTeardownRaisedWarning: A plugin raised an exception during an old-style hookwrapper teardown.
+Plugin: helpconfig, Hook: pytest_cmdline_parse
+ConftestImportFailure: ModuleNotFoundError: No module named 'maestro_ml.models.database' (from /home/ec2-user/projects/shared/claude_team_sdk/examples/sdlc_team/maestro_ml/tests/conftest.py)
+For more information see https://pluggy.readthedocs.io/en/stable/api_reference.html#pluggy.PluggyTeardownRaisedWarning
+  config = pluginmanager.hook.pytest_cmdline_parse(
+ImportError while loading conftest '/home/ec2-user/projects/shared/claude_team_sdk/examples/sdlc_team/maestro_ml/tests/conftest.py'.
+tests/conftest.py:32: in <module>
+    from maestro_ml.models.database import Base
+E   ModuleNotFoundError: No module named 'maestro_ml.models.database'
+Python path: ['/home/ec2-user/projects/shared/claude_team_sdk/examples/sdlc_team', '/home/ec2-user/projects/shared/claude_team_sdk/examples/sdlc_team/maestro_ml', '/home/ec2-user/projects/shared/claude_team_sdk/examples/sdlc_team/maestro_ml/.venv/bin']
+Working directory: /home/ec2-user/projects/shared/claude_team_sdk/examples/sdlc_team/maestro_ml
+Project root: /home/ec2-user/projects/shared/claude_team_sdk/examples/sdlc_team/maestro_ml
+❌ Failed to import app: 19 validation errors for Settings
+postgres_user
+  Extra inputs are not permitted [type=extra_forbidden, input_value='maestro', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+postgres_password
+  Extra inputs are not permitted [type=extra_forbidden, input_value='qLGIIKHQC28MV9nfjJONkpAqfYe8OK2A', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+postgres_db
+  Extra inputs are not permitted [type=extra_forbidden, input_value='maestro_ml', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+database_url
+  Extra inputs are not permitted [type=extra_forbidden, input_value='postgresql+asyncpg://mae...alhost:15432/maestro_ml', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+redis_url
+  Extra inputs are not permitted [type=extra_forbidden, input_value='redis://localhost:16379/0', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+s3_endpoint
+  Extra inputs are not permitted [type=extra_forbidden, input_value='http://localhost:9000', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+s3_bucket
+  Extra inputs are not permitted [type=extra_forbidden, input_value='maestro-artifacts', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+aws_access_key_id
+  Extra inputs are not permitted [type=extra_forbidden, input_value='minioadmin', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+aws_secret_access_key
+  Extra inputs are not permitted [type=extra_forbidden, input_value='ciG2zhNi5nd7uJSYcyNUcCpp6avHI7YY', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+jwt_secret_key
+  Extra inputs are not permitted [type=extra_forbidden, input_value='vUFJCAShgQw7WNpihTAAzlsD...NDHDhxDHaLgTF4VZFXLJMhR', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+jwt_algorithm
+  Extra inputs are not permitted [type=extra_forbidden, input_value='HS256', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+refresh_token_expire_days
+  Extra inputs are not permitted [type=extra_forbidden, input_value='7', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+environment
+  Extra inputs are not permitted [type=extra_forbidden, input_value='development', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+api_host
+  Extra inputs are not permitted [type=extra_forbidden, input_value='0.0.0.0', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+api_port
+  Extra inputs are not permitted [type=extra_forbidden, input_value='8000', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+minio_root_user
+  Extra inputs are not permitted [type=extra_forbidden, input_value='minioadmin', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+minio_root_password
+  Extra inputs are not permitted [type=extra_forbidden, input_value='ciG2zhNi5nd7uJSYcyNUcCpp6avHI7YY', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+grafana_admin_user
+  Extra inputs are not permitted [type=extra_forbidden, input_value='admin', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+grafana_admin_password
+  Extra inputs are not permitted [type=extra_forbidden, input_value='TyI4lMvR3nnuauFLYboMYhtMW0EeBG8T', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden
+❌ Failed to import database: No module named 'maestro_ml.models.database'

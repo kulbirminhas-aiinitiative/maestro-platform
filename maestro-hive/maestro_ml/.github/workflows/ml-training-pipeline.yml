@@ -1,0 +1,378 @@
+name: ML Training Pipeline CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'mlops/training/**'
+      - 'mlops/data_pipeline/**'
+      - 'docker/training.Dockerfile'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mlops/training/**'
+      - 'mlops/data_pipeline/**'
+  workflow_dispatch:
+    inputs:
+      experiment_name:
+        description: 'MLflow experiment name'
+        required: false
+        default: 'manual-training'
+      model_type:
+        description: 'Model type to train'
+        required: false
+        default: 'random_forest'
+        type: choice
+        options:
+          - random_forest
+          - gradient_boosting
+          - neural_network
+
+env:
+  REGISTRY: ${{ secrets.CONTAINER_REGISTRY }}
+  IMAGE_NAME: ml-platform/training
+  MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+  AWS_REGION: us-east-1
+
+jobs:
+  # Job 1: Code Quality & Testing
+  quality-checks:
+    name: Code Quality & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r mlops/data_pipeline/requirements.txt
+          pip install -r requirements-dev.txt
+          pip install pytest pytest-cov black flake8 mypy
+
+      - name: Run Black (code formatting)
+        run: black --check mlops/
+
+      - name: Run Flake8 (linting)
+        run: flake8 mlops/ --max-line-length=120
+
+      - name: Run MyPy (type checking)
+        run: mypy mlops/ --ignore-missing-imports
+
+      - name: Run unit tests
+        run: |
+          pytest tests/ -v --cov=mlops --cov-report=xml --cov-report=html
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+
+  # Job 2: Data Validation
+  data-validation:
+    name: Validate Training Data
+    runs-on: ubuntu-latest
+    needs: quality-checks
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r mlops/data_pipeline/requirements.txt
+
+      - name: Run data validation
+        run: |
+          python3 mlops/data_pipeline/validation/data_validator.py \
+            --config config/validation_config.yaml \
+            --data-path data/training_data.parquet
+
+      - name: Check data drift
+        run: |
+          python3 mlops/monitoring/drift_detector.py \
+            --reference data/reference_data.parquet \
+            --current data/training_data.parquet
+
+  # Job 3: Build and Push Docker Image
+  build-image:
+    name: Build Training Container
+    runs-on: ubuntu-latest
+    needs: [quality-checks, data-validation]
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=semver,pattern={{version}}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/training.Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            PYTHON_VERSION=3.11
+            MLFLOW_VERSION=2.8.0
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Job 4: Run Training Experiment
+  train-model:
+    name: Train ML Model
+    runs-on: ubuntu-latest
+    needs: build-image
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name ml-platform-cluster \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Trigger Airflow DAG
+        run: |
+          # Trigger model training DAG via Airflow API
+          curl -X POST "${{ secrets.AIRFLOW_API_URL }}/api/v1/dags/model_training_pipeline/dagRuns" \
+            -H "Content-Type: application/json" \
+            -u "${{ secrets.AIRFLOW_USERNAME }}:${{ secrets.AIRFLOW_PASSWORD }}" \
+            -d '{
+              "conf": {
+                "image_tag": "${{ github.sha }}",
+                "experiment_name": "${{ github.event.inputs.experiment_name || github.ref_name }}",
+                "model_type": "${{ github.event.inputs.model_type || 'random_forest' }}"
+              }
+            }'
+
+      - name: Wait for training completion
+        run: |
+          # Poll DAG run status
+          bash scripts/wait-for-dag-completion.sh model_training_pipeline 3600
+
+      - name: Get training metrics from MLflow
+        run: |
+          python3 scripts/get-mlflow-metrics.py \
+            --experiment-name "${{ github.event.inputs.experiment_name || github.ref_name }}" \
+            --run-id latest
+
+  # Job 5: Model Evaluation
+  evaluate-model:
+    name: Evaluate Model Performance
+    runs-on: ubuntu-latest
+    needs: train-model
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install mlflow scikit-learn pandas
+
+      - name: Evaluate model
+        id: eval
+        run: |
+          python3 scripts/evaluate-model.py \
+            --experiment-name "${{ github.event.inputs.experiment_name || github.ref_name }}" \
+            --metrics-output metrics.json
+
+      - name: Check quality gate
+        run: |
+          # Fail if accuracy < 0.85
+          python3 scripts/check-quality-gate.py \
+            --metrics-file metrics.json \
+            --min-accuracy 0.85 \
+            --min-f1 0.80
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const metrics = JSON.parse(fs.readFileSync('metrics.json'));
+            const comment = `## 🤖 Model Evaluation Results
+
+            | Metric | Value |
+            |--------|-------|
+            | Accuracy | ${metrics.accuracy.toFixed(4)} |
+            | Precision | ${metrics.precision.toFixed(4)} |
+            | Recall | ${metrics.recall.toFixed(4)} |
+            | F1 Score | ${metrics.f1.toFixed(4)} |
+
+            **Status**: ${metrics.accuracy >= 0.85 ? '✅ Passed' : '❌ Failed'}`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  # Job 6: Register Model (if quality gate passed)
+  register-model:
+    name: Register Model to MLflow
+    runs-on: ubuntu-latest
+    needs: evaluate-model
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install MLflow
+        run: pip install mlflow boto3
+
+      - name: Register model
+        run: |
+          python3 scripts/register-model.py \
+            --experiment-name "${{ github.event.inputs.experiment_name || github.ref_name }}" \
+            --model-name "ml-platform-model" \
+            --stage "Staging"
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Model Release ${{ github.ref }}
+          body: |
+            ## Model Release
+
+            - Experiment: ${{ github.event.inputs.experiment_name }}
+            - Commit: ${{ github.sha }}
+            - Training Image: ${{ needs.build-image.outputs.image-tag }}
+          draft: false
+          prerelease: false
+
+  # Job 7: Deploy to Staging (optional)
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: register-model
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: staging
+      url: https://ml-platform-staging.example.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name ml-platform-staging \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Deploy model service
+        run: |
+          kubectl set image deployment/model-server \
+            model-server=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            -n ml-platform
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/model-server -n ml-platform --timeout=300s
+
+      - name: Run smoke tests
+        run: |
+          python3 tests/integration/test_model_api.py \
+            --endpoint https://ml-platform-staging.example.com/predict
+
+  # Job 8: Notify
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [train-model, evaluate-model, register-model]
+    if: always()
+    steps:
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "ML Training Pipeline: ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*ML Training Pipeline ${{ job.status }}*\n\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

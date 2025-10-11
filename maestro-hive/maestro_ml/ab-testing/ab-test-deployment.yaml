@@ -1,0 +1,272 @@
+# A/B Testing Deployment for ML Models
+# Deploys champion and challenger models with traffic splitting
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ml-serving
+
+---
+# Champion Model Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-champion
+  namespace: ml-serving
+  labels:
+    app: ml-model
+    version: champion
+    experiment: ab-test
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ml-model
+      version: champion
+  template:
+    metadata:
+      labels:
+        app: ml-model
+        version: champion
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: model-server
+        image: python:3.11-slim
+        command:
+        - python3
+        - /app/serve.py
+        env:
+        - name: MODEL_VERSION
+          value: "champion"
+        - name: MODEL_NAME
+          value: "production-model"
+        - name: MLFLOW_TRACKING_URI
+          value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+        - name: MODEL_STAGE
+          value: "Production"
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+---
+# Challenger Model Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-challenger
+  namespace: ml-serving
+  labels:
+    app: ml-model
+    version: challenger
+    experiment: ab-test
+spec:
+  replicas: 1  # Fewer replicas for challenger
+  selector:
+    matchLabels:
+      app: ml-model
+      version: challenger
+  template:
+    metadata:
+      labels:
+        app: ml-model
+        version: challenger
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: model-server
+        image: python:3.11-slim
+        command:
+        - python3
+        - /app/serve.py
+        env:
+        - name: MODEL_VERSION
+          value: "challenger"
+        - name: MODEL_NAME
+          value: "production-model"
+        - name: MLFLOW_TRACKING_URI
+          value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+        - name: MODEL_STAGE
+          value: "Staging"
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+---
+# Champion Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: model-champion
+  namespace: ml-serving
+  labels:
+    app: ml-model
+    version: champion
+spec:
+  selector:
+    app: ml-model
+    version: champion
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  type: ClusterIP
+
+---
+# Challenger Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: model-challenger
+  namespace: ml-serving
+  labels:
+    app: ml-model
+    version: challenger
+spec:
+  selector:
+    app: ml-model
+    version: challenger
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  type: ClusterIP
+
+---
+# Traffic Splitter Service (weighted routing)
+apiVersion: v1
+kind: Service
+metadata:
+  name: model-service
+  namespace: ml-serving
+  labels:
+    app: ml-model
+  annotations:
+    # Traffic split annotation (for service mesh like Istio)
+    # 90% champion, 10% challenger
+    traffic.split: "champion:90,challenger:10"
+spec:
+  selector:
+    app: ml-model
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  type: ClusterIP
+
+---
+# Ingress for external access (optional)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: model-ingress
+  namespace: ml-serving
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: model.ml-platform.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: model-service
+            port:
+              number: 80
+
+---
+# ServiceMonitor for Prometheus
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: model-ab-test
+  namespace: ml-serving
+  labels:
+    app: ml-model
+spec:
+  selector:
+    matchLabels:
+      app: ml-model
+  endpoints:
+  - port: http
+    interval: 30s
+    path: /metrics
+
+---
+# ConfigMap with traffic splitting logic (for application-level routing)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ab-test-config
+  namespace: ml-serving
+data:
+  traffic_split: |
+    {
+      "champion": {
+        "weight": 90,
+        "endpoint": "http://model-champion"
+      },
+      "challenger": {
+        "weight": 10,
+        "endpoint": "http://model-challenger"
+      }
+    }
+  experiment_config: |
+    {
+      "experiment_name": "model-ab-test-v1",
+      "start_date": "2025-10-04",
+      "min_samples": 1000,
+      "significance_level": 0.05,
+      "metrics": ["accuracy", "latency", "throughput"]
+    }

@@ -1,0 +1,178 @@
+{
+  "dashboard": {
+    "title": "ML Inference Performance",
+    "tags": ["ml", "inference", "performance"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "rate(model_requests_total{namespace=\"ml-serving\"}[5m])",
+            "legendFormat": "{{model}} - {{status}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Requests/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Request Latency (p50, p95, p99)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(model_request_latency_seconds_bucket{namespace=\"ml-serving\"}[5m]))",
+            "legendFormat": "p50 - {{model}}",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(model_request_latency_seconds_bucket{namespace=\"ml-serving\"}[5m]))",
+            "legendFormat": "p95 - {{model}}",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(model_request_latency_seconds_bucket{namespace=\"ml-serving\"}[5m]))",
+            "legendFormat": "p99 - {{model}}",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Latency"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Error Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(model_requests_total{namespace=\"ml-serving\",status=\"error\"}[5m]) / rate(model_requests_total{namespace=\"ml-serving\"}[5m])",
+            "legendFormat": "{{model}} error rate",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percentunit", "label": "Error Rate"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [0.01], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "message": "Error rate exceeded 1%",
+          "name": "High Error Rate"
+        }
+      },
+      {
+        "id": 4,
+        "title": "Throughput (predictions/sec)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(model_predictions_total{namespace=\"ml-serving\"}[5m])",
+            "legendFormat": "{{model}} predictions/sec",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Predictions/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Active Connections",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(model_active_connections{namespace=\"ml-serving\"})",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "orientation": "auto",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 6,
+        "title": "Average Latency",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 16},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(model_request_latency_seconds_bucket{namespace=\"ml-serving\"}[5m]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "orientation": "auto",
+          "textMode": "auto",
+          "unit": "s"
+        }
+      },
+      {
+        "id": 7,
+        "title": "Total Requests (24h)",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(increase(model_requests_total{namespace=\"ml-serving\"}[24h]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "orientation": "auto",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 8,
+        "title": "Success Rate",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(rate(model_requests_total{namespace=\"ml-serving\",status=\"success\"}[5m])) / sum(rate(model_requests_total{namespace=\"ml-serving\"}[5m]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "orientation": "auto",
+          "textMode": "auto",
+          "unit": "percentunit"
+        }
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 27,
+    "style": "dark",
+    "time": {"from": "now-6h", "to": "now"},
+    "timepicker": {}
+  }
+}

@@ -1,0 +1,603 @@
+name: CI/CD Pipeline - Sunday.com
+
+on:
+  push:
+    branches: [ main, develop, staging ]
+  pull_request:
+    branches: [ main, develop ]
+  release:
+    types: [ published ]
+
+env:
+  NODE_VERSION: '20'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # =============================================================================
+  # CODE QUALITY & SECURITY
+  # =============================================================================
+
+  code-quality:
+    name: Code Quality & Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    # Backend quality checks
+    - name: Install backend dependencies
+      run: cd backend && npm ci
+
+    - name: Backend linting
+      run: cd backend && npm run lint
+
+    - name: Backend type checking
+      run: cd backend && npm run type-check
+
+    # Frontend quality checks
+    - name: Install frontend dependencies
+      run: cd frontend && npm ci
+
+    - name: Frontend linting
+      run: cd frontend && npm run lint
+
+    - name: Frontend type checking
+      run: cd frontend && npm run type-check
+
+    # Security scanning
+    - name: Run security audit (backend)
+      run: cd backend && npm audit --audit-level moderate
+
+    - name: Run security audit (frontend)
+      run: cd frontend && npm audit --audit-level moderate
+
+    # Code quality analysis
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # =============================================================================
+  # BUILD VALIDATION
+  # =============================================================================
+
+  build-validation:
+    name: Build Validation
+    runs-on: ubuntu-latest
+    needs: code-quality
+
+    strategy:
+      matrix:
+        component: [backend, frontend]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: ${{ matrix.component }}/package-lock.json
+
+    # Stub implementation detection
+    - name: Check for stub implementations
+      run: |
+        echo "Checking for 'Coming Soon' placeholders..."
+        if grep -r "Coming Soon" ${{ matrix.component }}/src/; then
+          echo "❌ DEPLOYMENT BLOCKED: Stub implementation found"
+          echo "Found 'Coming Soon' placeholder in production code"
+          echo "This violates deployment quality standards"
+          exit 1
+        else
+          echo "✅ No stub implementations found"
+        fi
+
+    # TODO comment check
+    - name: Check for TODO comments in production code
+      run: |
+        echo "Checking for TODO comments..."
+        TODO_COUNT=$(grep -r "TODO" ${{ matrix.component }}/src/ --include="*.ts" --include="*.tsx" | wc -l || echo "0")
+        echo "Found $TODO_COUNT TODO comments"
+        if [ "$TODO_COUNT" -gt 5 ]; then
+          echo "⚠️ WARNING: $TODO_COUNT TODO comments found (threshold: 5)"
+          echo "Consider resolving TODO comments before production deployment"
+        fi
+
+    - name: Install dependencies
+      run: cd ${{ matrix.component }} && npm ci
+
+    - name: Build application
+      run: |
+        cd ${{ matrix.component }}
+        echo "Building ${{ matrix.component }}..."
+        npm run build
+
+        # Validate build output
+        if [ "${{ matrix.component }}" = "backend" ]; then
+          if [ ! -f "dist/server.js" ]; then
+            echo "❌ Backend build failed: server.js not found"
+            exit 1
+          fi
+          echo "✅ Backend build successful: $(ls -lh dist/server.js)"
+        fi
+
+        if [ "${{ matrix.component }}" = "frontend" ]; then
+          if [ ! -f "dist/index.html" ]; then
+            echo "❌ Frontend build failed: index.html not found"
+            exit 1
+          fi
+          echo "✅ Frontend build successful"
+          echo "Bundle size analysis:"
+          du -sh dist/*
+        fi
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.component }}-build
+        path: ${{ matrix.component }}/dist/
+        retention-days: 7
+
+  # =============================================================================
+  # TESTING
+  # =============================================================================
+
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    needs: build-validation
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sunday_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install dependencies
+      run: cd backend && npm ci
+
+    - name: Setup test database
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sunday_test
+      run: |
+        cd backend
+        npx prisma migrate deploy
+        npx prisma generate
+
+    - name: Run unit tests
+      env:
+        NODE_ENV: test
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sunday_test
+        REDIS_URL: redis://localhost:6379
+        JWT_SECRET: test-jwt-secret-key-for-testing
+        JWT_REFRESH_SECRET: test-refresh-secret-key
+        SESSION_SECRET: test-session-secret-key
+        WEBHOOK_SECRET: test-webhook-secret-key
+      run: cd backend && npm test
+
+    - name: Run integration tests
+      env:
+        NODE_ENV: test
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sunday_test
+        REDIS_URL: redis://localhost:6379
+        JWT_SECRET: test-jwt-secret-key-for-testing
+        JWT_REFRESH_SECRET: test-refresh-secret-key
+        SESSION_SECRET: test-session-secret-key
+        WEBHOOK_SECRET: test-webhook-secret-key
+      run: cd backend && npm run test:e2e
+
+    - name: Generate test coverage
+      env:
+        NODE_ENV: test
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sunday_test
+        REDIS_URL: redis://localhost:6379
+        JWT_SECRET: test-jwt-secret-key-for-testing
+        JWT_REFRESH_SECRET: test-refresh-secret-key
+        SESSION_SECRET: test-session-secret-key
+        WEBHOOK_SECRET: test-webhook-secret-key
+      run: cd backend && npm run test:coverage
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: backend/coverage/lcov.info
+        flags: backend
+
+  test-frontend:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    needs: build-validation
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install dependencies
+      run: cd frontend && npm ci
+
+    - name: Run tests
+      run: cd frontend && npm test
+
+    - name: Generate test coverage
+      run: cd frontend && npm run test:coverage
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: frontend/coverage/lcov.info
+        flags: frontend
+
+  # =============================================================================
+  # E2E TESTING
+  # =============================================================================
+
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Start application stack
+      run: |
+        cp .env.example .env
+        docker-compose -f docker-compose.test.yml up -d
+
+        # Wait for services to be ready
+        echo "Waiting for services to start..."
+        sleep 30
+
+        # Health check
+        curl --retry 10 --retry-delay 5 http://localhost:3000/health
+
+    - name: Run E2E tests
+      run: |
+        cd e2e-tests
+        npm ci
+        npm run test:e2e
+
+    - name: Upload E2E test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-test-results
+        path: e2e-tests/results/
+
+  # =============================================================================
+  # SECURITY TESTING
+  # =============================================================================
+
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: build-validation
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: OWASP ZAP API Scan
+      uses: zaproxy/action-api-scan@v0.4.0
+      with:
+        target: 'http://localhost:3000'
+        format: 'openapi'
+        cmd_options: '-a'
+
+  # =============================================================================
+  # DOCKER BUILD & PUSH
+  # =============================================================================
+
+  docker-build:
+    name: Docker Build & Push
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend, security-scan]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+
+    strategy:
+      matrix:
+        component: [backend, frontend]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.component }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./${{ matrix.component }}
+        file: ./${{ matrix.component }}/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+        # Security scanning during build
+        build-args: |
+          BUILDKIT_INLINE_CACHE=1
+
+  # =============================================================================
+  # PERFORMANCE TESTING
+  # =============================================================================
+
+  performance-test:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup performance testing environment
+      run: |
+        # Start application with production-like configuration
+        docker-compose -f docker-compose.perf.yml up -d
+
+        # Wait for application to be ready
+        sleep 60
+
+        # Verify application is running
+        curl --retry 20 --retry-delay 10 http://localhost:3000/health
+
+    - name: Install k6
+      run: |
+        sudo gpg -k
+        sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+        echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+        sudo apt-get update
+        sudo apt-get install k6
+
+    - name: Run performance tests
+      run: |
+        cd performance-tests
+
+        # Smoke test
+        k6 run --vus 10 --duration 30s smoke-test.js
+
+        # Load test
+        k6 run --vus 100 --duration 5m load-test.js
+
+        # Stress test
+        k6 run --vus 200 --duration 10m stress-test.js
+
+    - name: Upload performance results
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-test-results
+        path: performance-tests/results/
+
+  # =============================================================================
+  # DEPLOYMENT
+  # =============================================================================
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [docker-build, e2e-tests, performance-test]
+    if: github.ref == 'refs/heads/staging'
+    environment: staging
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add staging deployment commands here
+        # Could be Kubernetes, Docker Swarm, or cloud provider deployment
+
+    - name: Run staging smoke tests
+      run: |
+        # Wait for deployment to complete
+        sleep 60
+
+        # Run smoke tests against staging
+        curl --retry 10 --retry-delay 10 https://staging.sunday.com/health
+
+        # Additional staging validation
+        cd staging-tests
+        npm ci
+        npm run test
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [docker-build, e2e-tests, performance-test]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deployment readiness check
+      run: |
+        echo "Running final deployment readiness checks..."
+
+        # Check for any last-minute blockers
+        if grep -r "Coming Soon" frontend/src/; then
+          echo "❌ DEPLOYMENT BLOCKED: Stub implementation found"
+          exit 1
+        fi
+
+        # Verify all required secrets are available
+        if [ -z "${{ secrets.PROD_DATABASE_URL }}" ]; then
+          echo "❌ DEPLOYMENT BLOCKED: Production database URL not configured"
+          exit 1
+        fi
+
+        echo "✅ Deployment readiness checks passed"
+
+    - name: Deploy to production
+      run: |
+        echo "Deploying to production environment..."
+        # Add production deployment commands here
+        # Implement blue-green or rolling deployment strategy
+
+    - name: Post-deployment validation
+      run: |
+        # Wait for deployment to complete
+        sleep 120
+
+        # Comprehensive production validation
+        curl --retry 20 --retry-delay 15 https://sunday.com/health
+
+        # Run production smoke tests
+        cd production-tests
+        npm ci
+        npm run test
+
+    - name: Notify deployment success
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        text: "🚀 Sunday.com deployed to production successfully!"
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # =============================================================================
+  # ROLLBACK CAPABILITY
+  # =============================================================================
+
+  rollback:
+    name: Emergency Rollback
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Execute rollback
+      run: |
+        echo "Executing emergency rollback..."
+        # Implement rollback procedures
+        # Could involve reverting to previous image versions
+        # or deploying from last known good commit
+
+    - name: Validate rollback
+      run: |
+        sleep 60
+        curl --retry 10 --retry-delay 10 https://sunday.com/health
+
+    - name: Notify rollback completion
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        text: "⚠️ Sunday.com rollback completed"
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+# =============================================================================
+# WORKFLOW NOTIFICATIONS
+# =============================================================================
+
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    if: failure()
+    needs: [code-quality, build-validation, test-backend, test-frontend, e2e-tests, security-scan, docker-build, performance-test]
+
+    steps:
+    - name: Notify failure
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        text: "❌ Sunday.com CI/CD pipeline failed"
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

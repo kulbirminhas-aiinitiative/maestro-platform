@@ -1,0 +1,14 @@
+# Pod Disruption Budget for MLflow
+# Ensures at least 1 MLflow server remains available during voluntary disruptions
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mlflow-pdb
+  namespace: ml-platform
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: mlflow
+  unhealthyPodEvictionPolicy: IfHealthyBudget

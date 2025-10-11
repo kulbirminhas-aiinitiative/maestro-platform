@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sunday-backend-config
+  namespace: production
+  labels:
+    app: sunday-backend
+    environment: production
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  LOG_LEVEL: "info"
+  CORS_ORIGIN: "https://sunday.com"
+  ENABLE_ANALYTICS: "true"
+  ENABLE_AI_FEATURES: "true"
+  ENABLE_WEBHOOKS: "true"
+  ENABLE_SEARCH: "true"
+  BCRYPT_ROUNDS: "12"
+  WS_HEARTBEAT_INTERVAL: "30000"
+  WS_MAX_CONNECTIONS: "10000"
+  RATE_LIMIT_WINDOW_MS: "900000"
+  RATE_LIMIT_MAX_REQUESTS: "1000"
+  MAX_FILE_SIZE: "100MB"
+  ALLOWED_FILE_TYPES: "image/*,application/pdf,text/*,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  AWS_REGION: "us-east-1"
+  S3_BUCKET: "sunday-files-production"
+  FROM_EMAIL: "noreply@sunday.com"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sunday-frontend-config
+  namespace: production
+  labels:
+    app: sunday-frontend
+    environment: production
+data:
+  NODE_ENV: "production"
+  VITE_API_URL: "https://api.sunday.com"
+  VITE_WS_URL: "wss://api.sunday.com"
+  VITE_APP_URL: "https://sunday.com"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: production
+  labels:
+    app: postgres
+    environment: production
+data:
+  POSTGRES_DB: "sunday_production"
+  POSTGRES_USER: "sunday_user"
+  PGDATA: "/var/lib/postgresql/data/pgdata"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: production
+  labels:
+    app: redis
+    environment: production
+data:
+  redis.conf: |
+    # Redis Production Configuration
+
+    # Memory management
+    maxmemory 2gb
+    maxmemory-policy allkeys-lru
+
+    # Persistence
+    save 900 1
+    save 300 10
+    save 60 10000
+
+    # Security
+    requirepass REDIS_PASSWORD_PLACEHOLDER
+
+    # Performance
+    tcp-keepalive 300
+    timeout 0
+
+    # Logging
+    loglevel notice
+
+    # Network
+    tcp-backlog 511
+
+    # Clients
+    maxclients 10000

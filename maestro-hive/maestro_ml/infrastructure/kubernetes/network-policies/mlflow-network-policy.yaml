@@ -1,0 +1,104 @@
+# MLflow Network Policy
+# Controls access to MLflow tracking server and artifact storage
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mlflow-policy
+  namespace: ml-platform
+spec:
+  podSelector:
+    matchLabels:
+      app: mlflow
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow from maestro-api
+  - from:
+    - podSelector:
+        matchLabels:
+          app: maestro-api
+    ports:
+    - protocol: TCP
+      port: 5000
+  # Allow from maestro-worker
+  - from:
+    - podSelector:
+        matchLabels:
+          app: maestro-worker
+    ports:
+    - protocol: TCP
+      port: 5000
+  # Allow from Airflow (for ML workflows)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: airflow
+    - podSelector:
+        matchLabels:
+          app: airflow
+    ports:
+    - protocol: TCP
+      port: 5000
+  # Allow from training jobs
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: kubeflow-training
+    ports:
+    - protocol: TCP
+      port: 5000
+  # Allow from ingress controller (for UI access)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 5000
+  # Allow metrics scraping
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 5000
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    - podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow PostgreSQL access (for MLflow backend)
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgresql
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow MinIO/S3 access (for artifact storage)
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: storage
+    - podSelector:
+        matchLabels:
+          app: minio
+    ports:
+    - protocol: TCP
+      port: 9000
+  # Allow external S3/object storage (HTTPS)
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443

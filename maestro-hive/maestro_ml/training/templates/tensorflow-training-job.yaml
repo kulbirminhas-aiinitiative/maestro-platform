@@ -1,0 +1,221 @@
+# TensorFlow Training Job Template
+# Distributed TensorFlow training with MLflow integration
+# Supports multi-worker training with parameter server strategy
+
+apiVersion: kubeflow.org/v1
+kind: TFJob
+metadata:
+  name: {{ .JobName }}
+  namespace: {{ .Namespace | default "kubeflow-training" }}
+  labels:
+    app: tensorflow-training
+    experiment: {{ .ExperimentName }}
+    model: {{ .ModelName }}
+spec:
+  # Run policy
+  runPolicy:
+    cleanPodPolicy: {{ .CleanPodPolicy | default "Running" }}
+    ttlSecondsAfterFinished: {{ .TTL | default 3600 }}
+    activeDeadlineSeconds: {{ .ActiveDeadline | default 7200 }}
+    backoffLimit: {{ .BackoffLimit | default 3 }}
+
+  # TensorFlow replica specs
+  tfReplicaSpecs:
+    # Chief (coordinator)
+    Chief:
+      replicas: 1
+      restartPolicy: OnFailure
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          containers:
+          - name: tensorflow
+            image: {{ .TrainingImage | default "tensorflow/tensorflow:2.15.0-gpu" }}
+            imagePullPolicy: IfNotPresent
+            command:
+            - python3
+            - /app/train.py
+            args:
+            - --strategy=multi_worker_mirrored
+            - --epochs={{ .Epochs | default 10 }}
+            - --batch-size={{ .BatchSize | default 32 }}
+            - --learning-rate={{ .LearningRate | default 0.001 }}
+            - --model-name={{ .ModelName }}
+            - --experiment-name={{ .ExperimentName }}
+            env:
+            # MLflow configuration
+            - name: MLFLOW_TRACKING_URI
+              value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+            - name: MLFLOW_EXPERIMENT_NAME
+              value: {{ .ExperimentName }}
+            - name: MLFLOW_RUN_NAME
+              value: {{ .RunName | default .JobName }}
+
+            # Feast configuration
+            - name: FEAST_REPO_PATH
+              value: "/feast/feature_repo"
+            - name: FEAST_FEATURE_SERVICE
+              value: {{ .FeatureService | default "model_features_v1" }}
+
+            # TensorFlow configuration
+            - name: TF_CONFIG
+              value: ""  # Auto-injected by Training Operator
+            - name: TF_CPP_MIN_LOG_LEVEL
+              value: "1"
+
+            # Job metadata
+            - name: JOB_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: JOB_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
+            resources:
+              requests:
+                cpu: {{ .CPURequest | default "2" }}
+                memory: {{ .MemoryRequest | default "4Gi" }}
+              limits:
+                cpu: {{ .CPULimit | default "4" }}
+                memory: {{ .MemoryLimit | default "8Gi" }}
+                {{ if .GPUs }}
+                nvidia.com/gpu: {{ .GPUs }}
+                {{ end }}
+
+            volumeMounts:
+            - name: training-code
+              mountPath: /app
+              readOnly: true
+            - name: data-volume
+              mountPath: /data
+            - name: model-volume
+              mountPath: /models
+
+          volumes:
+          - name: training-code
+            configMap:
+              name: {{ .TrainingCodeConfigMap }}
+          - name: data-volume
+            persistentVolumeClaim:
+              claimName: {{ .DataPVC | default "training-data-pvc" }}
+          - name: model-volume
+            persistentVolumeClaim:
+              claimName: {{ .ModelPVC | default "model-artifacts-pvc" }}
+
+    # Workers (data parallel training)
+    Worker:
+      replicas: {{ .WorkerReplicas | default 2 }}
+      restartPolicy: OnFailure
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          containers:
+          - name: tensorflow
+            image: {{ .TrainingImage | default "tensorflow/tensorflow:2.15.0-gpu" }}
+            imagePullPolicy: IfNotPresent
+            command:
+            - python3
+            - /app/train.py
+            args:
+            - --strategy=multi_worker_mirrored
+            - --epochs={{ .Epochs | default 10 }}
+            - --batch-size={{ .BatchSize | default 32 }}
+            - --learning-rate={{ .LearningRate | default 0.001 }}
+            - --model-name={{ .ModelName }}
+            - --experiment-name={{ .ExperimentName }}
+            env:
+            # MLflow configuration
+            - name: MLFLOW_TRACKING_URI
+              value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+            - name: MLFLOW_EXPERIMENT_NAME
+              value: {{ .ExperimentName }}
+
+            # Feast configuration
+            - name: FEAST_REPO_PATH
+              value: "/feast/feature_repo"
+
+            # TensorFlow configuration
+            - name: TF_CONFIG
+              value: ""  # Auto-injected by Training Operator
+            - name: TF_CPP_MIN_LOG_LEVEL
+              value: "1"
+
+            resources:
+              requests:
+                cpu: {{ .CPURequest | default "2" }}
+                memory: {{ .MemoryRequest | default "4Gi" }}
+              limits:
+                cpu: {{ .CPULimit | default "4" }}
+                memory: {{ .MemoryLimit | default "8Gi" }}
+                {{ if .GPUs }}
+                nvidia.com/gpu: {{ .GPUs }}
+                {{ end }}
+
+            volumeMounts:
+            - name: training-code
+              mountPath: /app
+              readOnly: true
+            - name: data-volume
+              mountPath: /data
+            - name: model-volume
+              mountPath: /models
+
+          volumes:
+          - name: training-code
+            configMap:
+              name: {{ .TrainingCodeConfigMap }}
+          - name: data-volume
+            persistentVolumeClaim:
+              claimName: {{ .DataPVC | default "training-data-pvc" }}
+          - name: model-volume
+            persistentVolumeClaim:
+              claimName: {{ .ModelPVC | default "model-artifacts-pvc" }}
+
+---
+# Example instantiation:
+# Replace {{ .Variable }} with actual values
+#
+# apiVersion: kubeflow.org/v1
+# kind: TFJob
+# metadata:
+#   name: mnist-tensorflow-training
+#   namespace: kubeflow-training
+#   labels:
+#     app: tensorflow-training
+#     experiment: mnist-experiment
+#     model: mnist-cnn
+# spec:
+#   runPolicy:
+#     cleanPodPolicy: Running
+#     ttlSecondsAfterFinished: 3600
+#     activeDeadlineSeconds: 7200
+#     backoffLimit: 3
+#   tfReplicaSpecs:
+#     Chief:
+#       replicas: 1
+#       restartPolicy: OnFailure
+#       template:
+#         spec:
+#           containers:
+#           - name: tensorflow
+#             image: tensorflow/tensorflow:2.15.0-gpu
+#             command: ["python3", "/app/train.py"]
+#             args:
+#             - --strategy=multi_worker_mirrored
+#             - --epochs=10
+#             - --batch-size=32
+#             - --learning-rate=0.001
+#             - --model-name=mnist-cnn
+#             - --experiment-name=mnist-experiment
+#             env:
+#             - name: MLFLOW_TRACKING_URI
+#               value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+#     Worker:
+#       replicas: 2
+#       # ... similar configuration

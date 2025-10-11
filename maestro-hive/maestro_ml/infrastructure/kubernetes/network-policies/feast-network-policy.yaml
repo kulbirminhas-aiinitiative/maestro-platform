@@ -1,0 +1,178 @@
+# Feast Feature Store Network Policy
+# Controls access to Feast components
+
+---
+# Feast Redis Network Policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: feast-redis-policy
+  namespace: feast
+spec:
+  podSelector:
+    matchLabels:
+      app: feast-redis
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow from Feast feature server
+  - from:
+    - podSelector:
+        matchLabels:
+          app: feast
+          component: feature-server
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow from maestro-api (feature serving)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ml-platform
+    - podSelector:
+        matchLabels:
+          app: maestro-api
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow from training jobs
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: kubeflow-training
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow from Airflow (for feature ingestion)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: airflow
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow metrics scraping
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 9121
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow Redis cluster communication
+  - to:
+    - podSelector:
+        matchLabels:
+          app: feast-redis
+    ports:
+    - protocol: TCP
+      port: 6379
+
+---
+# Feast Feature Server Network Policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: feast-feature-server-policy
+  namespace: feast
+spec:
+  podSelector:
+    matchLabels:
+      app: feast
+      component: feature-server
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow from maestro-api
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ml-platform
+    - podSelector:
+        matchLabels:
+          app: maestro-api
+    ports:
+    - protocol: TCP
+      port: 6566
+  # Allow from maestro-worker
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ml-platform
+    - podSelector:
+        matchLabels:
+          app: maestro-worker
+    ports:
+    - protocol: TCP
+      port: 6566
+  # Allow from training jobs (for online features)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: kubeflow-training
+    ports:
+    - protocol: TCP
+      port: 6566
+  # Allow from Airflow (for feature ingestion pipelines)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: airflow
+    ports:
+    - protocol: TCP
+      port: 6566
+  # Allow metrics scraping
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 6566
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow Feast Redis access
+  - to:
+    - podSelector:
+        matchLabels:
+          app: feast-redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow PostgreSQL access (for feature registry)
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: ml-platform
+    - podSelector:
+        matchLabels:
+          app: postgresql
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow S3/object storage access (for offline features)
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 9000  # MinIO

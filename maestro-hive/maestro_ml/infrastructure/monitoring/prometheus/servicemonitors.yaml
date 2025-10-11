@@ -1,0 +1,248 @@
+# Maestro ML Platform - Prometheus ServiceMonitors
+# Phase 1.1.9 - Configure Prometheus + Grafana monitoring for ML workloads
+# Task 1.3.9 - GPU utilization monitoring
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ml-monitoring
+  labels:
+    name: ml-monitoring
+
+---
+# MLflow Tracking Server Metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mlflow-metrics
+  namespace: ml-monitoring
+  labels:
+    app: mlflow
+    component: ml-platform
+spec:
+  selector:
+    matchLabels:
+      app: mlflow
+      component: tracking-server
+  namespaceSelector:
+    matchNames:
+    - mlflow
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+# Feast Feature Server Metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: feast-metrics
+  namespace: ml-monitoring
+  labels:
+    app: feast
+    component: ml-platform
+spec:
+  selector:
+    matchLabels:
+      app: feast
+      component: feature-server
+  namespaceSelector:
+    matchNames:
+    - feast
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 15s
+    scrapeTimeout: 10s
+    metricRelabelings:
+    - sourceLabels: [__name__]
+      regex: 'feast_(.*)'
+      action: keep
+
+---
+# Feast Redis Online Store Metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: feast-redis-metrics
+  namespace: ml-monitoring
+  labels:
+    app: feast-redis
+    component: ml-platform
+spec:
+  selector:
+    matchLabels:
+      app: feast-redis
+  namespaceSelector:
+    matchNames:
+    - feast
+  endpoints:
+  - port: redis
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+# ML Training Jobs Metrics (via Prometheus Pushgateway)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ml-training-metrics
+  namespace: ml-monitoring
+  labels:
+    app: ml-training
+    component: ml-platform
+spec:
+  selector:
+    matchLabels:
+      app: prometheus-pushgateway
+  namespaceSelector:
+    matchNames:
+    - ml-training
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 15s
+    scrapeTimeout: 10s
+
+---
+# ML Inference Services Metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ml-inference-metrics
+  namespace: ml-monitoring
+  labels:
+    app: ml-inference
+    component: ml-platform
+spec:
+  selector:
+    matchLabels:
+      app: ml-inference
+  namespaceSelector:
+    matchNames:
+    - ml-inference
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 10s  # More frequent for inference monitoring
+    scrapeTimeout: 5s
+
+---
+# NVIDIA GPU Metrics (DCGM Exporter)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: dcgm-exporter-metrics
+  namespace: ml-monitoring
+  labels:
+    app: dcgm-exporter
+    component: ml-platform
+spec:
+  selector:
+    matchLabels:
+      app: dcgm-exporter
+  namespaceSelector:
+    matchNames:
+    - gpu-operator
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 15s
+    scrapeTimeout: 10s
+    metricRelabelings:
+    - sourceLabels: [__name__]
+      regex: 'DCGM_(.*)'
+      action: keep
+
+---
+# Kubeflow Pipelines Metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kubeflow-pipelines-metrics
+  namespace: ml-monitoring
+  labels:
+    app: kubeflow-pipelines
+    component: ml-platform
+spec:
+  selector:
+    matchLabels:
+      app: ml-pipeline
+  namespaceSelector:
+    matchNames:
+    - kubeflow
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+# Airflow Metrics (Data Pipeline Orchestration)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: airflow-metrics
+  namespace: ml-monitoring
+  labels:
+    app: airflow
+    component: ml-platform
+spec:
+  selector:
+    matchLabels:
+      app: airflow
+      component: webserver
+  namespaceSelector:
+    matchNames:
+    - airflow
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+# PodMonitor for ML Training Pods (direct pod metrics)
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: ml-training-pods
+  namespace: ml-monitoring
+  labels:
+    component: ml-platform
+spec:
+  selector:
+    matchLabels:
+      workload-type: ml-training
+  namespaceSelector:
+    matchNames:
+    - ml-training
+  podMetricsEndpoints:
+  - port: metrics
+    path: /metrics
+    interval: 15s
+    scrapeTimeout: 10s
+
+---
+# PodMonitor for ML Inference Pods
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: ml-inference-pods
+  namespace: ml-monitoring
+  labels:
+    component: ml-platform
+spec:
+  selector:
+    matchLabels:
+      workload-type: ml-inference
+  namespaceSelector:
+    matchNames:
+    - ml-inference
+  podMetricsEndpoints:
+  - port: metrics
+    path: /metrics
+    interval: 10s
+    scrapeTimeout: 5s

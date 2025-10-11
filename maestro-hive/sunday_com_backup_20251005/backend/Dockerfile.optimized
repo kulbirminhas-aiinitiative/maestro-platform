@@ -1,0 +1,173 @@
+# Production-Optimized Dockerfile for Sunday.com Backend
+# Multi-stage build with security hardening and performance optimization
+
+# =============================================================================
+# BASE IMAGE - Alpine Linux for minimal attack surface
+# =============================================================================
+FROM node:20-alpine AS base
+
+# Install security updates and required packages
+RUN apk upgrade --no-cache && \
+    apk add --no-cache \
+    dumb-init \
+    libc6-compat \
+    curl \
+    ca-certificates && \
+    # Create app directory
+    mkdir -p /app && \
+    # Create non-root user
+    addgroup -g 1001 -S nodejs && \
+    adduser -S -u 1001 nodejs && \
+    # Set ownership
+    chown -R nodejs:nodejs /app
+
+# Set working directory
+WORKDIR /app
+
+# =============================================================================
+# DEPENDENCIES STAGE - Install and cache dependencies
+# =============================================================================
+FROM base AS deps
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install dependencies with npm ci for production builds
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --only=production --no-audit --no-fund && \
+    # Generate Prisma client
+    npx prisma generate && \
+    # Clean npm cache to reduce image size
+    npm cache clean --force && \
+    # Remove unnecessary files
+    rm -rf /tmp/* /var/cache/apk/*
+
+# =============================================================================
+# BUILD STAGE - Compile TypeScript
+# =============================================================================
+FROM base AS builder
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy source code
+COPY . .
+
+# Install dev dependencies for building
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --include=dev --no-audit --no-fund
+
+# Build the application
+RUN npm run build && \
+    # Remove dev dependencies after build
+    npm prune --production && \
+    # Clean build artifacts
+    rm -rf src tsconfig.json .eslintrc.js jest.config.js && \
+    # Remove unnecessary files
+    rm -rf /tmp/* /var/cache/apk/*
+
+# =============================================================================
+# PRODUCTION STAGE - Final runtime image
+# =============================================================================
+FROM base AS production
+
+# Set production environment
+ENV NODE_ENV=production \
+    PORT=3000 \
+    # Security hardening
+    NODE_OPTIONS="--max-old-space-size=1024" \
+    # Performance optimization
+    UV_THREADPOOL_SIZE=16
+
+# Copy built application from builder stage
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+
+# Copy health check script
+COPY --chown=nodejs:nodejs docker-healthcheck.js ./
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/logs /app/tmp && \
+    chown -R nodejs:nodejs /app && \
+    chmod -R 755 /app && \
+    # Remove write permissions from sensitive files
+    chmod 644 /app/package.json && \
+    chmod +x /app/docker-healthcheck.js
+
+# Security: Use non-root user
+USER nodejs
+
+# Expose port
+EXPOSE 3000
+
+# Health check with optimized settings
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD node docker-healthcheck.js || exit 1
+
+# Labels for metadata
+LABEL maintainer="Sunday.com Team" \
+      version="1.0.0" \
+      description="Sunday.com Backend API - Production Optimized" \
+      org.opencontainers.image.source="https://github.com/sunday-com/sunday" \
+      org.opencontainers.image.vendor="Sunday.com" \
+      org.opencontainers.image.licenses="MIT"
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+CMD ["node", "dist/server.js"]
+
+# =============================================================================
+# BUILD ARGUMENTS AND CACHE MOUNTS
+# =============================================================================
+
+# Build arguments for flexibility
+ARG NODE_ENV=production
+ARG BUILD_DATE
+ARG GIT_COMMIT
+ARG VERSION
+
+# Labels with build information
+LABEL build.date="${BUILD_DATE}" \
+      build.git.commit="${GIT_COMMIT}" \
+      build.version="${VERSION}"
+
+# =============================================================================
+# SECURITY HARDENING
+# =============================================================================
+
+# Run as non-root user
+USER nodejs
+
+# Read-only filesystem (can be enabled in docker-compose)
+# Add tmpfs mounts for /tmp and /var/run if needed
+
+# =============================================================================
+# PERFORMANCE OPTIMIZATIONS
+# =============================================================================
+
+# 1. Multi-stage build reduces final image size
+# 2. Layer caching with .dockerignore
+# 3. npm ci for faster, reliable installs
+# 4. Cache mounts for npm cache reuse
+# 5. Minimal base image (Alpine Linux)
+# 6. Proper signal handling with dumb-init
+# 7. Health check optimization
+# 8. Memory limits with NODE_OPTIONS
+
+# =============================================================================
+# IMAGE SIZE OPTIMIZATION
+# =============================================================================
+
+# Techniques used:
+# - Alpine Linux base (smaller than debian/ubuntu)
+# - Multi-stage build removes build dependencies
+# - npm prune removes dev dependencies
+# - Cache cleanup removes temporary files
+# - Only copy necessary files to final stage
+
+# Expected final image size: ~150-200MB (vs 500MB+ without optimization)

@@ -1,0 +1,171 @@
+# Lightweight Container Registry for Minikube Testing
+# Simple Docker Registry v2 for ML platform images
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: registry
+
+---
+# Simple Docker Registry
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: docker-registry
+  namespace: registry
+spec:
+  serviceName: docker-registry
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docker-registry
+  template:
+    metadata:
+      labels:
+        app: docker-registry
+    spec:
+      containers:
+      - name: registry
+        image: registry:2.8
+        env:
+        - name: REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY
+          value: "/var/lib/registry"
+        - name: REGISTRY_STORAGE_DELETE_ENABLED
+          value: "true"
+        - name: REGISTRY_HTTP_ADDR
+          value: "0.0.0.0:5000"
+        ports:
+        - containerPort: 5000
+          name: registry
+        volumeMounts:
+        - name: registry-data
+          mountPath: /var/lib/registry
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: registry-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 20Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-registry
+  namespace: registry
+  labels:
+    app: docker-registry
+spec:
+  type: NodePort
+  ports:
+  - port: 5000
+    targetPort: 5000
+    nodePort: 30506  # Allocated port for registry
+    name: registry
+  selector:
+    app: docker-registry
+
+---
+# Registry UI (optional but helpful for testing)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry-ui
+  namespace: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry-ui
+  template:
+    metadata:
+      labels:
+        app: registry-ui
+    spec:
+      containers:
+      - name: ui
+        image: joxit/docker-registry-ui:latest
+        env:
+        - name: REGISTRY_TITLE
+          value: "Maestro ML Registry"
+        - name: REGISTRY_URL
+          value: "http://docker-registry:5000"
+        - name: DELETE_IMAGES
+          value: "true"
+        - name: SHOW_CONTENT_DIGEST
+          value: "true"
+        - name: SINGLE_REGISTRY
+          value: "true"
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "25m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry-ui
+  namespace: registry
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30507  # UI port
+  selector:
+    app: registry-ui
+
+---
+# ConfigMap for registry configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-config
+  namespace: registry
+data:
+  config.yml: |
+    version: 0.1
+    log:
+      level: info
+    storage:
+      filesystem:
+        rootdirectory: /var/lib/registry
+      delete:
+        enabled: true
+    http:
+      addr: 0.0.0.0:5000
+      headers:
+        X-Content-Type-Options: [nosniff]
+    health:
+      storagedriver:
+        enabled: true
+        interval: 10s
+        threshold: 3

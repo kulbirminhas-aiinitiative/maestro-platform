@@ -1,0 +1,73 @@
+version: '3.8'
+
+# Development override for docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  # Backend - Development mode with hot reloading
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+      target: development
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://sunday_user:sunday_password@postgres:5432/sunday_db
+      REDIS_URL: redis://redis:6379
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      CLICKHOUSE_URL: http://clickhouse:8123
+      JWT_SECRET: dev-jwt-secret-key
+      JWT_EXPIRES_IN: 24h
+      LOG_LEVEL: debug
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run dev
+    ports:
+      - "3000:3000"
+      - "9229:9229" # Node.js debug port
+
+  # Frontend - Development mode with hot reloading
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      target: development
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:3000
+      VITE_WS_URL: ws://localhost:3000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev
+    ports:
+      - "5173:5173" # Vite dev server
+
+  # Development databases with less strict settings
+  postgres:
+    environment:
+      POSTGRES_DB: sunday_dev
+      POSTGRES_USER: sunday_dev
+      POSTGRES_PASSWORD: password123
+    command:
+      - postgres
+      - -c
+      - log_statement=all
+      - -c
+      - log_destination=stderr
+      - -c
+      - logging_collector=off
+
+  redis:
+    command: redis-server --loglevel verbose
+
+  # Mailhog - Email testing in development
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: sunday-mailhog
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+    networks:
+      - sunday-network

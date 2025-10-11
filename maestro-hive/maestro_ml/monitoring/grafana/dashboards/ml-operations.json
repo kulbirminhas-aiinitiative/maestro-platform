@@ -1,0 +1,148 @@
+{
+  "dashboard": {
+    "title": "Maestro ML - ML Operations",
+    "tags": ["maestro", "ml", "operations"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 0,
+    "refresh": "1m",
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "type": "graph",
+        "title": "Model Operations Rate",
+        "targets": [
+          {
+            "expr": "sum by (operation, status) (rate(maestro_ml_model_operations_total[5m]))",
+            "legendFormat": "{{operation}} - {{status}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Operations/sec"},
+          {"format": "short"}
+        ],
+        "stack": true
+      },
+      {
+        "id": 2,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "type": "graph",
+        "title": "Models by Tenant",
+        "targets": [
+          {
+            "expr": "maestro_ml_models_total",
+            "legendFormat": "Tenant: {{tenant_id}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Model Count"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 3,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "type": "graph",
+        "title": "Model Size Distribution",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(maestro_ml_model_size_bytes_bucket[5m])) by (le, tenant_id))",
+            "legendFormat": "{{tenant_id}} (p50)",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(maestro_ml_model_size_bytes_bucket[5m])) by (le, tenant_id))",
+            "legendFormat": "{{tenant_id}} (p95)",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "bytes", "label": "Model Size"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 4,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "type": "graph",
+        "title": "Experiments by Status",
+        "targets": [
+          {
+            "expr": "sum by (status) (increase(maestro_ml_experiments_total[1h]))",
+            "legendFormat": "{{status}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Experiments"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 5,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "type": "graph",
+        "title": "Training Job Duration (p95)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(maestro_ml_training_duration_seconds_bucket[5m])) by (le, job_type))",
+            "legendFormat": "{{job_type}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Duration"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 6,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "type": "graph",
+        "title": "Model Card Generations",
+        "targets": [
+          {
+            "expr": "sum by (format, status) (rate(maestro_model_card_generations_total[5m]))",
+            "legendFormat": "{{format}} - {{status}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Generations/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 7,
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24},
+        "type": "table",
+        "title": "Model Operations Summary (Last Hour)",
+        "targets": [
+          {
+            "expr": "sum by (operation, tenant_id, status) (increase(maestro_ml_model_operations_total[1h]))",
+            "format": "table",
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "indexByName": {},
+              "renameByName": {
+                "operation": "Operation",
+                "tenant_id": "Tenant",
+                "status": "Status",
+                "Value": "Count"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

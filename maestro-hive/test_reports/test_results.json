@@ -1,0 +1,101 @@
+{
+  "generated_at": "2025-10-09T12:26:58.178034",
+  "summary": {
+    "total": 10,
+    "passed": 4,
+    "failed": 6,
+    "total_duration": 179.88500237464905
+  },
+  "results": [
+    {
+      "test_id": "TC1",
+      "test_name": "TC1: Single Phase Execution",
+      "passed": false,
+      "duration_seconds": 22.011059284210205,
+      "error_message": "No module named 'networkx'",
+      "checkpoints_created": [],
+      "context_summary": null
+    },
+    {
+      "test_id": "TC2",
+      "test_name": "TC2: Sequential Phase Execution",
+      "passed": false,
+      "duration_seconds": 30.759509801864624,
+      "error_message": "No module named 'networkx'",
+      "checkpoints_created": [],
+      "context_summary": null
+    },
+    {
+      "test_id": "TC3",
+      "test_name": "TC3: Full Batch Execution",
+      "passed": false,
+      "duration_seconds": 35.89288568496704,
+      "error_message": "No module named 'networkx'",
+      "checkpoints_created": [],
+      "context_summary": null
+    },
+    {
+      "test_id": "TC4",
+      "test_name": "TC4: Resume from Checkpoint",
+      "passed": false,
+      "duration_seconds": 31.77530574798584,
+      "error_message": "No module named 'networkx'",
+      "checkpoints_created": [],
+      "context_summary": null
+    },
+    {
+      "test_id": "TC5",
+      "test_name": "TC5: Phase Skipping (Direct Jump)",
+      "passed": false,
+      "duration_seconds": 24.544480323791504,
+      "error_message": "No module named 'networkx'",
+      "checkpoints_created": [],
+      "context_summary": null
+    },
+    {
+      "test_id": "TC6",
+      "test_name": "TC6: Human Edits Between Phases",
+      "passed": false,
+      "duration_seconds": 30.901761531829834,
+      "error_message": "No module named 'networkx'",
+      "checkpoints_created": [],
+      "context_summary": null
+    },
+    {
+      "test_id": "TC7",
+      "test_name": "TC7: Quality Gate Failure",
+      "passed": true,
+      "duration_seconds": 1.0,
+      "error_message": "",
+      "checkpoints_created": [],
+      "context_summary": null
+    },
+    {
+      "test_id": "TC8",
+      "test_name": "TC8: Contract Validation Failure",
+      "passed": true,
+      "duration_seconds": 1.0,
+      "error_message": "",
+      "checkpoints_created": [],
+      "context_summary": null
+    },
+    {
+      "test_id": "TC9",
+      "test_name": "TC9: Multiple Checkpoints",
+      "passed": true,
+      "duration_seconds": 1.0,
+      "error_message": "",
+      "checkpoints_created": [],
+      "context_summary": null
+    },
+    {
+      "test_id": "TC10",
+      "test_name": "TC10: Concurrent Execution",
+      "passed": true,
+      "duration_seconds": 1.0,
+      "error_message": "",
+      "checkpoints_created": [],
+      "context_summary": null
+    }
+  ]
+}

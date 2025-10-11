@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "sdlc-team"
+version = "3.1.0"
+description = "Autonomous SDLC Engine with AI Team Orchestration"
+authors = ["SDLC Team"]
+readme = "README.md"
+packages = [{include = "."}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+httpx = "^0.28.1"
+anthropic = "^0.40.0"
+claude_team_sdk = {path = "../../", develop = true}
+maestro_core_api = {path = "../../../packages/core-api", develop = true}
+pydantic = "^2.11.10"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-asyncio = "^0.23.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+sdlc-team = "team_execution:main"

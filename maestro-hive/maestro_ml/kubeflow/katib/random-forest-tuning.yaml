@@ -1,0 +1,325 @@
+# Katib Hyperparameter Tuning Experiment
+# Tunes RandomForest hyperparameters using Bayesian Optimization
+
+apiVersion: kubeflow.org/v1beta1
+kind: Experiment
+metadata:
+  name: random-forest-tuning
+  namespace: kubeflow
+  labels:
+    app: ml-platform
+    component: hyperparameter-tuning
+spec:
+  # Optimization objective
+  objective:
+    type: maximize
+    goal: 0.95
+    objectiveMetricName: accuracy
+    additionalMetricNames:
+    - f1_score
+    - precision
+    - recall
+
+  # Tuning algorithm
+  algorithm:
+    algorithmName: bayesianoptimization
+    algorithmSettings:
+    - name: random_state
+      value: "42"
+    - name: acq_func
+      value: "gp_hedge"
+    - name: acq_optimizer
+      value: "auto"
+    - name: base_estimator
+      value: "GP"
+
+  # Parallel execution
+  parallelTrialCount: 3
+  maxTrialCount: 20
+  maxFailedTrialCount: 3
+
+  # Hyperparameters to tune
+  parameters:
+  - name: n_estimators
+    parameterType: int
+    feasibleSpace:
+      min: "50"
+      max: "200"
+      step: "10"
+
+  - name: max_depth
+    parameterType: int
+    feasibleSpace:
+      min: "5"
+      max: "30"
+
+  - name: min_samples_split
+    parameterType: int
+    feasibleSpace:
+      min: "2"
+      max: "20"
+
+  - name: min_samples_leaf
+    parameterType: int
+    feasibleSpace:
+      min: "1"
+      max: "10"
+
+  - name: max_features
+    parameterType: categorical
+    feasibleSpace:
+      list:
+      - "sqrt"
+      - "log2"
+
+  - name: learning_rate
+    parameterType: double
+    feasibleSpace:
+      min: "0.01"
+      max: "0.3"
+
+  # Early stopping (optional)
+  earlyStopping:
+    algorithmName: medianstop
+    algorithmSettings:
+    - name: min_trials_required
+      value: "3"
+    - name: start_step
+      value: "5"
+
+  # Trial template
+  trialTemplate:
+    primaryContainerName: training
+    retain: true  # Keep successful trials
+
+    # Trial parameters
+    trialParameters:
+    - name: n_estimators
+      description: Number of trees in the forest
+      reference: n_estimators
+    - name: max_depth
+      description: Maximum depth of trees
+      reference: max_depth
+    - name: min_samples_split
+      description: Minimum samples required to split
+      reference: min_samples_split
+    - name: min_samples_leaf
+      description: Minimum samples required at leaf
+      reference: min_samples_leaf
+    - name: max_features
+      description: Number of features to consider
+      reference: max_features
+    - name: learning_rate
+      description: Learning rate (for gradient boosting)
+      reference: learning_rate
+
+    # Trial specification (Kubernetes Job)
+    trialSpec:
+      apiVersion: batch/v1
+      kind: Job
+      spec:
+        backoffLimit: 1
+        template:
+          metadata:
+            annotations:
+              sidecar.istio.io/inject: "false"
+          spec:
+            restartPolicy: Never
+            containers:
+            - name: training
+              image: ml-platform/training:latest
+              imagePullPolicy: Always
+
+              # Command with hyperparameters
+              command:
+              - python3
+              - /app/train.py
+
+              args:
+              - --data-path=/data/training_data.parquet
+              - --n-estimators=${trialParameters.n_estimators}
+              - --max-depth=${trialParameters.max_depth}
+              - --min-samples-split=${trialParameters.min_samples_split}
+              - --min-samples-leaf=${trialParameters.min_samples_leaf}
+              - --max-features=${trialParameters.max_features}
+              - --learning-rate=${trialParameters.learning_rate}
+
+              # Environment variables
+              env:
+              - name: MLFLOW_TRACKING_URI
+                value: http://mlflow.ml-platform.svc.cluster.local
+              - name: MLFLOW_EXPERIMENT_NAME
+                value: katib-random-forest-tuning
+              - name: FEAST_REPO_PATH
+                value: /feast/feature_repo
+
+              # Volume mounts
+              volumeMounts:
+              - name: data
+                mountPath: /data
+              - name: feast-config
+                mountPath: /feast
+
+              # Resource limits
+              resources:
+                requests:
+                  memory: "2Gi"
+                  cpu: "1000m"
+                limits:
+                  memory: "4Gi"
+                  cpu: "2000m"
+
+            # Volumes
+            volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: training-data-pvc
+            - name: feast-config
+              configMap:
+                name: feast-repo-config
+
+---
+# Alternative: Grid Search for comparison
+apiVersion: kubeflow.org/v1beta1
+kind: Experiment
+metadata:
+  name: random-forest-grid-search
+  namespace: kubeflow
+spec:
+  objective:
+    type: maximize
+    objectiveMetricName: accuracy
+
+  algorithm:
+    algorithmName: grid
+
+  parallelTrialCount: 5
+  maxTrialCount: 48  # 3 * 4 * 4 = 48 combinations
+
+  parameters:
+  - name: n_estimators
+    parameterType: int
+    feasibleSpace:
+      list:
+      - "50"
+      - "100"
+      - "150"
+
+  - name: max_depth
+    parameterType: int
+    feasibleSpace:
+      list:
+      - "5"
+      - "10"
+      - "15"
+      - "20"
+
+  - name: min_samples_split
+    parameterType: int
+    feasibleSpace:
+      list:
+      - "2"
+      - "5"
+      - "10"
+      - "15"
+
+  trialTemplate:
+    # Same as above
+    primaryContainerName: training
+    trialSpec:
+      apiVersion: batch/v1
+      kind: Job
+      spec:
+        template:
+          spec:
+            restartPolicy: Never
+            containers:
+            - name: training
+              image: ml-platform/training:latest
+              command:
+              - python3
+              - /app/train.py
+              args:
+              - --n-estimators=${trialParameters.n_estimators}
+              - --max-depth=${trialParameters.max_depth}
+              - --min-samples-split=${trialParameters.min_samples_split}
+              env:
+              - name: MLFLOW_TRACKING_URI
+                value: http://mlflow.ml-platform.svc.cluster.local
+
+---
+# Training script template (for reference)
+# Save as: docker/training_scripts/train.py
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: katib-training-script
+  namespace: kubeflow
+data:
+  train.py: |
+    #!/usr/bin/env python3
+    """
+    Training script for Katib hyperparameter tuning
+    Logs metrics to both MLflow and stdout (for Katib)
+    """
+    import argparse
+    import mlflow
+    import pandas as pd
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+
+    def main():
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--data-path', type=str, required=True)
+        parser.add_argument('--n-estimators', type=int, default=100)
+        parser.add_argument('--max-depth', type=int, default=10)
+        parser.add_argument('--min-samples-split', type=int, default=2)
+        parser.add_argument('--min-samples-leaf', type=int, default=1)
+        parser.add_argument('--max-features', type=str, default='sqrt')
+        parser.add_argument('--learning-rate', type=float, default=0.1)
+        args = parser.parse_args()
+
+        # Load data
+        df = pd.read_parquet(args.data_path)
+        X = df.drop('target', axis=1)
+        y = df['target']
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        # Train model
+        model = RandomForestClassifier(
+            n_estimators=args.n_estimators,
+            max_depth=args.max_depth,
+            min_samples_split=args.min_samples_split,
+            min_samples_leaf=args.min_samples_leaf,
+            max_features=args.max_features,
+            random_state=42
+        )
+        model.fit(X_train, y_train)
+
+        # Evaluate
+        predictions = model.predict(X_test)
+        accuracy = accuracy_score(y_test, predictions)
+        f1 = f1_score(y_test, predictions, average='weighted')
+        precision = precision_score(y_test, predictions, average='weighted')
+        recall = recall_score(y_test, predictions, average='weighted')
+
+        # Log to MLflow
+        mlflow.log_params(vars(args))
+        mlflow.log_metrics({
+            'accuracy': accuracy,
+            'f1_score': f1,
+            'precision': precision,
+            'recall': recall
+        })
+        mlflow.sklearn.log_model(model, 'model')
+
+        # Print metrics for Katib (REQUIRED FORMAT)
+        print(f"accuracy={accuracy}")
+        print(f"f1_score={f1}")
+        print(f"precision={precision}")
+        print(f"recall={recall}")
+
+    if __name__ == '__main__':
+        main()

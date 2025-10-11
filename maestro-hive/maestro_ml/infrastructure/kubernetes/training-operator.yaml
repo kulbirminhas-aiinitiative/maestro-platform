@@ -1,0 +1,565 @@
+# KubeFlow Training Operator - Production Deployment
+# Full-featured configuration for production ML training
+# Supports TensorFlow, PyTorch, MXNet, XGBoost, and PaddlePaddle
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubeflow-training
+  labels:
+    app.kubernetes.io/name: kubeflow-training
+    app.kubernetes.io/component: training-operator
+
+---
+# ServiceAccount for Training Operator
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: training-operator
+  namespace: kubeflow-training
+
+---
+# ClusterRole for Training Operator
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubeflow-training-operator
+rules:
+# Training job resources
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - tfjobs
+  - tfjobs/status
+  - tfjobs/finalizers
+  - pytorchjobs
+  - pytorchjobs/status
+  - pytorchjobs/finalizers
+  - mxjobs
+  - mxjobs/status
+  - mxjobs/finalizers
+  - xgboostjobs
+  - xgboostjobs/status
+  - xgboostjobs/finalizers
+  - paddlejobs
+  - paddlejobs/status
+  - paddlejobs/finalizers
+  verbs:
+  - "*"
+# Core resources
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - pods/log
+  - services
+  - events
+  - configmaps
+  - secrets
+  - persistentvolumeclaims
+  verbs:
+  - "*"
+# Apps
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - statefulsets
+  verbs:
+  - "*"
+# Batch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - "*"
+# Monitoring
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  - podmonitors
+  verbs:
+  - "*"
+
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubeflow-training-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubeflow-training-operator
+subjects:
+- kind: ServiceAccount
+  name: training-operator
+  namespace: kubeflow-training
+
+---
+# Training Operator Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: training-operator
+  namespace: kubeflow-training
+  labels:
+    app: training-operator
+    version: v1.7.0
+spec:
+  replicas: 2  # High availability
+  selector:
+    matchLabels:
+      app: training-operator
+  template:
+    metadata:
+      labels:
+        app: training-operator
+        version: v1.7.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: training-operator
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - training-operator
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: training-operator
+        image: kubeflow/training-operator:v1-855e096
+        imagePullPolicy: IfNotPresent
+        command:
+        - /manager
+        args:
+        - --enable-leader-election
+        - --leader-election-namespace=$(MY_POD_NAMESPACE)
+        - --metrics-addr=:8080
+        - --health-probe-addr=:8081
+        env:
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MLFLOW_TRACKING_URI
+          valueFrom:
+            configMapKeyRef:
+              name: training-operator-config
+              key: MLFLOW_TRACKING_URI
+        - name: FEAST_REPO_PATH
+          valueFrom:
+            configMapKeyRef:
+              name: training-operator-config
+              key: FEAST_REPO_PATH
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+          requests:
+            cpu: 500m
+            memory: 512Mi
+        ports:
+        - name: metrics
+          containerPort: 8080
+          protocol: TCP
+        - name: health
+          containerPort: 8081
+          protocol: TCP
+        - name: webhook
+          containerPort: 9443
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: health
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: health
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: cache
+          mountPath: /.cache
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: cache
+        emptyDir: {}
+
+---
+# ConfigMap for Training Operator
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: training-operator-config
+  namespace: kubeflow-training
+data:
+  # MLflow tracking URI (from Phase 1)
+  MLFLOW_TRACKING_URI: "http://mlflow.ml-platform.svc.cluster.local:5000"
+  # Feast feature store (from Phase 1)
+  FEAST_REPO_PATH: "/feast/feature_repo"
+  # Default resource limits (production)
+  DEFAULT_CPU_LIMIT: "8"
+  DEFAULT_MEMORY_LIMIT: "16Gi"
+  DEFAULT_GPU_LIMIT: "2"
+  # Training job defaults
+  DEFAULT_BACKOFF_LIMIT: "3"
+  DEFAULT_ACTIVE_DEADLINE_SECONDS: "7200"  # 2 hours
+  # Gang scheduling
+  GANG_SCHEDULING_ENABLED: "true"
+  GANG_SCHEDULER_NAME: "volcano"
+
+---
+# CRDs (Custom Resource Definitions)
+
+# TFJob CRD (TensorFlow)
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: tfjobs.kubeflow.org
+spec:
+  group: kubeflow.org
+  names:
+    kind: TFJob
+    plural: tfjobs
+    singular: tfjob
+    shortNames:
+    - tfj
+  scope: Namespaced
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              tfReplicaSpecs:
+                type: object
+              runPolicy:
+                type: object
+              successPolicy:
+                type: object
+              elasticPolicy:
+                type: object
+          status:
+            type: object
+    subresources:
+      status: {}
+    additionalPrinterColumns:
+    - name: State
+      type: string
+      jsonPath: .status.conditions[-1:].type
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+    - name: Chief
+      type: string
+      jsonPath: .status.replicaStatuses.Chief.active
+    - name: Workers
+      type: string
+      jsonPath: .status.replicaStatuses.Worker.active
+
+---
+# PyTorchJob CRD
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: pytorchjobs.kubeflow.org
+spec:
+  group: kubeflow.org
+  names:
+    kind: PyTorchJob
+    plural: pytorchjobs
+    singular: pytorchjob
+    shortNames:
+    - pyj
+  scope: Namespaced
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              pytorchReplicaSpecs:
+                type: object
+              runPolicy:
+                type: object
+              elasticPolicy:
+                type: object
+          status:
+            type: object
+    subresources:
+      status: {}
+    additionalPrinterColumns:
+    - name: State
+      type: string
+      jsonPath: .status.conditions[-1:].type
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+    - name: Master
+      type: string
+      jsonPath: .status.replicaStatuses.Master.active
+    - name: Workers
+      type: string
+      jsonPath: .status.replicaStatuses.Worker.active
+
+---
+# MXJob CRD (MXNet)
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: mxjobs.kubeflow.org
+spec:
+  group: kubeflow.org
+  names:
+    kind: MXJob
+    plural: mxjobs
+    singular: mxjob
+    shortNames:
+    - mxj
+  scope: Namespaced
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+          status:
+            type: object
+    subresources:
+      status: {}
+
+---
+# XGBoostJob CRD
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: xgboostjobs.kubeflow.org
+spec:
+  group: kubeflow.org
+  names:
+    kind: XGBoostJob
+    plural: xgboostjobs
+    singular: xgboostjob
+    shortNames:
+    - xgbj
+  scope: Namespaced
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+          status:
+            type: object
+    subresources:
+      status: {}
+
+---
+# Service for Training Operator
+apiVersion: v1
+kind: Service
+metadata:
+  name: training-operator
+  namespace: kubeflow-training
+  labels:
+    app: training-operator
+spec:
+  type: ClusterIP
+  ports:
+  - name: webhook
+    port: 443
+    targetPort: 9443
+    protocol: TCP
+  - name: metrics
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    app: training-operator
+
+---
+# ServiceMonitor for Prometheus
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: training-operator
+  namespace: kubeflow-training
+  labels:
+    app: training-operator
+spec:
+  selector:
+    matchLabels:
+      app: training-operator
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+
+---
+# PodDisruptionBudget for high availability
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: training-operator
+  namespace: kubeflow-training
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: training-operator
+
+---
+# NetworkPolicy (optional - restrict access)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: training-operator
+  namespace: kubeflow-training
+spec:
+  podSelector:
+    matchLabels:
+      app: training-operator
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: TCP
+      port: 9443
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+  - to:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 5000  # MLflow
+    - protocol: TCP
+      port: 6379  # Redis (Feast)
+
+---
+# PrometheusRule for alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: training-operator-alerts
+  namespace: kubeflow-training
+  labels:
+    app: training-operator
+    prometheus: kube-prometheus
+spec:
+  groups:
+  - name: training-operator
+    interval: 30s
+    rules:
+    - alert: TrainingOperatorDown
+      expr: up{job="training-operator"} == 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Training Operator is down"
+        description: "Training Operator has been down for more than 5 minutes."
+
+    - alert: TrainingJobsFailing
+      expr: |
+        sum(rate(training_operator_jobs_failed_total[5m])) > 0.1
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High rate of training job failures"
+        description: "More than 10% of training jobs are failing."
+
+    - alert: TrainingJobsStuck
+      expr: |
+        count(training_operator_jobs_running_duration_seconds > 7200) > 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Training jobs stuck"
+        description: "Training jobs have been running for more than 2 hours."
+
+    - alert: HighResourceUsage
+      expr: |
+        sum(kube_pod_container_resource_requests{namespace="kubeflow-training"})
+        /
+        sum(kube_node_status_allocatable{resource="cpu"}) > 0.8
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High resource usage in training namespace"
+        description: "Training namespace is using more than 80% of cluster resources."

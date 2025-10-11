@@ -1,0 +1,14 @@
+# Pod Disruption Budget for Maestro Worker
+# Ensures at least 1 worker remains available during voluntary disruptions
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: maestro-worker-pdb
+  namespace: ml-platform
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: maestro-worker
+  unhealthyPodEvictionPolicy: IfHealthyBudget

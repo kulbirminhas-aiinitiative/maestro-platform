@@ -1,0 +1,47 @@
+# Pod Disruption Budget for Airflow Components
+# Ensures high availability for workflow orchestration
+
+---
+# Airflow Webserver PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: airflow-webserver-pdb
+  namespace: airflow
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: airflow
+      component: webserver
+  unhealthyPodEvictionPolicy: IfHealthyBudget
+
+---
+# Airflow Scheduler PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: airflow-scheduler-pdb
+  namespace: airflow
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: airflow
+      component: scheduler
+  unhealthyPodEvictionPolicy: IfHealthyBudget
+
+---
+# Airflow Worker PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: airflow-worker-pdb
+  namespace: airflow
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: airflow
+      component: worker
+  unhealthyPodEvictionPolicy: IfHealthyBudget

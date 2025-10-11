@@ -1,0 +1,29 @@
+# Grafana Dashboard Provisioning Configuration
+#
+# Place this file in /etc/grafana/provisioning/dashboards/
+#
+# This tells Grafana where to find dashboard JSON files
+
+apiVersion: 1
+
+providers:
+  - name: 'Maestro ML Dashboards'
+    orgId: 1
+    folder: 'Maestro ML'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards/maestro-ml
+      foldersFromFilesStructure: true
+
+  - name: 'SLO Dashboards'
+    orgId: 1
+    folder: 'SLO'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards/slo

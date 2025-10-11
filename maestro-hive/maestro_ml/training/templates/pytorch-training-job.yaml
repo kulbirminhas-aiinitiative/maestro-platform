@@ -1,0 +1,274 @@
+# PyTorch Training Job Template
+# Distributed PyTorch training with DDP (DistributedDataParallel)
+# Integrated with MLflow for experiment tracking
+
+apiVersion: kubeflow.org/v1
+kind: PyTorchJob
+metadata:
+  name: {{ .JobName }}
+  namespace: {{ .Namespace | default "kubeflow-training" }}
+  labels:
+    app: pytorch-training
+    experiment: {{ .ExperimentName }}
+    model: {{ .ModelName }}
+spec:
+  # Run policy
+  runPolicy:
+    cleanPodPolicy: {{ .CleanPodPolicy | default "Running" }}
+    ttlSecondsAfterFinished: {{ .TTL | default 3600 }}
+    activeDeadlineSeconds: {{ .ActiveDeadline | default 7200 }}
+    backoffLimit: {{ .BackoffLimit | default 3 }}
+
+  # PyTorch replica specs
+  pytorchReplicaSpecs:
+    # Master (rank 0)
+    Master:
+      replicas: 1
+      restartPolicy: OnFailure
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          containers:
+          - name: pytorch
+            image: {{ .TrainingImage | default "pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime" }}
+            imagePullPolicy: IfNotPresent
+            command:
+            - python3
+            - /app/train.py
+            args:
+            - --backend=nccl  # or gloo for CPU
+            - --epochs={{ .Epochs | default 10 }}
+            - --batch-size={{ .BatchSize | default 32 }}
+            - --learning-rate={{ .LearningRate | default 0.001 }}
+            - --model-name={{ .ModelName }}
+            - --experiment-name={{ .ExperimentName }}
+            - --optimizer={{ .Optimizer | default "adam" }}
+            - --scheduler={{ .Scheduler | default "cosine" }}
+            env:
+            # MLflow configuration
+            - name: MLFLOW_TRACKING_URI
+              value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+            - name: MLFLOW_EXPERIMENT_NAME
+              value: {{ .ExperimentName }}
+            - name: MLFLOW_RUN_NAME
+              value: {{ .RunName | default .JobName }}
+
+            # Feast configuration
+            - name: FEAST_REPO_PATH
+              value: "/feast/feature_repo"
+            - name: FEAST_FEATURE_SERVICE
+              value: {{ .FeatureService | default "model_features_v1" }}
+
+            # PyTorch DDP configuration (auto-injected by operator)
+            - name: MASTER_ADDR
+              value: ""
+            - name: MASTER_PORT
+              value: "23456"
+            - name: WORLD_SIZE
+              value: ""
+            - name: RANK
+              value: ""
+
+            # CUDA configuration
+            - name: CUDA_VISIBLE_DEVICES
+              value: {{ .CUDADevices | default "0" }}
+            - name: NCCL_DEBUG
+              value: {{ .NCCLDebug | default "INFO" }}
+
+            # Job metadata
+            - name: JOB_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: JOB_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
+            resources:
+              requests:
+                cpu: {{ .CPURequest | default "2" }}
+                memory: {{ .MemoryRequest | default "4Gi" }}
+              limits:
+                cpu: {{ .CPULimit | default "4" }}
+                memory: {{ .MemoryLimit | default "8Gi" }}
+                {{ if .GPUs }}
+                nvidia.com/gpu: {{ .GPUs }}
+                {{ end }}
+
+            volumeMounts:
+            - name: training-code
+              mountPath: /app
+              readOnly: true
+            - name: data-volume
+              mountPath: /data
+            - name: model-volume
+              mountPath: /models
+            - name: shm  # Shared memory for DDP
+              mountPath: /dev/shm
+
+          volumes:
+          - name: training-code
+            configMap:
+              name: {{ .TrainingCodeConfigMap }}
+          - name: data-volume
+            persistentVolumeClaim:
+              claimName: {{ .DataPVC | default "training-data-pvc" }}
+          - name: model-volume
+            persistentVolumeClaim:
+              claimName: {{ .ModelPVC | default "model-artifacts-pvc" }}
+          - name: shm
+            emptyDir:
+              medium: Memory
+              sizeLimit: {{ .SHMSize | default "2Gi" }}
+
+    # Workers (rank 1, 2, 3, ...)
+    Worker:
+      replicas: {{ .WorkerReplicas | default 2 }}
+      restartPolicy: OnFailure
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          containers:
+          - name: pytorch
+            image: {{ .TrainingImage | default "pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime" }}
+            imagePullPolicy: IfNotPresent
+            command:
+            - python3
+            - /app/train.py
+            args:
+            - --backend=nccl
+            - --epochs={{ .Epochs | default 10 }}
+            - --batch-size={{ .BatchSize | default 32 }}
+            - --learning-rate={{ .LearningRate | default 0.001 }}
+            - --model-name={{ .ModelName }}
+            - --experiment-name={{ .ExperimentName }}
+            - --optimizer={{ .Optimizer | default "adam" }}
+            - --scheduler={{ .Scheduler | default "cosine" }}
+            env:
+            # MLflow configuration
+            - name: MLFLOW_TRACKING_URI
+              value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+            - name: MLFLOW_EXPERIMENT_NAME
+              value: {{ .ExperimentName }}
+
+            # Feast configuration
+            - name: FEAST_REPO_PATH
+              value: "/feast/feature_repo"
+
+            # PyTorch DDP configuration
+            - name: MASTER_ADDR
+              value: ""
+            - name: MASTER_PORT
+              value: "23456"
+            - name: WORLD_SIZE
+              value: ""
+            - name: RANK
+              value: ""
+
+            # CUDA configuration
+            - name: CUDA_VISIBLE_DEVICES
+              value: {{ .CUDADevices | default "0" }}
+            - name: NCCL_DEBUG
+              value: {{ .NCCLDebug | default "INFO" }}
+
+            resources:
+              requests:
+                cpu: {{ .CPURequest | default "2" }}
+                memory: {{ .MemoryRequest | default "4Gi" }}
+              limits:
+                cpu: {{ .CPULimit | default "4" }}
+                memory: {{ .MemoryLimit | default "8Gi" }}
+                {{ if .GPUs }}
+                nvidia.com/gpu: {{ .GPUs }}
+                {{ end }}
+
+            volumeMounts:
+            - name: training-code
+              mountPath: /app
+              readOnly: true
+            - name: data-volume
+              mountPath: /data
+            - name: model-volume
+              mountPath: /models
+            - name: shm
+              mountPath: /dev/shm
+
+          volumes:
+          - name: training-code
+            configMap:
+              name: {{ .TrainingCodeConfigMap }}
+          - name: data-volume
+            persistentVolumeClaim:
+              claimName: {{ .DataPVC | default "training-data-pvc" }}
+          - name: model-volume
+            persistentVolumeClaim:
+              claimName: {{ .ModelPVC | default "model-artifacts-pvc" }}
+          - name: shm
+            emptyDir:
+              medium: Memory
+              sizeLimit: {{ .SHMSize | default "2Gi" }}
+
+  # Elastic policy (optional - for elastic training)
+  {{ if .ElasticEnabled }}
+  elasticPolicy:
+    minReplicas: {{ .ElasticMinReplicas | default 1 }}
+    maxReplicas: {{ .ElasticMaxReplicas | default 4 }}
+    maxRestarts: {{ .ElasticMaxRestarts | default 3 }}
+    rdzvBackend: c10d
+    rdzvHost: ""
+    rdzvPort: 29400
+  {{ end }}
+
+---
+# Example training script structure (train.py):
+#
+# import torch
+# import torch.distributed as dist
+# from torch.nn.parallel import DistributedDataParallel as DDP
+# import mlflow
+# from feast import FeatureStore
+#
+# def train():
+#     # Initialize DDP
+#     dist.init_process_group(backend='nccl')
+#     rank = dist.get_rank()
+#     world_size = dist.get_world_size()
+#
+#     # Load model and wrap with DDP
+#     model = MyModel()
+#     model = model.to(rank)
+#     model = DDP(model, device_ids=[rank])
+#
+#     # Start MLflow run (only on master)
+#     if rank == 0:
+#         mlflow.set_tracking_uri(os.environ['MLFLOW_TRACKING_URI'])
+#         mlflow.set_experiment(os.environ['MLFLOW_EXPERIMENT_NAME'])
+#         mlflow.start_run(run_name=os.environ.get('MLFLOW_RUN_NAME'))
+#
+#     # Get features from Feast
+#     store = FeatureStore(repo_path=os.environ['FEAST_REPO_PATH'])
+#     features = store.get_online_features(...)
+#
+#     # Training loop
+#     for epoch in range(epochs):
+#         for batch in dataloader:
+#             outputs = model(batch)
+#             loss = criterion(outputs, targets)
+#             loss.backward()
+#             optimizer.step()
+#
+#             # Log metrics (only on master)
+#             if rank == 0:
+#                 mlflow.log_metric("train_loss", loss.item(), step=step)
+#
+#     # Save model (only on master)
+#     if rank == 0:
+#         mlflow.pytorch.log_model(model.module, "model")
+#         mlflow.end_run()
+#
+#     dist.destroy_process_group()

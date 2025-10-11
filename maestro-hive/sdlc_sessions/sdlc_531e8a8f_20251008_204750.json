@@ -1,0 +1,16 @@
+{
+  "session_id": "sdlc_531e8a8f_20251008_204750",
+  "requirement": "\n    Fix a bug in user authentication:\n    - Users can't login after password reset\n    - Error: \"Invalid session token\"\n    - Appears to be a token expiry issue\n    \n    Investigate, fix, and verify.\n    ",
+  "output_dir": "test_v2_integration_output/test3_bug_fix",
+  "created_at": "2025-10-08T20:47:50.307284",
+  "last_updated": "2025-10-08T20:47:50.307285",
+  "completed_personas": [],
+  "files_registry": {},
+  "persona_outputs": {},
+  "metadata": {
+    "phase_history": [],
+    "current_phase": null,
+    "iteration_count": 0,
+    "workflow_mode": "sequential"
+  }
+}

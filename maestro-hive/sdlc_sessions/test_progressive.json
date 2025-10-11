@@ -1,0 +1,10 @@
+{
+  "session_id": "test_progressive",
+  "requirement": "Build API service with ML integration",
+  "output_dir": "test_output/progressive",
+  "created_at": "2025-10-05T10:41:46.765354",
+  "last_updated": "2025-10-05T10:41:46.765355",
+  "completed_personas": [],
+  "files_registry": {},
+  "persona_outputs": {}
+}

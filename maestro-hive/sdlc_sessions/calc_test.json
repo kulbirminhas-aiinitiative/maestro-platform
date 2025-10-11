@@ -1,0 +1,10 @@
+{
+  "session_id": "calc_test",
+  "requirement": "Create a simple calculator API",
+  "output_dir": "test_calc_output",
+  "created_at": "2025-10-04T11:25:24.227790",
+  "last_updated": "2025-10-04T11:25:24.227792",
+  "completed_personas": [],
+  "files_registry": {},
+  "persona_outputs": {}
+}

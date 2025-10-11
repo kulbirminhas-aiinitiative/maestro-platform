@@ -1,0 +1,378 @@
+version: '3.8'
+
+# Enhanced Development Environment for Sunday.com
+# Includes monitoring, testing, and development tools
+
+services:
+  # =============================================================================
+  # Core Database Services
+  # =============================================================================
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: sunday-postgres-dev
+    environment:
+      POSTGRES_DB: sunday_dev
+      POSTGRES_USER: sunday_user
+      POSTGRES_PASSWORD: sunday_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./deployment/database/init-dev.sql:/docker-entrypoint-initdb.d/init-dev.sql
+      - ./deployment/database/dev-seed.sql:/docker-entrypoint-initdb.d/dev-seed.sql
+    networks:
+      - sunday-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sunday_user -d sunday_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Test database for isolated testing
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: sunday-postgres-test
+    environment:
+      POSTGRES_DB: sunday_test
+      POSTGRES_USER: sunday_user
+      POSTGRES_PASSWORD: sunday_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - sunday-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sunday_user -d sunday_test"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Redis for caching and session storage
+  redis:
+    image: redis:7-alpine
+    container_name: sunday-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+      - ./deployment/redis/dev.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - sunday-dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # =============================================================================
+  # Application Services
+  # =============================================================================
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: sunday-backend-dev
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://sunday_user:sunday_password@postgres:5432/sunday_dev
+      DATABASE_URL_TEST: postgresql://sunday_user:sunday_password@postgres-test:5432/sunday_test
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev-jwt-secret-key-not-for-production
+      JWT_REFRESH_SECRET: dev-refresh-secret-key
+      SESSION_SECRET: dev-session-secret-key
+      WEBHOOK_SECRET: dev-webhook-secret-key
+      CORS_ORIGIN: http://localhost:3001
+      LOG_LEVEL: debug
+      ENABLE_ANALYTICS: true
+      ENABLE_AI_FEATURES: true
+      ENABLE_WEBHOOKS: true
+      ENABLE_SEARCH: true
+    ports:
+      - "3000:3000"
+      - "9229:9229" # Node.js debugging port
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - /app/dist
+      - backend_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sunday-dev-network
+    command: npm run dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: sunday-frontend-dev
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:3000
+      VITE_WS_URL: ws://localhost:3000
+      VITE_APP_URL: http://localhost:3001
+    ports:
+      - "3001:3001"
+      - "5173:5173" # Vite dev server port
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/dist
+    depends_on:
+      - backend
+    networks:
+      - sunday-dev-network
+    command: npm run dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # =============================================================================
+  # Development & Testing Tools
+  # =============================================================================
+
+  # Database management tool
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: sunday-pgadmin-dev
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@sunday.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./deployment/pgadmin/servers.json:/pgadmin4/servers.json
+    depends_on:
+      - postgres
+    networks:
+      - sunday-dev-network
+    restart: unless-stopped
+
+  # Redis management tool
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: sunday-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - sunday-dev-network
+    restart: unless-stopped
+
+  # =============================================================================
+  # Monitoring & Observability
+  # =============================================================================
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sunday-prometheus-dev
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployment/prometheus/dev.yml:/etc/prometheus/prometheus.yml
+      - prometheus_dev_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - sunday-dev-network
+    restart: unless-stopped
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: sunday-grafana-dev
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+      GF_USERS_ALLOW_SIGN_UP: false
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+    ports:
+      - "3002:3000"
+    volumes:
+      - grafana_dev_data:/var/lib/grafana
+      - ./deployment/grafana/provisioning:/etc/grafana/provisioning
+      - ./deployment/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - sunday-dev-network
+    restart: unless-stopped
+
+  # Jaeger for distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: sunday-jaeger-dev
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+      COLLECTOR_ZIPKIN_HOST_PORT: 9411
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "14268:14268" # Jaeger collector HTTP
+      - "14250:14250" # Jaeger collector gRPC
+      - "9411:9411"   # Zipkin collector
+    networks:
+      - sunday-dev-network
+    restart: unless-stopped
+
+  # =============================================================================
+  # Testing & Quality Assurance
+  # =============================================================================
+
+  # Test runner service
+  test-runner:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: sunday-test-runner
+    environment:
+      NODE_ENV: test
+      DATABASE_URL_TEST: postgresql://sunday_user:sunday_password@postgres-test:5432/sunday_test
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: test-jwt-secret
+      JWT_REFRESH_SECRET: test-refresh-secret
+      SESSION_SECRET: test-session-secret
+      WEBHOOK_SECRET: test-webhook-secret
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - test_coverage:/app/coverage
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sunday-dev-network
+    profiles:
+      - testing
+    command: ["npm", "run", "test:watch"]
+
+  # E2E testing service
+  e2e-tests:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: sunday-e2e-tests
+    environment:
+      NODE_ENV: test
+      VITE_API_URL: http://backend:3000
+      VITE_APP_URL: http://frontend:3001
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - e2e_results:/app/test-results
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - sunday-dev-network
+    profiles:
+      - testing
+    command: ["npm", "run", "test:e2e"]
+
+  # =============================================================================
+  # Development Utilities
+  # =============================================================================
+
+  # Mail catcher for development email testing
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: sunday-mailhog
+    ports:
+      - "1025:1025" # SMTP server
+      - "8025:8025" # Web UI
+    networks:
+      - sunday-dev-network
+    restart: unless-stopped
+
+  # Mock AWS services for development
+  localstack:
+    image: localstack/localstack:latest
+    container_name: sunday-localstack
+    environment:
+      SERVICES: s3,ses,lambda
+      DEBUG: 1
+      DATA_DIR: /tmp/localstack/data
+      HOST_TMP_FOLDER: ./tmp/localstack
+    ports:
+      - "4566:4566"
+      - "4571:4571"
+    volumes:
+      - ./tmp/localstack:/tmp/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - sunday-dev-network
+    restart: unless-stopped
+
+# =============================================================================
+# Volumes
+# =============================================================================
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  postgres_test_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  prometheus_dev_data:
+    driver: local
+  grafana_dev_data:
+    driver: local
+  backend_logs:
+    driver: local
+  test_coverage:
+    driver: local
+  e2e_results:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+
+networks:
+  sunday-dev-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,0 +1,346 @@
+# Maestro ML Platform - Prometheus Alerting Rules
+# Phase 1.1.9 - Alerting for ML infrastructure
+# Phase 3.2.3 - Performance degradation alerts
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ml-platform-alerts
+  namespace: ml-monitoring
+  labels:
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+
+  # MLflow Tracking Server Alerts
+  - name: mlflow-alerts
+    interval: 30s
+    rules:
+    - alert: MLflowServerDown
+      expr: up{job="mlflow-metrics"} == 0
+      for: 5m
+      labels:
+        severity: critical
+        component: mlflow
+      annotations:
+        summary: "MLflow tracking server is down"
+        description: "MLflow server {{ $labels.instance }} has been down for more than 5 minutes."
+
+    - alert: MLflowHighLatency
+      expr: histogram_quantile(0.95, rate(mlflow_request_duration_seconds_bucket[5m])) > 2
+      for: 10m
+      labels:
+        severity: warning
+        component: mlflow
+      annotations:
+        summary: "MLflow server experiencing high latency"
+        description: "MLflow p95 latency is {{ $value }}s (threshold: 2s)"
+
+    - alert: MLflowHighErrorRate
+      expr: rate(mlflow_request_errors_total[5m]) / rate(mlflow_requests_total[5m]) > 0.05
+      for: 5m
+      labels:
+        severity: warning
+        component: mlflow
+      annotations:
+        summary: "MLflow error rate is high"
+        description: "MLflow error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+  # Feast Feature Store Alerts
+  - name: feast-alerts
+    interval: 15s
+    rules:
+    - alert: FeastFeatureServerDown
+      expr: up{job="feast-metrics"} == 0
+      for: 2m
+      labels:
+        severity: critical
+        component: feast
+      annotations:
+        summary: "Feast feature server is down"
+        description: "Feast server {{ $labels.instance }} has been down for more than 2 minutes. ML inference may be impacted."
+
+    - alert: FeastHighLatency
+      expr: histogram_quantile(0.95, rate(feast_feature_request_duration_seconds_bucket[5m])) > 0.1
+      for: 5m
+      labels:
+        severity: warning
+        component: feast
+      annotations:
+        summary: "Feast feature serving latency is high"
+        description: "Feast p95 latency is {{ $value }}s (threshold: 100ms)"
+
+    - alert: FeastCacheMissRateHigh
+      expr: rate(feast_redis_cache_miss_total[5m]) / rate(feast_redis_cache_requests_total[5m]) > 0.3
+      for: 10m
+      labels:
+        severity: warning
+        component: feast
+      annotations:
+        summary: "Feast cache miss rate is high"
+        description: "Cache miss rate is {{ $value | humanizePercentage }} (threshold: 30%)"
+
+    - alert: FeastRedisDown
+      expr: up{job="feast-redis-metrics"} == 0
+      for: 1m
+      labels:
+        severity: critical
+        component: feast
+      annotations:
+        summary: "Feast Redis online store is down"
+        description: "Redis instance {{ $labels.instance }} is down. Feature serving will fail."
+
+    - alert: FeastRedisMemoryHigh
+      expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+      for: 5m
+      labels:
+        severity: warning
+        component: feast
+      annotations:
+        summary: "Feast Redis memory usage is high"
+        description: "Redis memory usage is {{ $value | humanizePercentage }} (threshold: 90%)"
+
+  # ML Training Alerts
+  - name: ml-training-alerts
+    interval: 30s
+    rules:
+    - alert: TrainingJobFailed
+      expr: training_job_status{status="failed"} == 1
+      for: 1m
+      labels:
+        severity: warning
+        component: ml-training
+      annotations:
+        summary: "ML training job failed"
+        description: "Training job {{ $labels.job_name }} failed. Check logs for details."
+
+    - alert: TrainingJobStalled
+      expr: rate(training_metrics_steps[5m]) == 0 AND training_job_status{status="running"} == 1
+      for: 15m
+      labels:
+        severity: warning
+        component: ml-training
+      annotations:
+        summary: "Training job appears stalled"
+        description: "Training job {{ $labels.job_name }} hasn't progressed in 15 minutes."
+
+    - alert: GPUUtilizationLow
+      expr: avg(DCGM_FI_DEV_GPU_UTIL) by (gpu, pod) < 30 AND on(pod) training_job_status{status="running"} == 1
+      for: 30m
+      labels:
+        severity: info
+        component: ml-training
+      annotations:
+        summary: "GPU utilization is low during training"
+        description: "GPU {{ $labels.gpu }} in pod {{ $labels.pod }} utilization is {{ $value }}% (threshold: 30%)"
+
+    - alert: GPUMemoryHigh
+      expr: DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_FREE > 0.95
+      for: 5m
+      labels:
+        severity: warning
+        component: ml-training
+      annotations:
+        summary: "GPU memory usage is critical"
+        description: "GPU {{ $labels.gpu }} memory usage is {{ $value | humanizePercentage }} (threshold: 95%)"
+
+    - alert: GPUTemperatureHigh
+      expr: DCGM_FI_DEV_GPU_TEMP > 85
+      for: 10m
+      labels:
+        severity: warning
+        component: ml-training
+      annotations:
+        summary: "GPU temperature is high"
+        description: "GPU {{ $labels.gpu }} temperature is {{ $value }}°C (threshold: 85°C)"
+
+  # ML Inference Alerts
+  - name: ml-inference-alerts
+    interval: 10s
+    rules:
+    - alert: InferenceServiceDown
+      expr: up{job="ml-inference-metrics"} == 0
+      for: 2m
+      labels:
+        severity: critical
+        component: ml-inference
+      annotations:
+        summary: "ML inference service is down"
+        description: "Inference service {{ $labels.service_name }} has been down for more than 2 minutes."
+
+    - alert: InferenceHighLatency
+      expr: histogram_quantile(0.99, rate(inference_request_duration_seconds_bucket[5m])) > 0.5
+      for: 5m
+      labels:
+        severity: critical
+        component: ml-inference
+      annotations:
+        summary: "Inference latency is too high"
+        description: "{{ $labels.model_name }} p99 latency is {{ $value }}s (SLA: 500ms)"
+
+    - alert: InferenceErrorRateHigh
+      expr: rate(inference_errors_total[5m]) / rate(inference_requests_total[5m]) > 0.01
+      for: 5m
+      labels:
+        severity: warning
+        component: ml-inference
+      annotations:
+        summary: "Inference error rate is elevated"
+        description: "{{ $labels.model_name }} error rate is {{ $value | humanizePercentage }} (threshold: 1%)"
+
+    - alert: InferenceThroughputLow
+      expr: rate(inference_requests_total[5m]) < 10 AND hour() > 8 AND hour() < 20
+      for: 15m
+      labels:
+        severity: info
+        component: ml-inference
+      annotations:
+        summary: "Inference throughput is unusually low"
+        description: "{{ $labels.model_name }} is serving {{ $value }} requests/sec during business hours"
+
+    - alert: ModelPredictionDrift
+      expr: abs(inference_prediction_mean - inference_prediction_mean offset 1d) / inference_prediction_mean > 0.2
+      for: 30m
+      labels:
+        severity: warning
+        component: ml-inference
+      annotations:
+        summary: "Model predictions showing drift"
+        description: "{{ $labels.model_name }} prediction distribution changed by {{ $value | humanizePercentage }} vs yesterday"
+
+  # Model Quality Alerts (Phase 3.2.2 - Model drift detection)
+  - name: model-quality-alerts
+    interval: 60s
+    rules:
+    - alert: ModelAccuracyDegraded
+      expr: model_accuracy < 0.85
+      for: 1h
+      labels:
+        severity: warning
+        component: ml-ops
+      annotations:
+        summary: "Model accuracy has degraded"
+        description: "{{ $labels.model_name }} accuracy is {{ $value }} (threshold: 0.85)"
+
+    - alert: DataDriftDetected
+      expr: data_drift_score > 0.3
+      for: 30m
+      labels:
+        severity: warning
+        component: ml-ops
+      annotations:
+        summary: "Input data drift detected"
+        description: "{{ $labels.model_name }} data drift score is {{ $value }} (threshold: 0.3)"
+
+    - alert: PredictionBiasDetected
+      expr: prediction_bias_score > 0.15
+      for: 1h
+      labels:
+        severity: warning
+        component: ml-ops
+      annotations:
+        summary: "Prediction bias detected"
+        description: "{{ $labels.model_name }} shows bias score of {{ $value }} (threshold: 0.15)"
+
+  # Resource Utilization Alerts
+  - name: ml-resource-alerts
+    interval: 30s
+    rules:
+    - alert: MLPodCPUThrottling
+      expr: rate(container_cpu_cfs_throttled_seconds_total{namespace=~"ml-.*|feast|mlflow"}[5m]) > 0.5
+      for: 10m
+      labels:
+        severity: warning
+        component: ml-platform
+      annotations:
+        summary: "ML pod experiencing CPU throttling"
+        description: "Pod {{ $labels.pod }} in {{ $labels.namespace }} is being throttled {{ $value }}s per second"
+
+    - alert: MLPodMemoryPressure
+      expr: container_memory_working_set_bytes{namespace=~"ml-.*|feast|mlflow"} / container_spec_memory_limit_bytes > 0.9
+      for: 5m
+      labels:
+        severity: warning
+        component: ml-platform
+      annotations:
+        summary: "ML pod memory usage is high"
+        description: "Pod {{ $labels.pod }} memory usage is {{ $value | humanizePercentage }} of limit"
+
+    - alert: MLNodeDiskSpaceLow
+      expr: (node_filesystem_avail_bytes{mountpoint="/",job="node-exporter"} / node_filesystem_size_bytes{mountpoint="/",job="node-exporter"}) < 0.15
+      for: 10m
+      labels:
+        severity: warning
+        component: ml-platform
+      annotations:
+        summary: "ML node disk space is low"
+        description: "Node {{ $labels.instance }} has only {{ $value | humanizePercentage }} disk space remaining"
+
+  # Cost Optimization Alerts (Phase 4.2.5 - Cost allocation tracking)
+  - name: ml-cost-alerts
+    interval: 300s
+    rules:
+    - alert: SpotInstanceTerminationWarning
+      expr: aws_spot_termination_notice == 1
+      for: 1m
+      labels:
+        severity: warning
+        component: ml-platform
+      annotations:
+        summary: "Spot instance will be terminated soon"
+        description: "Spot instance {{ $labels.instance }} received termination notice. Workloads should be migrated."
+
+    - alert: GPUIdleTimeHigh
+      expr: avg_over_time(DCGM_FI_DEV_GPU_UTIL[1h]) < 20 AND sum(kube_pod_container_resource_requests{resource="nvidia.com/gpu"}) > 0
+      for: 2h
+      labels:
+        severity: info
+        component: ml-platform
+      annotations:
+        summary: "GPU instance is underutilized"
+        description: "GPU {{ $labels.gpu }} average utilization is {{ $value }}% over last hour. Consider scaling down."
+
+    - alert: InferenceScalingNeeded
+      expr: avg(rate(inference_requests_total[5m])) by (model_name) > 1000 AND kube_deployment_spec_replicas{deployment=~".*inference.*"} < 5
+      for: 15m
+      labels:
+        severity: info
+        component: ml-platform
+      annotations:
+        summary: "Consider scaling up inference service"
+        description: "{{ $labels.model_name }} is handling {{ $value }} req/s with only {{ $labels.replicas }} replicas"
+
+  # Data Pipeline Alerts
+  - name: data-pipeline-alerts
+    interval: 60s
+    rules:
+    - alert: FeatureMaterializationFailed
+      expr: airflow_dag_run_status{dag_id=~".*feature_materialization.*",state="failed"} == 1
+      for: 5m
+      labels:
+        severity: critical
+        component: data-pipeline
+      annotations:
+        summary: "Feature materialization DAG failed"
+        description: "Airflow DAG {{ $labels.dag_id }} failed. Features may be stale."
+
+    - alert: DataQualityCheckFailed
+      expr: data_quality_check_failures_total > 0
+      for: 5m
+      labels:
+        severity: warning
+        component: data-pipeline
+      annotations:
+        summary: "Data quality check failed"
+        description: "{{ $labels.check_name }} failed {{ $value }} times in last 5 minutes"
+
+    - alert: FeatureLagHigh
+      expr: (time() - feast_feature_freshness_timestamp) > 3600
+      for: 10m
+      labels:
+        severity: warning
+        component: data-pipeline
+      annotations:
+        summary: "Feature data is stale"
+        description: "Features for {{ $labels.feature_view }} are {{ $value | humanizeDuration }} old (threshold: 1h)"

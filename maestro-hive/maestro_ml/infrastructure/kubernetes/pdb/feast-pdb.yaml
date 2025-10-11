@@ -1,0 +1,31 @@
+# Pod Disruption Budget for Feast
+# Ensures high availability for Feast Redis and Feature Server
+
+---
+# Feast Redis PDB (3 replicas, need 2 available)
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: feast-redis-pdb
+  namespace: feast
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: feast-redis
+  unhealthyPodEvictionPolicy: IfHealthyBudget
+
+---
+# Feast Feature Server PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: feast-feature-server-pdb
+  namespace: feast
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: feast
+      component: feature-server
+  unhealthyPodEvictionPolicy: IfHealthyBudget

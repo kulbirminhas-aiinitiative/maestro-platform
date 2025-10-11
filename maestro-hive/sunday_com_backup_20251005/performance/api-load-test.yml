@@ -1,0 +1,310 @@
+# Artillery.js Load Test Configuration
+# Tests API performance under various load conditions
+
+config:
+  target: 'http://localhost:3001'
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up"
+
+    # Ramp-up phase
+    - duration: 300
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp-up to normal load"
+
+    # Sustained load phase
+    - duration: 600
+      arrivalRate: 50
+      name: "Sustained normal load"
+
+    # Peak load phase
+    - duration: 300
+      arrivalRate: 50
+      rampTo: 100
+      name: "Peak load"
+
+    # Stress test phase
+    - duration: 180
+      arrivalRate: 100
+      rampTo: 200
+      name: "Stress test"
+
+  defaults:
+    headers:
+      'Content-Type': 'application/json'
+      'User-Agent': 'Artillery Load Test'
+
+  payload:
+    path: './test-data/users.csv'
+    fields:
+      - 'email'
+      - 'password'
+      - 'userId'
+      - 'token'
+
+scenarios:
+  # Authentication flow test
+  - name: "Authentication Flow"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/v1/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+          expect:
+            - statusCode: 200
+            - hasProperty: "token"
+
+      - get:
+          url: "/api/v1/auth/me"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: "id"
+
+  # Board operations test
+  - name: "Board Operations"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/v1/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      - get:
+          url: "/api/v1/boards"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: "boards"
+
+      - post:
+          url: "/api/v1/boards"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            name: "Load Test Board {{ $randomString() }}"
+            description: "Board created during load testing"
+            workspaceId: "{{ workspaceId }}"
+          capture:
+            - json: "$.id"
+              as: "boardId"
+          expect:
+            - statusCode: 201
+            - hasProperty: "id"
+
+      - get:
+          url: "/api/v1/boards/{{ boardId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: "id"
+
+      - put:
+          url: "/api/v1/boards/{{ boardId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            name: "Updated Load Test Board {{ $randomString() }}"
+            description: "Updated during load testing"
+          expect:
+            - statusCode: 200
+
+  # Item/Task operations test
+  - name: "Item Operations"
+    weight: 35
+    flow:
+      - post:
+          url: "/api/v1/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      - get:
+          url: "/api/v1/items"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          qs:
+            boardId: "{{ boardId }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: "items"
+
+      - post:
+          url: "/api/v1/items"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            title: "Load Test Item {{ $randomString() }}"
+            description: "Item created during load testing"
+            boardId: "{{ boardId }}"
+            status: "TODO"
+            priority: "MEDIUM"
+          capture:
+            - json: "$.id"
+              as: "itemId"
+          expect:
+            - statusCode: 201
+            - hasProperty: "id"
+
+      - put:
+          url: "/api/v1/items/{{ itemId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            title: "Updated Load Test Item {{ $randomString() }}"
+            status: "IN_PROGRESS"
+            priority: "HIGH"
+          expect:
+            - statusCode: 200
+
+      - post:
+          url: "/api/v1/items/{{ itemId }}/comments"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            content: "Load test comment {{ $randomString() }}"
+          expect:
+            - statusCode: 201
+
+  # Time tracking operations test
+  - name: "Time Tracking Operations"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/v1/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      - post:
+          url: "/api/v1/time/start"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            itemId: "{{ itemId }}"
+            description: "Load testing timer"
+          capture:
+            - json: "$.id"
+              as: "timerId"
+          expect:
+            - statusCode: 200
+
+      - get:
+          url: "/api/v1/time/active"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+      - post:
+          url: "/api/v1/time/stop"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+      - get:
+          url: "/api/v1/time/entries"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          qs:
+            page: 1
+            limit: 10
+          expect:
+            - statusCode: 200
+            - hasProperty: "entries"
+
+  # Analytics operations test
+  - name: "Analytics Operations"
+    weight: 5
+    flow:
+      - post:
+          url: "/api/v1/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      - get:
+          url: "/api/v1/analytics/boards/{{ boardId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          qs:
+            timeRange: "7d"
+          expect:
+            - statusCode: 200
+            - hasProperty: "analytics"
+
+      - get:
+          url: "/api/v1/analytics/users/{{ userId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          qs:
+            timeRange: "30d"
+          expect:
+            - statusCode: 200
+
+      - post:
+          url: "/api/v1/analytics/custom"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            metrics: ["completion_rate", "velocity"]
+            timeRange: "30d"
+            filters:
+              boardId: "{{ boardId }}"
+          expect:
+            - statusCode: 200
+
+# Performance expectations
+expect:
+  # Response time requirements
+  - statusCode: 200
+  - hasProperty: "."
+  - maxResponseTime: 2000  # 2 seconds max for any request
+
+# Metrics to collect
+metrics:
+  - name: "Response Time"
+    unit: "ms"
+  - name: "Requests per Second"
+    unit: "req/s"
+  - name: "Error Rate"
+    unit: "%"
+  - name: "Active Users"
+    unit: "users"
+
+# Custom metrics
+plugins:
+  metrics-by-endpoint:
+    # Track metrics per endpoint
+    useOnlyRequestNames: true
+
+  publish-metrics:
+    # Publish metrics to monitoring system
+    - type: "cloudwatch"
+      region: "us-east-1"
+      namespace: "Sunday.com/LoadTesting"

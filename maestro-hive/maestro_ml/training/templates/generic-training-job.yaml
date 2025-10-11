@@ -1,0 +1,259 @@
+# Generic Training Job Template
+# For any Python-based ML training (scikit-learn, XGBoost, LightGBM, custom frameworks)
+# Uses standard Kubernetes Job with MLflow integration
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .JobName }}
+  namespace: {{ .Namespace | default "kubeflow-training" }}
+  labels:
+    app: ml-training
+    framework: {{ .Framework | default "generic" }}
+    experiment: {{ .ExperimentName }}
+    model: {{ .ModelName }}
+spec:
+  # Job configuration
+  ttlSecondsAfterFinished: {{ .TTL | default 3600 }}
+  activeDeadlineSeconds: {{ .ActiveDeadline | default 7200 }}
+  backoffLimit: {{ .BackoffLimit | default 3 }}
+  completions: 1
+  parallelism: 1
+
+  template:
+    metadata:
+      labels:
+        app: ml-training
+        framework: {{ .Framework | default "generic" }}
+        experiment: {{ .ExperimentName }}
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      restartPolicy: OnFailure
+
+      containers:
+      - name: training
+        image: {{ .TrainingImage | default "python:3.11-slim" }}
+        imagePullPolicy: IfNotPresent
+
+        command:
+        - /bin/bash
+        - -c
+        - |
+          # Install dependencies
+          pip install -q {{ .PipPackages | default "scikit-learn mlflow feast pandas numpy" }}
+
+          # Run training script
+          python3 /app/train.py \
+            --model-name={{ .ModelName }} \
+            --experiment-name={{ .ExperimentName }} \
+            --epochs={{ .Epochs | default 10 }} \
+            --learning-rate={{ .LearningRate | default 0.001 }} \
+            {{ .ExtraArgs }}
+
+        env:
+        # MLflow configuration
+        - name: MLFLOW_TRACKING_URI
+          value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+        - name: MLFLOW_EXPERIMENT_NAME
+          value: {{ .ExperimentName }}
+        - name: MLFLOW_RUN_NAME
+          value: {{ .RunName | default .JobName }}
+        - name: MLFLOW_TAGS
+          value: '{"framework":"{{ .Framework }}","model":"{{ .ModelName }}","job":"{{ .JobName }}"}'
+
+        # Feast configuration
+        - name: FEAST_REPO_PATH
+          value: "/feast/feature_repo"
+        - name: FEAST_FEATURE_SERVICE
+          value: {{ .FeatureService | default "model_features_v1" }}
+
+        # Model registry configuration
+        - name: MODEL_REGISTRY_URI
+          value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+        - name: MODEL_STAGE
+          value: {{ .ModelStage | default "staging" }}
+
+        # Job metadata
+        - name: JOB_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: JOB_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+
+        # Training hyperparameters (as env vars)
+        {{ range .Hyperparameters }}
+        - name: {{ .Name }}
+          value: "{{ .Value }}"
+        {{ end }}
+
+        resources:
+          requests:
+            cpu: {{ .CPURequest | default "1" }}
+            memory: {{ .MemoryRequest | default "2Gi" }}
+          limits:
+            cpu: {{ .CPULimit | default "2" }}
+            memory: {{ .MemoryLimit | default "4Gi" }}
+
+        volumeMounts:
+        - name: training-code
+          mountPath: /app
+          readOnly: true
+        - name: data-volume
+          mountPath: /data
+        - name: model-volume
+          mountPath: /models
+        - name: feast-config
+          mountPath: /feast
+          readOnly: true
+
+      volumes:
+      - name: training-code
+        configMap:
+          name: {{ .TrainingCodeConfigMap }}
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: {{ .DataPVC | default "training-data-pvc" }}
+      - name: model-volume
+        persistentVolumeClaim:
+          claimName: {{ .ModelPVC | default "model-artifacts-pvc" }}
+      - name: feast-config
+        configMap:
+          name: feast-feature-repo
+
+---
+# Example instantiation for scikit-learn RandomForest:
+#
+# apiVersion: batch/v1
+# kind: Job
+# metadata:
+#   name: sklearn-rf-training-job
+#   namespace: kubeflow-training
+#   labels:
+#     app: ml-training
+#     framework: sklearn
+#     experiment: customer-churn-prediction
+#     model: random-forest-v1
+# spec:
+#   ttlSecondsAfterFinished: 3600
+#   activeDeadlineSeconds: 3600
+#   backoffLimit: 2
+#   template:
+#     spec:
+#       restartPolicy: OnFailure
+#       containers:
+#       - name: training
+#         image: python:3.11-slim
+#         command:
+#         - /bin/bash
+#         - -c
+#         - |
+#           pip install -q scikit-learn mlflow feast pandas numpy
+#           python3 /app/train_sklearn.py \
+#             --model-name=random-forest-v1 \
+#             --experiment-name=customer-churn-prediction \
+#             --n-estimators=100 \
+#             --max-depth=10
+#         env:
+#         - name: MLFLOW_TRACKING_URI
+#           value: "http://mlflow.ml-platform.svc.cluster.local:5000"
+#         - name: MLFLOW_EXPERIMENT_NAME
+#           value: "customer-churn-prediction"
+#         resources:
+#           requests:
+#             cpu: "1"
+#             memory: "2Gi"
+#           limits:
+#             cpu: "2"
+#             memory: "4Gi"
+#         volumeMounts:
+#         - name: training-code
+#           mountPath: /app
+#         - name: data-volume
+#           mountPath: /data
+#       volumes:
+#       - name: training-code
+#         configMap:
+#           name: sklearn-training-code
+#       - name: data-volume
+#         persistentVolumeClaim:
+#           claimName: training-data-pvc
+
+---
+# Example training script (train_sklearn.py):
+#
+# import argparse
+# import mlflow
+# import mlflow.sklearn
+# from sklearn.ensemble import RandomForestClassifier
+# from sklearn.metrics import accuracy_score, f1_score
+# from feast import FeatureStore
+# import os
+#
+# def main(args):
+#     # Set up MLflow
+#     mlflow.set_tracking_uri(os.environ['MLFLOW_TRACKING_URI'])
+#     mlflow.set_experiment(os.environ['MLFLOW_EXPERIMENT_NAME'])
+#
+#     with mlflow.start_run(run_name=os.environ.get('MLFLOW_RUN_NAME')):
+#         # Log parameters
+#         mlflow.log_params({
+#             'n_estimators': args.n_estimators,
+#             'max_depth': args.max_depth,
+#             'framework': 'sklearn',
+#             'model_name': args.model_name
+#         })
+#
+#         # Get features from Feast
+#         store = FeatureStore(repo_path=os.environ['FEAST_REPO_PATH'])
+#         features_df = store.get_historical_features(
+#             entity_df=entity_df,
+#             features=[
+#                 'customer_features:age',
+#                 'customer_features:tenure',
+#                 'customer_features:monthly_charges'
+#             ]
+#         ).to_df()
+#
+#         # Prepare data
+#         X_train, X_test, y_train, y_test = train_test_split(...)
+#
+#         # Train model
+#         model = RandomForestClassifier(
+#             n_estimators=args.n_estimators,
+#             max_depth=args.max_depth,
+#             random_state=42
+#         )
+#         model.fit(X_train, y_train)
+#
+#         # Evaluate
+#         y_pred = model.predict(X_test)
+#         accuracy = accuracy_score(y_test, y_pred)
+#         f1 = f1_score(y_test, y_pred, average='weighted')
+#
+#         # Log metrics
+#         mlflow.log_metrics({
+#             'accuracy': accuracy,
+#             'f1_score': f1
+#         })
+#
+#         # Log model
+#         mlflow.sklearn.log_model(
+#             model,
+#             "model",
+#             registered_model_name=args.model_name
+#         )
+#
+#         print(f"Training complete! Accuracy: {accuracy:.4f}, F1: {f1:.4f}")
+#
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--model-name', required=True)
+#     parser.add_argument('--experiment-name', required=True)
+#     parser.add_argument('--n-estimators', type=int, default=100)
+#     parser.add_argument('--max-depth', type=int, default=10)
+#     args = parser.parse_args()
+#     main(args)

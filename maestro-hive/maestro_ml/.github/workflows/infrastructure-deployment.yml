@@ -1,0 +1,371 @@
+name: Infrastructure Deployment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infrastructure/**'
+      - 'terraform/**'
+      - 'helm/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'infrastructure/**'
+      - 'terraform/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      component:
+        description: 'Component to deploy'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - mlflow
+          - airflow
+          - feast
+          - monitoring
+          - logging
+
+env:
+  AWS_REGION: us-east-1
+  TERRAFORM_VERSION: 1.6.0
+
+jobs:
+  # Job 1: Validate Infrastructure Code
+  validate:
+    name: Validate Infrastructure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive terraform/
+
+      - name: Terraform Init
+        run: |
+          cd terraform/environments/staging
+          terraform init -backend=false
+
+      - name: Terraform Validate
+        run: |
+          cd terraform/environments/staging
+          terraform validate
+
+      - name: Run tflint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Lint Terraform
+        run: |
+          tflint --init
+          tflint terraform/
+
+      - name: Validate Kubernetes manifests
+        run: |
+          # Install kubeval
+          wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+          tar xf kubeval-linux-amd64.tar.gz
+          sudo mv kubeval /usr/local/bin
+
+          # Validate all YAML files
+          find infrastructure/ -name '*.yaml' -exec kubeval {} \;
+
+      - name: Validate Helm charts
+        run: |
+          helm lint helm/model-server/
+          helm template test helm/model-server/ --dry-run
+
+  # Job 2: Security Scanning
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1
+        with:
+          soft_fail: false
+
+      - name: Run checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: terraform/
+          framework: terraform
+
+      - name: Scan Kubernetes manifests
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: 'infrastructure/'
+
+  # Job 3: Plan Infrastructure Changes
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: [validate, security-scan]
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Terraform Init
+        run: |
+          cd terraform/environments/staging
+          terraform init
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          cd terraform/environments/staging
+          terraform plan -out=tfplan -no-color
+
+      - name: Comment PR with Plan
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('terraform/environments/staging/tfplan.txt', 'utf8');
+            const comment = `## Terraform Plan
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`terraform
+            ${plan}
+            \`\`\`
+
+            </details>`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  # Job 4: Deploy Infrastructure (Staging)
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    environment:
+      name: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Deploy with Terraform
+        run: |
+          cd terraform/environments/staging
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name ml-platform-staging
+
+      - name: Deploy Kubernetes resources
+        run: |
+          # Deploy based on component selection
+          COMPONENT="${{ github.event.inputs.component || 'all' }}"
+
+          if [ "$COMPONENT" = "all" ] || [ "$COMPONENT" = "mlflow" ]; then
+            kubectl apply -f infrastructure/kubernetes/mlflow-deployment.yaml
+          fi
+
+          if [ "$COMPONENT" = "all" ] || [ "$COMPONENT" = "airflow" ]; then
+            kubectl apply -f infrastructure/kubernetes/airflow-deployment.yaml
+          fi
+
+          if [ "$COMPONENT" = "all" ] || [ "$COMPONENT" = "feast" ]; then
+            kubectl apply -f infrastructure/kubernetes/feast-deployment.yaml
+          fi
+
+          if [ "$COMPONENT" = "all" ] || [ "$COMPONENT" = "monitoring" ]; then
+            kubectl apply -f infrastructure/kubernetes/monitoring-stack.yaml
+          fi
+
+          if [ "$COMPONENT" = "all" ] || [ "$COMPONENT" = "logging" ]; then
+            kubectl apply -f infrastructure/kubernetes/logging-stack.yaml
+          fi
+
+      - name: Wait for deployments
+        run: |
+          kubectl wait --for=condition=available --timeout=600s \
+            deployment --all -n ml-platform
+
+      - name: Run health checks
+        run: |
+          bash scripts/health-check.sh staging
+
+  # Job 5: Deploy Infrastructure (Production)
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.event.inputs.environment == 'production'
+    environment:
+      name: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Deploy with Terraform
+        run: |
+          cd terraform/environments/production
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name ml-platform-production
+
+      - name: Deploy Kubernetes resources
+        run: |
+          kubectl apply -f infrastructure/kubernetes/ --recursive
+
+      - name: Wait for deployments
+        run: |
+          kubectl wait --for=condition=available --timeout=600s \
+            deployment --all -n ml-platform
+
+      - name: Run health checks
+        run: |
+          bash scripts/health-check.sh production
+
+  # Job 6: Run Integration Tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pytest requests mlflow
+
+      - name: Run integration tests
+        run: |
+          pytest tests/integration/ -v \
+            --environment staging \
+            --junitxml=test-results.xml
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: test-results.xml
+
+  # Job 7: Backup Configuration
+  backup:
+    name: Backup Configuration
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always() && success()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Backup Terraform state
+        run: |
+          aws s3 cp terraform/environments/staging/terraform.tfstate \
+            s3://ml-platform-backups/terraform/$(date +%Y%m%d)/staging.tfstate
+
+      - name: Backup Kubernetes configs
+        run: |
+          kubectl get all --all-namespaces -o yaml > k8s-backup.yaml
+          aws s3 cp k8s-backup.yaml \
+            s3://ml-platform-backups/k8s/$(date +%Y%m%d)/backup.yaml
+
+  # Job 8: Notify
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production, integration-tests]
+    if: always()
+    steps:
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Infrastructure Deployment: ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Infrastructure Deployment ${{ job.status }}*\n\n*Environment:* ${{ github.event.inputs.environment || 'staging' }}\n*Component:* ${{ github.event.inputs.component || 'all' }}\n*Commit:* ${{ github.sha }}\n*Deployed by:* ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
