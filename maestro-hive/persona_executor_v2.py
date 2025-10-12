@@ -33,6 +33,7 @@ import sys
 import json
 import yaml
 import logging
+import os
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from datetime import datetime
@@ -141,6 +142,9 @@ class PersonaExecutorV2:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.model = model
+        # Gateway flag
+        self.use_gateway = os.getenv("HIVE_USE_GATEWAY", "0") == "1"
+
         self.rag_client = rag_client
 
         # Load persona definition
@@ -539,21 +543,23 @@ type Item {
         ai_response = ""
         
         try:
-            if CLAUDE_SDK_AVAILABLE:
+            if self.use_gateway:
+                files_created, deliverables, ai_response = await self._execute_via_gateway(prompt)
+            elif CLAUDE_SDK_AVAILABLE:
                 logger.info("🤖 Executing with AI...")
-
-                # Use ClaudeCLIClient
                 client = ClaudeCLIClient(cwd=self.output_dir)
 
                 # Build full prompt with system context
                 full_prompt = f"{self._build_system_prompt()}\n\n{prompt}"
 
                 # Execute query
+                # Timeout increased from 600s (10min) to 3600s (60min) for production-quality AI work
+                # Complex tasks like database design, security implementation, architecture can take 20-40+ minutes
                 result = client.query(
                     prompt=full_prompt,
                     skip_permissions=True,  # Auto-accept for automation
                     allowed_tools=["Write", "Edit", "Read", "Bash"],
-                    timeout=600  # 10 minutes
+                    timeout=3600  # 60 minutes - sufficient for complex AI work
                 )
 
                 if result.get('success'):
@@ -635,7 +641,7 @@ type Item {
         logger.info(f"   Duration: {duration:.2f}s")
         logger.info(f"   Files: {len(files_created)}")
         logger.info(f"   Contract fulfilled: {result.contract_fulfilled}")
-        logger.info(f"   Quality: {result.quality_score:.0%}")
+        logger.info(f"   Quality: {float(result.quality_score or 0):.0%}")
         logger.info("="*70)
         
         return result
@@ -986,6 +992,45 @@ Document your work clearly.
         scores = []
         
         # Contract fulfillment score (40%)
+    async def _execute_via_gateway(self, prompt: str) -> tuple[List[str], Dict[str, List[str]], str]:
+        """Execute via Execution Platform Gateway with persona-scoped routing.
+        Mirrors fs_write tool results into local workspace to collect deliverables.
+        """
+        try:
+            from persona_gateway_client import PersonaGatewayClient  # type: ignore
+        except Exception as e:
+            raise RuntimeError("PersonaGatewayClient not available") from e
+        gw = PersonaGatewayClient(base_url=os.getenv("GATEWAY_URL"))
+        full_prompt = f"{self._build_system_prompt()}\n\n{prompt}"
+        ai_text = []
+        # Process events
+        async for ev in gw.stream_chat(self.persona_id, messages=[{"role": "user", "content": full_prompt}]):
+            kind = ev.get("event")
+            data = ev.get("data", {})
+            if kind == "token":
+                t = data.get("text")
+                if t:
+                    ai_text.append(t)
+            elif kind == "tool_call":
+                name = data.get("data", {}).get("name") if "data" in data else data.get("name")
+                args = data.get("data", {}).get("args") if "data" in data else data.get("args", {})
+                if name == "fs_write":
+                    rel = args.get("path")
+                    content = args.get("content", "")
+                    if rel:
+                        dest = (self.output_dir / rel)
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        with open(dest, "w", encoding="utf-8") as f:
+                            f.write(content)
+        # After stream, scan files
+        files_created = []
+        if self.output_dir.exists():
+            for file_path in self.output_dir.rglob("*"):
+                if file_path.is_file():
+                    files_created.append(str(file_path))
+        deliverables = self._categorize_deliverables(files_created)
+        return files_created, deliverables, "".join(ai_text)
+
         scores.append(validation["score"] * 0.4)
         
         # Completeness score (30%)
