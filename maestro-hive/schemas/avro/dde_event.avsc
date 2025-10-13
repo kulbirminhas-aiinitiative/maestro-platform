@@ -1,0 +1,144 @@
+{
+  "type": "record",
+  "name": "DDEEvent",
+  "namespace": "com.maestro.trimodal.dde",
+  "doc": "DDE workflow execution event for Tri-Modal Mission Control",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "Unique event identifier (UUID)"
+    },
+    {
+      "name": "iteration_id",
+      "type": "string",
+      "doc": "Workflow iteration identifier"
+    },
+    {
+      "name": "workflow_id",
+      "type": "string",
+      "doc": "Workflow template identifier"
+    },
+    {
+      "name": "event_type",
+      "type": {
+        "type": "enum",
+        "name": "DDEEventType",
+        "symbols": [
+          "WORKFLOW_STARTED",
+          "WORKFLOW_COMPLETED",
+          "WORKFLOW_FAILED",
+          "TASK_STARTED",
+          "TASK_COMPLETED",
+          "TASK_FAILED",
+          "TASK_RETRYING",
+          "ARTIFACT_CREATED",
+          "ARTIFACT_VALIDATED",
+          "CONTRACT_LOCKED",
+          "CONTRACT_VALIDATED",
+          "QUALITY_GATE_CHECKED"
+        ]
+      },
+      "doc": "Type of DDE event"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "logicalType": "timestamp-millis",
+      "doc": "Event timestamp (epoch milliseconds)"
+    },
+    {
+      "name": "node_id",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "DAG node identifier (task/interface/action)"
+    },
+    {
+      "name": "node_type",
+      "type": ["null", {
+        "type": "enum",
+        "name": "DDENodeType",
+        "symbols": ["INTERFACE", "ACTION", "QUALITY_GATE", "ARTIFACT"]
+      }],
+      "default": null,
+      "doc": "Type of DAG node"
+    },
+    {
+      "name": "node_status",
+      "type": ["null", {
+        "type": "enum",
+        "name": "DDENodeStatus",
+        "symbols": ["PENDING", "RUNNING", "COMPLETED", "FAILED", "RETRYING", "SKIPPED"]
+      }],
+      "default": null,
+      "doc": "Current node status"
+    },
+    {
+      "name": "artifact_path",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Path to artifact (for ARTIFACT_* events)"
+    },
+    {
+      "name": "artifact_hash",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "SHA256 hash of artifact content"
+    },
+    {
+      "name": "contract_id",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Contract identifier (for CONTRACT_* events)"
+    },
+    {
+      "name": "quality_gate_name",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Quality gate name (for QUALITY_GATE_* events)"
+    },
+    {
+      "name": "quality_gate_passed",
+      "type": ["null", "boolean"],
+      "default": null,
+      "doc": "Whether quality gate passed"
+    },
+    {
+      "name": "retry_count",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Number of retries attempted"
+    },
+    {
+      "name": "error_message",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Error message (for *_FAILED events)"
+    },
+    {
+      "name": "metadata",
+      "type": ["null", {
+        "type": "map",
+        "values": "string"
+      }],
+      "default": null,
+      "doc": "Additional event metadata"
+    },
+    {
+      "name": "trace_id",
+      "type": "string",
+      "doc": "OpenTelemetry trace ID (hex string)"
+    },
+    {
+      "name": "span_id",
+      "type": "string",
+      "doc": "OpenTelemetry span ID (hex string)"
+    },
+    {
+      "name": "traceparent",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "W3C Trace Context traceparent header"
+    }
+  ]
+}

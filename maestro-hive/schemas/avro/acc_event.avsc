@@ -1,0 +1,174 @@
+{
+  "type": "record",
+  "name": "ACCEvent",
+  "namespace": "com.maestro.trimodal.acc",
+  "doc": "ACC architectural conformance event for Tri-Modal Mission Control",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "Unique event identifier (UUID)"
+    },
+    {
+      "name": "iteration_id",
+      "type": "string",
+      "doc": "Analysis iteration identifier"
+    },
+    {
+      "name": "manifest_name",
+      "type": "string",
+      "doc": "Architectural manifest name"
+    },
+    {
+      "name": "event_type",
+      "type": {
+        "type": "enum",
+        "name": "ACCEventType",
+        "symbols": [
+          "ANALYSIS_STARTED",
+          "ANALYSIS_COMPLETED",
+          "GRAPH_BUILT",
+          "VIOLATION_DETECTED",
+          "CYCLE_DETECTED",
+          "LAYERING_VIOLATION",
+          "COUPLING_ALERT",
+          "MODULE_ANALYZED"
+        ]
+      },
+      "doc": "Type of ACC event"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "logicalType": "timestamp-millis",
+      "doc": "Event timestamp (epoch milliseconds)"
+    },
+    {
+      "name": "module_path",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Module file path"
+    },
+    {
+      "name": "module_name",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Module name (extracted from path)"
+    },
+    {
+      "name": "violation_type",
+      "type": ["null", {
+        "type": "enum",
+        "name": "ACCViolationType",
+        "symbols": [
+          "FORBIDDEN_DEPENDENCY",
+          "LAYER_VIOLATION",
+          "CIRCULAR_DEPENDENCY",
+          "HIGH_COUPLING",
+          "SIZE_VIOLATION",
+          "NAMING_VIOLATION"
+        ]
+      }],
+      "default": null,
+      "doc": "Type of violation detected"
+    },
+    {
+      "name": "violation_severity",
+      "type": ["null", {
+        "type": "enum",
+        "name": "ACCViolationSeverity",
+        "symbols": ["BLOCKING", "WARNING", "INFO"]
+      }],
+      "default": null,
+      "doc": "Severity of violation"
+    },
+    {
+      "name": "violation_message",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Detailed violation message"
+    },
+    {
+      "name": "rule_id",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Rule identifier that was violated"
+    },
+    {
+      "name": "source_module",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Source module in violation"
+    },
+    {
+      "name": "target_module",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Target module in violation"
+    },
+    {
+      "name": "cycle_modules",
+      "type": ["null", {
+        "type": "array",
+        "items": "string"
+      }],
+      "default": null,
+      "doc": "Modules involved in circular dependency"
+    },
+    {
+      "name": "coupling_score",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Coupling metric score (0.0-1.0)"
+    },
+    {
+      "name": "total_modules",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Total modules analyzed"
+    },
+    {
+      "name": "total_dependencies",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Total dependencies found"
+    },
+    {
+      "name": "total_violations",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Total violations detected"
+    },
+    {
+      "name": "blocking_violations",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Number of BLOCKING violations"
+    },
+    {
+      "name": "metadata",
+      "type": ["null", {
+        "type": "map",
+        "values": "string"
+      }],
+      "default": null,
+      "doc": "Additional event metadata"
+    },
+    {
+      "name": "trace_id",
+      "type": "string",
+      "doc": "OpenTelemetry trace ID (hex string)"
+    },
+    {
+      "name": "span_id",
+      "type": "string",
+      "doc": "OpenTelemetry span ID (hex string)"
+    },
+    {
+      "name": "traceparent",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "W3C Trace Context traceparent header"
+    }
+  ]
+}

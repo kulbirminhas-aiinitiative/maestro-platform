@@ -1,0 +1,169 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://maestro-platform.com/schemas/execution_manifest.schema.json",
+  "title": "Execution Manifest Schema",
+  "description": "Schema for DDE (Dependency-Driven Execution) manifests that define iteration execution plans",
+  "type": "object",
+  "required": ["iteration_id", "timestamp", "project", "nodes"],
+  "properties": {
+    "iteration_id": {
+      "type": "string",
+      "pattern": "^Iter-\\d{8}-\\d{4}-\\d{3}$",
+      "description": "Unique iteration identifier in format: Iter-YYYYMMDD-HHMM-###",
+      "examples": ["Iter-20251012-1430-001"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when manifest was created"
+    },
+    "project": {
+      "type": "string",
+      "description": "Name of the project this iteration belongs to",
+      "examples": ["DogMarketplace", "AuthService", "PaymentGateway"]
+    },
+    "constraints": {
+      "type": "object",
+      "description": "Global constraints for this iteration",
+      "properties": {
+        "security_standard": {
+          "type": "string",
+          "enum": ["OWASP-L1", "OWASP-L2", "OWASP-L3", "PCI-DSS", "SOC2"],
+          "description": "Security compliance standard"
+        },
+        "library_policy": {
+          "type": "string",
+          "enum": ["InternalOnly", "ApprovedExternal", "AnyPublic"],
+          "description": "Policy for library usage"
+        },
+        "runtime": {
+          "type": "string",
+          "description": "Runtime environment specification",
+          "examples": ["Python3.11", "Node18", "Go1.21"]
+        },
+        "max_duration_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum allowed duration for iteration execution"
+        }
+      }
+    },
+    "policies": {
+      "type": "array",
+      "description": "Quality gate policies for this iteration",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Policy identifier or rule expression",
+            "examples": ["coverage >= 70%", "no_secrets", "lint_pass"]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["BLOCKING", "WARNING", "INFO"],
+            "description": "Severity level for policy violations"
+          },
+          "scope": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Node types this policy applies to",
+            "examples": [["impl", "integration"]]
+          }
+        }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "description": "Execution nodes in this iteration",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "capability"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z]{2,4}\\.[A-Za-z0-9_]+$",
+            "description": "Node identifier with prefix (IF=Interface, FE=Frontend, BE=Backend, DB=Database, QA=QualityAssurance)",
+            "examples": ["IF.AuthAPI", "BE.UserService", "FE.LoginPage"]
+          },
+          "type": {
+            "type": "string",
+            "enum": ["interface", "impl", "integration", "test", "deployment"],
+            "description": "Node type - interface nodes execute first"
+          },
+          "capability": {
+            "type": "string",
+            "description": "Required capability for this node in hierarchy format",
+            "examples": ["Architecture:APIDesign", "Backend:Python:FastAPI", "Web:React:Hooks"]
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "IDs of nodes this node depends on",
+            "examples": [["IF.AuthAPI", "BE.UserService"]]
+          },
+          "outputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Expected output artifacts",
+            "examples": [["openapi.yaml", "swagger.json"]]
+          },
+          "gates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Quality gates that must pass before node completion",
+            "examples": [["openapi-lint", "semver-check", "breaking-change-check"]]
+          },
+          "estimated_effort": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Estimated effort in minutes"
+          },
+          "contract_version": {
+            "type": "string",
+            "pattern": "^v\\d+\\.\\d+(\\.\\d+)?$",
+            "description": "Contract version for interface nodes",
+            "examples": ["v1.0", "v2.1.3"]
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional node-specific metadata",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional iteration metadata",
+      "properties": {
+        "author": {
+          "type": "string",
+          "description": "Author of this manifest"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of iteration goals"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tags for categorization"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

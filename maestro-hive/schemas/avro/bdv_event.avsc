@@ -1,0 +1,156 @@
+{
+  "type": "record",
+  "name": "BDVEvent",
+  "namespace": "com.maestro.trimodal.bdv",
+  "doc": "BDV test scenario event for Tri-Modal Mission Control",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "Unique event identifier (UUID)"
+    },
+    {
+      "name": "iteration_id",
+      "type": "string",
+      "doc": "Test iteration identifier"
+    },
+    {
+      "name": "event_type",
+      "type": {
+        "type": "enum",
+        "name": "BDVEventType",
+        "symbols": [
+          "TEST_RUN_STARTED",
+          "TEST_RUN_COMPLETED",
+          "FEATURE_STARTED",
+          "FEATURE_COMPLETED",
+          "SCENARIO_STARTED",
+          "SCENARIO_PASSED",
+          "SCENARIO_FAILED",
+          "SCENARIO_SKIPPED",
+          "STEP_EXECUTED",
+          "CONTRACT_TAG_DETECTED",
+          "FLAKE_DETECTED"
+        ]
+      },
+      "doc": "Type of BDV event"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "logicalType": "timestamp-millis",
+      "doc": "Event timestamp (epoch milliseconds)"
+    },
+    {
+      "name": "feature_path",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Path to feature file"
+    },
+    {
+      "name": "feature_name",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Feature name"
+    },
+    {
+      "name": "scenario_id",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Scenario identifier"
+    },
+    {
+      "name": "scenario_name",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Scenario name"
+    },
+    {
+      "name": "scenario_tags",
+      "type": ["null", {
+        "type": "array",
+        "items": "string"
+      }],
+      "default": null,
+      "doc": "Scenario tags (including @contract tags)"
+    },
+    {
+      "name": "scenario_status",
+      "type": ["null", {
+        "type": "enum",
+        "name": "BDVScenarioStatus",
+        "symbols": ["PASSED", "FAILED", "SKIPPED", "FLAKY"]
+      }],
+      "default": null,
+      "doc": "Scenario execution status"
+    },
+    {
+      "name": "step_text",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Step text (for STEP_EXECUTED events)"
+    },
+    {
+      "name": "step_result",
+      "type": ["null", {
+        "type": "enum",
+        "name": "BDVStepResult",
+        "symbols": ["PASSED", "FAILED", "UNDEFINED", "PENDING"]
+      }],
+      "default": null,
+      "doc": "Step execution result"
+    },
+    {
+      "name": "contract_tags",
+      "type": ["null", {
+        "type": "array",
+        "items": "string"
+      }],
+      "default": null,
+      "doc": "Extracted contract tags (@contract:InterfaceName:version)"
+    },
+    {
+      "name": "error_message",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Error message (for failed scenarios/steps)"
+    },
+    {
+      "name": "flake_rate",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Flake rate (0.0-1.0) for FLAKE_DETECTED events"
+    },
+    {
+      "name": "duration_ms",
+      "type": ["null", "long"],
+      "default": null,
+      "doc": "Execution duration in milliseconds"
+    },
+    {
+      "name": "metadata",
+      "type": ["null", {
+        "type": "map",
+        "values": "string"
+      }],
+      "default": null,
+      "doc": "Additional event metadata"
+    },
+    {
+      "name": "trace_id",
+      "type": "string",
+      "doc": "OpenTelemetry trace ID (hex string)"
+    },
+    {
+      "name": "span_id",
+      "type": "string",
+      "doc": "OpenTelemetry span ID (hex string)"
+    },
+    {
+      "name": "traceparent",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "W3C Trace Context traceparent header"
+    }
+  ]
+}

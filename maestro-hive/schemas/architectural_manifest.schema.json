@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://maestro-platform.com/schemas/architectural_manifest.schema.json",
+  "title": "Architectural Manifest Schema",
+  "description": "Schema for ACC (Architectural Conformance Checking) manifests that define architectural rules and constraints",
+  "type": "object",
+  "required": ["project", "version", "components", "rules"],
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "Name of the project",
+      "examples": ["DogMarketplace", "AuthService"]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Version of the architectural manifest",
+      "examples": ["1.0.0", "2.1.0"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the architecture"
+    },
+    "components": {
+      "type": "array",
+      "description": "Architectural components (layers, modules, etc.)",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "paths"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Component name",
+            "examples": ["Presentation", "BusinessLogic", "DataAccess"]
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "File paths that belong to this component",
+            "examples": [["frontend/src/components/", "frontend/src/pages/"]]
+          },
+          "description": {
+            "type": "string",
+            "description": "Component description"
+          },
+          "technology": {
+            "type": "string",
+            "description": "Primary technology used",
+            "examples": ["React", "FastAPI", "PostgreSQL"]
+          }
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "description": "Architectural conformance rules",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "description", "rule", "severity"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^R\\d+$",
+            "description": "Unique rule identifier",
+            "examples": ["R1", "R2", "R10"]
+          },
+          "type": {
+            "type": "string",
+            "enum": ["dependency", "coupling", "cycles", "naming", "size", "layering"],
+            "description": "Type of architectural rule"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable rule description"
+          },
+          "rule": {
+            "type": "string",
+            "description": "Rule expression (DSL or natural language)",
+            "examples": [
+              "Presentation: CAN_CALL(BusinessLogic)",
+              "BusinessLogic: MUST_NOT_CALL(Presentation)",
+              "BusinessLogic: COUPLING < 10"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["BLOCKING", "WARNING", "INFO"],
+            "description": "Severity level for violations"
+          },
+          "applicable_to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Components this rule applies to"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional rule metadata",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "tech": {
+      "type": "object",
+      "description": "Technology and analysis configuration",
+      "properties": {
+        "language": {
+          "type": "string",
+          "enum": ["python", "javascript", "typescript", "java", "go", "csharp"],
+          "description": "Primary programming language"
+        },
+        "analyzers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["import_graph", "ast", "dependency_graph", "call_graph"]
+          },
+          "description": "Static analysis tools to use"
+        }
+      }
+    },
+    "exclusions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Paths to exclude from analysis",
+      "examples": [["**/tests/", "**/migrations/", "**/__pycache__/"]]
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional manifest metadata",
+      "additionalProperties": true
+    }
+  }
+}
