@@ -1,0 +1,44 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "maestro-monitoring"
+version = "1.0.0"
+description = "Enterprise monitoring and observability for MAESTRO ecosystem"
+authors = [
+    {name = "MAESTRO Team", email = "team@maestro.ai"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+keywords = ["maestro", "monitoring", "observability", "prometheus", "opentelemetry"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "prometheus-client>=0.21.1",
+    "opentelemetry-api>=1.29.0",
+    "opentelemetry-sdk>=1.29.0",
+    "opentelemetry-instrumentation>=0.50b0",
+    "opentelemetry-exporter-otlp>=1.29.0",
+    "opentelemetry-instrumentation-fastapi>=0.50b0",
+    "opentelemetry-instrumentation-sqlalchemy>=0.50b0",
+    "opentelemetry-instrumentation-redis>=0.50b0",
+    "opentelemetry-instrumentation-httpx>=0.50b0",
+    "psutil>=5.9.0",
+    "pydantic>=2.11.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.2",
+    "pytest-asyncio>=0.24.0",
+]
+
+[tool.poetry]
+packages = [{include = "maestro_monitoring", from = "src"}]

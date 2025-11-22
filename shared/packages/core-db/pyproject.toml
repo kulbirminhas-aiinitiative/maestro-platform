@@ -1,0 +1,42 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "maestro-core-db"
+version = "1.0.0"
+description = "Enterprise database abstraction layer for MAESTRO ecosystem"
+authors = [
+    {name = "MAESTRO Team", email = "team@maestro.ai"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+keywords = ["maestro", "database", "sqlalchemy", "orm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "sqlalchemy>=2.0.43",
+    "alembic>=1.16.5",
+    "asyncpg>=0.30.0",
+    "aiomysql>=0.2.0",
+    "aiosqlite>=0.19.0",
+    "redis>=5.3.1",
+    "psycopg2-binary>=2.9.0",
+    "sqlalchemy-utils>=0.41.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.2",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.3.0",
+]
+
+[tool.poetry]
+packages = [{include = "maestro_core_db", from = "src"}]

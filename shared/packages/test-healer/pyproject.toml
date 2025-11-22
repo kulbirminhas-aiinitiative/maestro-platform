@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "maestro-test-healer"
+version = "1.0.0"
+description = "Maestro Platform - Autonomous Test Healing System with 7 Healing Strategies"
+authors = ["Maestro Platform Team"]
+readme = "README.md"
+packages = [{include = "maestro_test_healer"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "maestro-test-result-aggregator"
+version = "1.0.0"
+description = "Maestro Platform - Test Result Aggregation and Analytics"
+authors = ["Maestro Platform Team <platform@example.com>"]
+readme = "README.md"
+packages = [{include = "maestro_test_result_aggregator"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pandas = {version = ">=2.0.0", optional = true}
+numpy = {version = ">=1.24.0", optional = true}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.0"
+
+[tool.poetry.extras]
+analytics = ["pandas", "numpy"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,71 @@
+# Pre-commit hooks for Claude Team SDK
+# See https://pre-commit.com for more information
+
+repos:
+  # Standard pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=1000']  # Prevent files >1MB
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: check-case-conflict
+
+  # Python formatting with Black
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+        args: [--line-length=100]
+        language_version: python3
+
+  # Python import sorting with isort
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.0
+    hooks:
+      - id: isort
+        args: [--profile=black, --line-length=100]
+
+  # Python linting with flake8
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.0
+    hooks:
+      - id: flake8
+        args: [
+          --max-line-length=100,
+          --exclude=_legacy,_experiments,.venv,venv,__pycache__
+        ]
+
+  # Custom validation hooks
+  - repo: local
+    hooks:
+      # Block imports from _legacy or _experiments
+      - id: block-legacy-imports
+        name: Block imports from _legacy or _experiments
+        entry: python scripts/check_legacy_imports.py
+        language: system
+        files: \.py$
+        pass_filenames: true
+
+      # Check for hardcoded URLs (warning only)
+      - id: check-hardcoded-urls
+        name: Check for hardcoded URLs
+        entry: python scripts/detect_hardcoded_urls.py
+        language: system
+        files: \.py$
+        pass_filenames: false
+        # Note: This will show warnings but won't block commits
+        # Use --strict in CI/CD to enforce
+
+      # Validate port allocation
+      - id: validate-ports
+        name: Validate port allocation
+        entry: python scripts/validate_port_allocation.py
+        language: system
+        files: config/service_ports\.yaml$
+        pass_filenames: false

@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "maestro-test-adapters"
+version = "1.0.0"
+description = "Maestro Platform - Test Framework Adapters (Selenium, Playwright, Pytest, Jest, Cucumber)"
+authors = ["Maestro Platform Team <platform@example.com>"]
+readme = "README.md"
+packages = [{include = "maestro_test_adapters"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+selenium = {version = ">=4.0.0", optional = true}
+playwright = {version = ">=1.40.0", optional = true}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.0"
+
+[tool.poetry.extras]
+selenium = ["selenium"]
+playwright = ["playwright"]
+all = ["selenium", "playwright"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

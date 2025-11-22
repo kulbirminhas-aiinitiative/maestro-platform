@@ -1,0 +1,43 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "maestro-core-messaging"
+version = "1.0.0"
+description = "Enterprise messaging and event streaming for MAESTRO ecosystem"
+authors = [
+    {name = "MAESTRO Team", email = "team@maestro.ai"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+keywords = ["maestro", "messaging", "kafka", "rabbitmq", "nats"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "kafka-python-ng>=2.2.0",
+    "aiokafka>=0.9.0",
+    "redis>=5.3.1",
+    "aio-pika>=9.3.0",
+    "nats-py>=2.5.0",
+    "pydantic>=2.11.9",
+    "tenacity>=9.0.0",
+    "prometheus-client>=0.21.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.2",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.3.0",
+    "testcontainers>=3.7.0",
+]
+
+[tool.poetry]
+packages = [{include = "maestro_core_messaging", from = "src"}]

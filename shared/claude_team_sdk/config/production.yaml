@@ -1,0 +1,57 @@
+# Production Environment Configuration
+# Overrides default.yaml for production
+
+service:
+  environment: production
+
+# Production Database (must be set via environment variables)
+database:
+  url: ${DATABASE_URL:}  # Required in production
+  pool_size: 20
+  max_overflow: 40
+  echo: false
+
+# Production Redis
+redis:
+  url: ${REDIS_URL:}  # Required in production
+  max_connections: 50
+
+# Production API
+api:
+  timeout: 30
+
+# Monitoring
+monitoring:
+  logging:
+    level: INFO
+    format: json
+
+  tracing:
+    enabled: true
+
+# Security (strict in production)
+security:
+  jwt_secret: ${JWT_SECRET:}  # Required in production
+
+  cors:
+    enabled: true
+    origins: ${CORS_ORIGINS:}  # Explicit list required
+
+  rate_limit:
+    enabled: true
+    requests_per_minute: 100
+
+# Output
+output:
+  base_dir: /var/lib/claude_team_sdk/output
+  retention_days: 7
+  auto_cleanup: true
+
+# Resilience (stricter in production)
+resilience:
+  circuit_breaker:
+    failure_threshold: 3  # Fail faster
+    timeout: 30
+
+  retry:
+    max_retries: 2  # Fewer retries

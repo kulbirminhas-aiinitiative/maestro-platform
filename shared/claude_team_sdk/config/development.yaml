@@ -1,0 +1,35 @@
+# Development Environment Configuration
+# Overrides default.yaml for development
+
+service:
+  environment: development
+
+# Development Database
+database:
+  url: postgresql://postgres:postgres@localhost:5432/claude_team_sdk_dev
+  echo: true  # Show SQL queries
+
+# Development Redis
+redis:
+  url: redis://localhost:6379/1  # Use different DB than production
+
+# Development API
+api:
+  base_url: http://localhost:4000
+  timeout: 60  # Longer timeout for debugging
+
+# Monitoring
+monitoring:
+  logging:
+    level: DEBUG
+    format: text  # More readable during development
+
+# Security (relaxed for development)
+security:
+  cors:
+    origins: "*"  # Allow all origins
+
+# Output
+output:
+  base_dir: ./dev_output
+  auto_cleanup: false  # Keep outputs for debugging

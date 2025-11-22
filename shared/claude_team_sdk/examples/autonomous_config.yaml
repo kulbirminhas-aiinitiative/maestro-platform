@@ -1,0 +1,106 @@
+# Autonomous Discussion Configuration
+# Define your team discussion without coding!
+
+discussion:
+  agenda: "Plan the Q4 product roadmap and prioritize features"
+
+  rounds: 4  # Number of discussion iterations
+
+  target_outcome: "Agreed roadmap with prioritized features and timeline"
+
+  team:
+    - id: "product_lead"
+      role: "Product Lead"
+      expertise: "Product strategy, market analysis, user needs"
+
+    - id: "engineering_manager"
+      role: "Engineering Manager"
+      expertise: "Technical feasibility, team capacity, architecture"
+
+    - id: "designer"
+      role: "Lead Designer"
+      expertise: "UX/UI design, user research, design systems"
+
+    - id: "data_analyst"
+      role: "Data Analyst"
+      expertise: "User metrics, A/B testing, data-driven decisions"
+
+    - id: "customer_success"
+      role: "Customer Success Manager"
+      expertise: "Customer feedback, pain points, feature requests"
+
+---
+# Example 2: Medical Case Discussion
+# Uncomment to use this instead
+
+# discussion:
+#   agenda: "Discuss treatment options for complex patient case"
+#   rounds: 3
+#   target_outcome: "Consensus on diagnosis and treatment plan"
+#
+#   team:
+#     - id: "lead_physician"
+#       role: "Lead Physician"
+#       expertise: "Overall patient care, diagnosis, treatment coordination"
+#
+#     - id: "cardiologist"
+#       role: "Cardiologist"
+#       expertise: "Heart conditions, cardiac medications, interventions"
+#
+#     - id: "neurologist"
+#       role: "Neurologist"
+#       expertise: "Brain and nervous system, neurological symptoms"
+#
+#     - id: "pharmacist"
+#       role: "Clinical Pharmacist"
+#       expertise: "Drug interactions, dosing, medication safety"
+
+---
+# Example 3: Research Hypothesis Discussion
+
+# discussion:
+#   agenda: "Develop hypothesis for climate change impact study"
+#   rounds: 3
+#   target_outcome: "Clear research hypothesis and methodology"
+#
+#   team:
+#     - id: "climate_scientist"
+#       role: "Climate Scientist"
+#       expertise: "Climate modeling, atmospheric science, trends"
+#
+#     - id: "ecologist"
+#       role: "Ecologist"
+#       expertise: "Ecosystem impacts, biodiversity, adaptation"
+#
+#     - id: "statistician"
+#       role: "Statistician"
+#       expertise: "Data analysis, statistical methods, modeling"
+
+---
+# Example 4: Startup Strategy Session
+
+# discussion:
+#   agenda: "Define go-to-market strategy for B2B SaaS launch"
+#   rounds: 5
+#   target_outcome: "Complete GTM strategy with channels and timeline"
+#
+#   team:
+#     - id: "ceo"
+#       role: "CEO"
+#       expertise: "Vision, strategy, fundraising, partnerships"
+#
+#     - id: "cmo"
+#       role: "Chief Marketing Officer"
+#       expertise: "Marketing strategy, branding, demand generation"
+#
+#     - id: "sales_vp"
+#       role: "VP of Sales"
+#       expertise: "Sales strategy, enterprise deals, channel partnerships"
+#
+#     - id: "product_vp"
+#       role: "VP of Product"
+#       expertise: "Product positioning, features, customer needs"
+#
+#     - id: "cfo"
+#       role: "CFO"
+#       expertise: "Financial planning, unit economics, burn rate"

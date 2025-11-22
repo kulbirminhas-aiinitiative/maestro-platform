@@ -1,0 +1,408 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: maestro-utcp
+  labels:
+    name: maestro-utcp
+    environment: ${ENVIRONMENT}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workflow-engine-config
+  namespace: maestro-utcp
+data:
+  SERVICE_NAME: "workflow-engine"
+  SERVICE_PORT: "8001"
+  LOG_LEVEL: "INFO"
+  ENVIRONMENT: "${ENVIRONMENT}"
+  UTCP_ENABLED: "true"
+  AUTO_REGISTER: "true"
+  REGISTRY_URL: "http://utcp-registry-service:9000"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: workflow-engine-secrets
+  namespace: maestro-utcp
+type: Opaque
+stringData:
+  ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
+  REGISTRY_TOKEN: "${UTCP_REGISTRY_TOKEN}"
+  JWT_SECRET: "${JWT_SECRET}"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workflow-engine
+  namespace: maestro-utcp
+  labels:
+    app: workflow-engine
+    service: utcp
+    tier: backend
+spec:
+  replicas: ${REPLICAS:-2}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: workflow-engine
+  template:
+    metadata:
+      labels:
+        app: workflow-engine
+        service: utcp
+        version: "${VERSION}"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8001"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: utcp-service-account
+
+      initContainers:
+        # Wait for UTCP registry to be available
+        - name: wait-for-registry
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for UTCP registry..."
+              until nc -z utcp-registry-service 9000; do
+                echo "Registry not ready, waiting..."
+                sleep 2
+              done
+              echo "✅ Registry is ready"
+
+      containers:
+        - name: workflow-engine
+          image: ${DOCKER_REGISTRY}/${REPOSITORY}/workflow-engine:${VERSION}
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 8001
+              protocol: TCP
+            - name: metrics
+              containerPort: 8001
+              protocol: TCP
+
+          env:
+            - name: SERVICE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: workflow-engine-config
+                  key: SERVICE_NAME
+            - name: SERVICE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: workflow-engine-config
+                  key: SERVICE_PORT
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: workflow-engine-config
+                  key: LOG_LEVEL
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: workflow-engine-config
+                  key: ENVIRONMENT
+            - name: UTCP_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: workflow-engine-config
+                  key: UTCP_ENABLED
+            - name: AUTO_REGISTER
+              valueFrom:
+                configMapKeyRef:
+                  name: workflow-engine-config
+                  key: AUTO_REGISTER
+            - name: REGISTRY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: workflow-engine-config
+                  key: REGISTRY_URL
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: workflow-engine-secrets
+                  key: ANTHROPIC_API_KEY
+            - name: REGISTRY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: workflow-engine-secrets
+                  key: REGISTRY_TOKEN
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: workflow-engine-secrets
+                  key: JWT_SECRET
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 2
+            timeoutSeconds: 3
+            failureThreshold: 30
+
+          # Lifecycle hooks for UTCP registration
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    # Wait for service to be ready
+                    sleep 5
+
+                    # Register with UTCP registry
+                    curl -X POST ${REGISTRY_URL}/registry/services \
+                      -H "Content-Type: application/json" \
+                      -H "Authorization: Bearer ${REGISTRY_TOKEN}" \
+                      -d "{
+                        \"name\": \"${SERVICE_NAME}\",
+                        \"base_url\": \"http://${POD_IP}:${SERVICE_PORT}\",
+                        \"environment\": \"${ENVIRONMENT}\",
+                        \"version\": \"${VERSION}\",
+                        \"pod_name\": \"${POD_NAME}\",
+                        \"namespace\": \"${POD_NAMESPACE}\",
+                        \"tags\": [\"workflow\", \"utcp\", \"maestro\"]
+                      }"
+
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    # Unregister from UTCP registry
+                    curl -X DELETE ${REGISTRY_URL}/registry/services/${SERVICE_NAME} \
+                      -H "Authorization: Bearer ${REGISTRY_TOKEN}"
+
+                    # Graceful shutdown
+                    sleep 15
+
+      terminationGracePeriodSeconds: 30
+
+      affinity:
+        # Prefer to spread pods across nodes
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - workflow-engine
+                topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: workflow-engine
+  namespace: maestro-utcp
+  labels:
+    app: workflow-engine
+    service: utcp
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  type: LoadBalancer
+  selector:
+    app: workflow-engine
+  ports:
+    - name: http
+      port: 8001
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+      protocol: TCP
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: workflow-engine-headless
+  namespace: maestro-utcp
+  labels:
+    app: workflow-engine
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: workflow-engine
+  ports:
+    - name: http
+      port: 8001
+      targetPort: http
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: workflow-engine-hpa
+  namespace: maestro-utcp
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: workflow-engine
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+      selectPolicy: Max
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: workflow-engine-pdb
+  namespace: maestro-utcp
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: workflow-engine
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: workflow-engine-network-policy
+  namespace: maestro-utcp
+spec:
+  podSelector:
+    matchLabels:
+      app: workflow-engine
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from UTCP registry
+    - from:
+        - podSelector:
+            matchLabels:
+              app: utcp-registry
+      ports:
+        - protocol: TCP
+          port: 8001
+    # Allow from other UTCP services
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: maestro-utcp
+      ports:
+        - protocol: TCP
+          port: 8001
+    # Allow from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8001
+  egress:
+    # Allow to UTCP registry
+    - to:
+        - podSelector:
+            matchLabels:
+              app: utcp-registry
+      ports:
+        - protocol: TCP
+          port: 9000
+    # Allow to other services in namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: maestro-utcp
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow HTTPS (for external APIs)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443

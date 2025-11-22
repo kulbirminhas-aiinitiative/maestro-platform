@@ -1,0 +1,6 @@
+# Core dependencies
+claude-code-sdk>=0.0.25
+anyio>=4.0.0
+
+# Optional dependencies
+typing-extensions>=4.0.0

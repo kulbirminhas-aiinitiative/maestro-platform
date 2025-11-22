@@ -1,0 +1,435 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  release:
+    types: [ published ]
+
+env:
+  PYTHON_VERSION: "3.11"
+  POETRY_VERSION: "2.2.1"
+
+jobs:
+  # Job 1: Code Quality and Linting
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run black (code formatting)
+        run: poetry run black --check packages/
+
+      - name: Run isort (import sorting)
+        run: poetry run isort --check-only packages/
+
+      - name: Run ruff (linting)
+        run: poetry run ruff check packages/
+
+      - name: Run mypy (type checking)
+        run: poetry run mypy packages/
+
+  # Job 2: Security Scanning
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run safety (dependency security check)
+        run: poetry run safety check
+
+      - name: Run bandit (security linting)
+        run: poetry run bandit -r packages/ -f json -o bandit-report.json
+        continue-on-error: true
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+
+  # Job 3: Test Matrix
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+        package: [
+          "core-logging",
+          "core-api",
+          "core-config",
+          "core-auth",
+          "core-db",
+          "core-messaging",
+          "monitoring"
+        ]
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: poetry-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        run: |
+          poetry install
+          cd packages/${{ matrix.package }}
+          poetry install
+
+      - name: Run tests with coverage
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379
+        run: |
+          cd packages/${{ matrix.package }}
+          poetry run pytest tests/ -v --cov=src --cov-report=xml --cov-report=html
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: packages/${{ matrix.package }}/coverage.xml
+          flags: ${{ matrix.package }}
+          name: ${{ matrix.package }}-${{ matrix.python-version }}
+
+  # Job 4: Integration Tests
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [quality, test]
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: integration_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+      kafka:
+        image: confluentinc/cp-kafka:latest
+        env:
+          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        ports:
+          - 9092:9092
+
+      zookeeper:
+        image: confluentinc/cp-zookeeper:latest
+        env:
+          ZOOKEEPER_CLIENT_PORT: 2181
+          ZOOKEEPER_TICK_TIME: 2000
+        ports:
+          - 2181:2181
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+
+      - name: Install all packages
+        run: |
+          poetry install
+          for package in packages/*/; do
+            cd "$package"
+            poetry install
+            cd - > /dev/null
+          done
+
+      - name: Wait for services
+        run: |
+          sleep 30  # Give services time to start
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/integration_test
+          REDIS_URL: redis://localhost:6379
+          KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+        run: |
+          poetry run pytest tests/integration/ -v
+
+  # Job 5: Performance Tests
+  performance:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: [test]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run performance benchmarks
+        run: |
+          poetry run pytest tests/performance/ -v --benchmark-only --benchmark-json=benchmark.json
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-results
+          path: benchmark.json
+
+  # Job 6: Documentation
+  docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+
+      - name: Install dependencies
+        run: poetry install --with docs
+
+      - name: Build documentation
+        run: |
+          cd docs/
+          poetry run sphinx-build -b html . _build/html
+
+      - name: Upload documentation
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation
+          path: docs/_build/html
+
+  # Job 7: Package Building and Publishing
+  build:
+    name: Build Packages
+    runs-on: ubuntu-latest
+    needs: [quality, test, integration]
+    if: github.event_name == 'release'
+
+    strategy:
+      matrix:
+        package: [
+          "core-logging",
+          "core-api",
+          "core-config",
+          "core-auth",
+          "core-db",
+          "core-messaging",
+          "monitoring"
+        ]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+
+      - name: Build package
+        run: |
+          cd packages/${{ matrix.package }}
+          poetry build
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: packages-${{ matrix.package }}
+          path: packages/${{ matrix.package }}/dist/
+
+      - name: Publish to PyPI
+        if: github.event_name == 'release'
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          cd packages/${{ matrix.package }}
+          poetry publish
+
+  # Job 8: Security and Compliance
+  compliance:
+    name: Compliance Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Run SAST with CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: python
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
+      - name: License compliance check
+        run: |
+          pip install pip-licenses
+          pip-licenses --format=json --output-file=licenses.json
+
+      - name: Upload compliance reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: compliance-reports
+          path: |
+            licenses.json
+
+  # Job 9: Deployment (on release)
+  deploy:
+    name: Deploy Documentation
+    runs-on: ubuntu-latest
+    needs: [docs, build]
+    if: github.event_name == 'release'
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Download documentation
+        uses: actions/download-artifact@v3
+        with:
+          name: documentation
+          path: docs-build/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs-build/
+
+  # Job 10: Notification
+  notify:
+    name: Notify Team
+    runs-on: ubuntu-latest
+    needs: [quality, test, integration, performance, docs]
+    if: always()
+
+    steps:
+      - name: Notify on success
+        if: needs.test.result == 'success' && needs.integration.result == 'success'
+        run: |
+          echo "✅ All tests passed! Ready for deployment."
+
+      - name: Notify on failure
+        if: needs.test.result == 'failure' || needs.integration.result == 'failure'
+        run: |
+          echo "❌ Tests failed. Please check the logs."
+          exit 1

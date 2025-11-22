@@ -1,0 +1,87 @@
+# Service Port Registry
+# Prevents port conflicts and documents all service ports
+
+metadata:
+  project: claude_team_sdk
+  version: 1.0.0
+  port_range_min: 3000
+  port_range_max: 9999
+
+# Port Range Allocation
+port_ranges:
+  examples: [3000, 3999]
+  api_services: [4000, 4999]
+  databases: [5400, 5499]
+  cache: [6300, 6399]
+  monitoring: [9000, 9099]
+
+# Service Definitions
+services:
+  # Example Services
+  - name: example-frontend
+    port: 3000
+    category: examples
+    public: true
+    health_endpoint: /health
+    description: Example frontend application
+
+  - name: example-chat-frontend
+    port: 3002
+    category: examples
+    public: true
+    health_endpoint: /
+    description: Chat interface for examples
+
+  # API Services
+  - name: team-sdk-api
+    port: 4000
+    category: api_services
+    public: false
+    health_endpoint: /api/health
+    description: Main Team SDK API
+
+  - name: coordination-api
+    port: 4001
+    category: api_services
+    public: false
+    health_endpoint: /health
+    description: Agent coordination API
+
+  # Database Services
+  - name: postgres
+    port: 5432
+    category: databases
+    public: false
+    health_endpoint: tcp
+    description: PostgreSQL database
+
+  # Cache Services
+  - name: redis
+    port: 6379
+    category: cache
+    public: false
+    health_endpoint: tcp
+    description: Redis cache
+
+  # Monitoring Services
+  - name: prometheus
+    port: 9090
+    category: monitoring
+    public: false
+    health_endpoint: /-/healthy
+    description: Prometheus metrics
+
+  - name: grafana
+    port: 9091
+    category: monitoring
+    public: true
+    health_endpoint: /api/health
+    description: Grafana dashboards
+
+  # Example-Specific Services
+  - name: mlflow
+    port: 3500
+    category: examples
+    public: false
+    health_endpoint: /health
+    description: MLflow tracking server (Maestro ML example)

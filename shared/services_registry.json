@@ -1,0 +1,45 @@
+{
+  "services": {},
+  "port_allocations": {
+    "7927e636-ed4a-4637-863a-ce9ab683ac12": {
+      "service_id": "7927e636-ed4a-4637-863a-ce9ab683ac12",
+      "service_name": "maestro-ml-platform",
+      "project_path": "/home/ec2-user/projects/shared/claude_team_sdk/examples/sdlc_team/maestro_ml",
+      "allocated_ports": [
+        30500,
+        30501,
+        30502,
+        30503,
+        30504,
+        30505
+      ],
+      "allocated_at": "2025-10-04T14:08:06.184952",
+      "status": "allocated"
+    },
+    "01cefaf3-78bc-4f5b-bb5b-7845efb1180a": {
+      "service_id": "01cefaf3-78bc-4f5b-bb5b-7845efb1180a",
+      "service_name": "container-registry",
+      "project_path": "/home/ec2-user/projects/shared/claude_team_sdk/examples/sdlc_team/maestro_ml",
+      "allocated_ports": [
+        30506,
+        30507
+      ],
+      "allocated_at": "2025-10-04T14:30:02.802600",
+      "status": "allocated"
+    },
+    "7011a998-8d8f-462b-9b8a-1cc333911772": {
+      "service_id": "7011a998-8d8f-462b-9b8a-1cc333911772",
+      "service_name": "loki",
+      "project_path": "/home/ec2-user/projects/shared/claude_team_sdk/examples/sdlc_team/maestro_ml",
+      "allocated_ports": [
+        30508
+      ],
+      "allocated_at": "2025-10-04T14:32:22.976157",
+      "status": "allocated"
+    }
+  },
+  "metadata": {
+    "last_updated": "2025-10-04T14:32:22.976181",
+    "registry_version": "2.0"
+  }
+}

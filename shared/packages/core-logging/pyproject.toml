@@ -1,0 +1,44 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "maestro-core-logging"
+version = "1.0.0"
+description = "Enterprise-grade structured logging for MAESTRO ecosystem"
+authors = [
+    {name = "MAESTRO Team", email = "team@maestro.ai"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+keywords = ["maestro", "logging", "structlog", "opentelemetry"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "structlog>=24.4.0",
+    "opentelemetry-api>=1.29.0",
+    "opentelemetry-sdk>=1.29.0",
+    "opentelemetry-instrumentation-logging>=0.50b0",
+    "opentelemetry-exporter-otlp>=1.29.0",
+    "python-json-logger>=2.0.7",
+    "colorama>=0.4.6",
+    "rich>=13.9.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.2",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.3.0",
+    "black>=25.9.0",
+    "mypy>=1.18.2",
+]
+
+[tool.poetry]
+packages = [{include = "maestro_core_logging", from = "src"}]

@@ -1,0 +1,116 @@
+# Claude Team SDK - Default Configuration
+# This file contains default values that can be overridden by:
+# 1. config/development.yaml or config/production.yaml
+# 2. Environment variables
+# 3. .env file
+
+# Service Information
+service:
+  name: claude_team_sdk
+  version: 1.0.0
+  environment: ${ENVIRONMENT:development}
+
+# Database Configuration
+database:
+  url: ${DATABASE_URL:postgresql://postgres:postgres@localhost:5432/claude_team_sdk}
+  pool_size: ${DB_POOL_SIZE:5}
+  max_overflow: ${DB_MAX_OVERFLOW:10}
+  echo: ${DB_ECHO:false}
+
+# Redis Configuration
+redis:
+  url: ${REDIS_URL:redis://localhost:6379/0}
+  max_connections: ${REDIS_MAX_CONNECTIONS:10}
+  socket_timeout: ${REDIS_SOCKET_TIMEOUT:5}
+
+# API Configuration
+api:
+  base_url: ${API_BASE_URL:http://localhost:4000}
+  timeout: ${API_TIMEOUT:30}
+  max_retries: ${API_MAX_RETRIES:3}
+
+# Claude SDK Configuration
+claude:
+  api_key: ${ANTHROPIC_API_KEY:}
+  model: ${CLAUDE_MODEL:claude-sonnet-4.0}
+  max_tokens: ${CLAUDE_MAX_TOKENS:4096}
+  temperature: ${CLAUDE_TEMPERATURE:0.7}
+
+# Team SDK Configuration
+team:
+  max_agents: ${MAX_AGENTS:10}
+  coordination_timeout: ${COORDINATION_TIMEOUT:30}
+  agent_execution_timeout: ${AGENT_EXECUTION_TIMEOUT:300}
+  enable_mcp: ${ENABLE_MCP:true}
+
+# Resilience Patterns
+resilience:
+  # Circuit Breaker
+  circuit_breaker:
+    failure_threshold: ${CIRCUIT_BREAKER_FAILURE_THRESHOLD:5}
+    success_threshold: ${CIRCUIT_BREAKER_SUCCESS_THRESHOLD:2}
+    timeout: ${CIRCUIT_BREAKER_TIMEOUT:60}
+
+  # Retry Logic
+  retry:
+    max_retries: ${MAX_RETRIES:3}
+    initial_delay: ${INITIAL_RETRY_DELAY:1.0}
+    backoff_factor: ${RETRY_BACKOFF_FACTOR:2.0}
+    max_delay: ${MAX_RETRY_DELAY:60.0}
+
+  # Timeouts
+  timeout:
+    default: ${DEFAULT_TIMEOUT:30}
+    agent_execution: ${AGENT_EXECUTION_TIMEOUT:300}
+    coordination: ${COORDINATION_TIMEOUT:30}
+
+  # Bulkhead
+  bulkhead:
+    max_concurrent_agents: ${MAX_CONCURRENT_AGENTS:4}
+    max_concurrent_tasks: ${MAX_CONCURRENT_TASKS:10}
+
+# Monitoring & Observability
+monitoring:
+  metrics:
+    enabled: ${METRICS_ENABLED:true}
+    port: ${METRICS_PORT:9090}
+    path: ${METRICS_PATH:/metrics}
+
+  logging:
+    level: ${LOG_LEVEL:INFO}
+    format: ${LOG_FORMAT:json}
+    file: ${LOG_FILE:}
+
+  tracing:
+    enabled: ${TRACING_ENABLED:false}
+    endpoint: ${TRACING_ENDPOINT:}
+
+# Security
+security:
+  jwt_secret: ${JWT_SECRET:}
+  jwt_algorithm: ${JWT_ALGORITHM:HS256}
+  jwt_expiration: ${JWT_EXPIRATION:3600}
+
+  cors:
+    enabled: ${CORS_ENABLED:true}
+    origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:4200}
+
+  rate_limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    requests_per_minute: ${RATE_LIMIT_PER_MINUTE:100}
+
+# Output Configuration
+output:
+  base_dir: ${OUTPUT_BASE_DIR:/tmp/claude_team_sdk_output}
+  retention_days: ${OUTPUT_RETENTION_DAYS:7}
+  auto_cleanup: ${OUTPUT_AUTO_CLEANUP:true}
+
+# Example-Specific Settings
+examples:
+  sdlc:
+    output_dir: ${SDLC_OUTPUT_DIR:/tmp/claude_team_sdk_output/sdlc}
+    enable_code_generation: ${SDLC_ENABLE_CODEGEN:true}
+
+  maestro_ml:
+    mlflow_tracking_uri: ${MLFLOW_TRACKING_URI:http://localhost:5000}
+    grafana_url: ${GRAFANA_URL:http://localhost:3001}
