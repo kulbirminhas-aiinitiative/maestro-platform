@@ -942,7 +942,21 @@ Document your work clearly.
         for required in required_deliverables:
             name = required.get("name", "")
             artifacts = required.get("artifacts", [])
-            
+
+            # If no specific artifacts required, consider fulfilled if any files created
+            if not artifacts:
+                if files_created:
+                    fulfilled_count += 1
+                else:
+                    missing.append(name)
+                    issues.append({
+                        "type": "missing_deliverable",
+                        "severity": "high",
+                        "deliverable": name,
+                        "expected_artifacts": ["any files"]
+                    })
+                continue
+
             # Check if artifacts exist
             artifacts_found = []
             for artifact_pattern in artifacts:
@@ -952,7 +966,7 @@ Document your work clearly.
                     if pattern_name in created_file or artifact_pattern in created_file:
                         artifacts_found.append(created_file)
                         break
-            
+
             if artifacts_found:
                 fulfilled_count += 1
             else:
@@ -990,8 +1004,27 @@ Document your work clearly.
     ) -> float:
         """Calculate overall quality score"""
         scores = []
-        
+
         # Contract fulfillment score (40%)
+        scores.append(validation["score"] * 0.4)
+
+        # Completeness score (30%)
+        expected_categories = {"documentation", "code"}
+        found_categories = set(deliverables.keys())
+        completeness = len(expected_categories & found_categories) / len(expected_categories) if expected_categories else 0
+        scores.append(completeness * 0.3)
+
+        # File count score (20%)
+        file_score = min(len(files_created) / 5, 1.0)  # Expect at least 5 files
+        scores.append(file_score * 0.2)
+
+        # Issues penalty (10%)
+        issues = validation.get("issues", [])
+        issue_score = max(0, 1.0 - len(issues) * 0.2)
+        scores.append(issue_score * 0.1)
+
+        return sum(scores)
+
     async def _execute_via_gateway(self, prompt: str) -> tuple[List[str], Dict[str, List[str]], str]:
         """Execute via Execution Platform Gateway with persona-scoped routing.
         Mirrors fs_write tool results into local workspace to collect deliverables.
@@ -1030,25 +1063,6 @@ Document your work clearly.
                     files_created.append(str(file_path))
         deliverables = self._categorize_deliverables(files_created)
         return files_created, deliverables, "".join(ai_text)
-
-        scores.append(validation["score"] * 0.4)
-        
-        # Completeness score (30%)
-        expected_categories = {"documentation", "code"}
-        found_categories = set(deliverables.keys())
-        completeness = len(expected_categories & found_categories) / len(expected_categories)
-        scores.append(completeness * 0.3)
-        
-        # File count score (20%)
-        file_score = min(len(files_created) / 5, 1.0)  # Expect at least 5 files
-        scores.append(file_score * 0.2)
-        
-        # Issues penalty (10%)
-        issues = validation.get("issues", [])
-        issue_score = max(0, 1.0 - len(issues) * 0.2)
-        scores.append(issue_score * 0.1)
-        
-        return sum(scores)
 
 
 # =============================================================================
