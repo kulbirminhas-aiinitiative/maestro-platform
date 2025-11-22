@@ -1082,7 +1082,68 @@ class TeamExecutionEngineV2:
         logger.info(f"Quality: {execution_result.overall_quality_score:.0%}")
         logger.info(f"Parallelization: {execution_result.parallelization_achieved:.0%}")
         logger.info("="*80)
-        
+
+        return result
+
+    async def execute_jira_task(
+        self,
+        task_key: str,
+        constraints: Optional[Dict[str, Any]] = None,
+        update_jira: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Execute a JIRA task using AI-driven team composition.
+
+        This convenience method fetches the JIRA task, converts it to a requirement,
+        executes it, and optionally updates JIRA with the results.
+
+        Args:
+            task_key: JIRA task key (e.g., "MD-131")
+            constraints: Optional execution constraints
+            update_jira: Whether to update JIRA status and add comments
+
+        Returns:
+            Execution result dictionary
+        """
+        # Import adapter here to avoid circular imports
+        from jira_task_adapter import JiraTaskAdapter
+
+        logger.info(f"\n{'='*80}")
+        logger.info(f"🎫 JIRA TASK EXECUTION: {task_key}")
+        logger.info(f"{'='*80}\n")
+
+        # Create adapter
+        adapter = JiraTaskAdapter()
+
+        # Convert task to requirement
+        logger.info("📋 Converting JIRA task to requirement...")
+        requirement = await adapter.task_to_requirement(task_key)
+
+        # Update JIRA status to In Progress
+        if update_jira:
+            await adapter.update_task_status(task_key, 'inProgress')
+            logger.info(f"   Updated {task_key} status to In Progress")
+
+        # Merge constraints
+        merged_constraints = constraints or {}
+        merged_constraints['jira_task_key'] = task_key
+
+        # Execute
+        result = await self.execute(
+            requirement=requirement,
+            constraints=merged_constraints
+        )
+
+        # Post result to JIRA
+        if update_jira:
+            await adapter.add_execution_result_comment(task_key, result)
+            logger.info(f"   Posted execution result to {task_key}")
+
+            # Update status based on result
+            if result.get('success', False):
+                await adapter.update_task_status(task_key, 'done')
+                logger.info(f"   Updated {task_key} status to Done")
+
         return result
 
 
@@ -1093,46 +1154,72 @@ class TeamExecutionEngineV2:
 async def main():
     """CLI entry point"""
     import argparse
-    
+
     parser = argparse.ArgumentParser(
         description="Team Execution Engine V2 - AI-Driven, Blueprint-Based, Contract-First",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Execute with requirement string
+  python team_execution_v2.py --requirement "Build a REST API for user management"
+
+  # Execute a JIRA task
+  python team_execution_v2.py --jira-task MD-131
+
+  # Execute JIRA task with custom output directory
+  python team_execution_v2.py --jira-task MD-131 --output ./output --prefer-parallel
+        """
     )
-    
-    parser.add_argument("--requirement", required=True, help="Project requirement")
+
+    # Input options (mutually exclusive)
+    input_group = parser.add_mutually_exclusive_group(required=True)
+    input_group.add_argument("--requirement", help="Project requirement string")
+    input_group.add_argument("--jira-task", help="JIRA task key (e.g., MD-131)")
+
+    # Other options
     parser.add_argument("--output", help="Output directory")
     parser.add_argument("--session-id", help="Session ID")
     parser.add_argument("--prefer-parallel", action="store_true", help="Prefer parallel execution")
     parser.add_argument("--quality-threshold", type=float, default=0.80, help="Quality threshold (0-1)")
-    
+    parser.add_argument("--no-jira-update", action="store_true", help="Don't update JIRA status/comments")
+
     args = parser.parse_args()
-    
+
     # Configure logging
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s"
     )
-    
+
     # Create engine
     engine = TeamExecutionEngineV2(output_dir=args.output)
-    
+
     # Execute
     constraints = {
         "prefer_parallel": args.prefer_parallel,
         "quality_threshold": args.quality_threshold
     }
-    
-    result = await engine.execute(
-        requirement=args.requirement,
-        constraints=constraints,
-        session_id=args.session_id
-    )
-    
+
+    if args.jira_task:
+        # Execute JIRA task
+        result = await engine.execute_jira_task(
+            task_key=args.jira_task,
+            constraints=constraints,
+            update_jira=not args.no_jira_update
+        )
+    else:
+        # Execute requirement string
+        result = await engine.execute(
+            requirement=args.requirement,
+            constraints=constraints,
+            session_id=args.session_id
+        )
+
     # Print result
     print("\n" + "="*80)
     print("📊 EXECUTION RESULT")
     print("="*80)
-    print(json.dumps(result, indent=2))
+    print(json.dumps(result, indent=2, default=str))
     print("="*80)
 
 
