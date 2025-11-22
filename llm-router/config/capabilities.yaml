@@ -1,0 +1,26 @@
+providers:
+  claude_agent:
+    capabilities:
+      - text_generation
+      - streaming
+      - code_analysis
+      - tool_calling
+    max_context: 200000
+    cost_tier: premium
+
+  openai:
+    capabilities:
+      - text_generation
+      - streaming
+      - code_analysis
+      - tool_calling
+    max_context: 128000
+    cost_tier: medium
+
+  gemini:
+    capabilities:
+      - text_generation
+      - streaming
+      - multimodal
+    max_context: 1000000
+    cost_tier: low

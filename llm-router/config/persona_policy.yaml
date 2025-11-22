@@ -1,0 +1,83 @@
+personas:
+  code_assistant:
+    provider_preferences:
+      - claude_agent
+      - openai
+      - gemini
+    requires:
+      - text_generation
+      - streaming
+      - code_analysis
+    description: "AI coding assistant with code understanding"
+
+  chatbot:
+    provider_preferences:
+      - openai
+      - gemini
+      - claude_agent
+    requires:
+      - text_generation
+      - streaming
+    description: "General purpose conversational AI"
+
+  analyst:
+    provider_preferences:
+      - claude_agent
+      - openai
+    requires:
+      - text_generation
+      - streaming
+      - tool_calling
+    description: "Data and business analyst persona"
+
+  creative_writer:
+    provider_preferences:
+      - gemini
+      - claude_agent
+      - openai
+    requires:
+      - text_generation
+    description: "Creative content generation"
+
+  solution_architect:
+    provider_preferences:
+      - claude_agent
+      - openai
+      - gemini
+    requires:
+      - text_generation
+      - streaming
+      - tool_calling
+    description: "Solution architecture design and technical planning"
+
+  code_writer:
+    provider_preferences:
+      - claude_agent
+      - openai
+      - gemini
+    requires:
+      - text_generation
+      - streaming
+      - code_analysis
+    description: "Code generation and implementation specialist"
+
+  requirement_analyst:
+    provider_preferences:
+      - claude_agent
+      - openai
+    requires:
+      - text_generation
+      - streaming
+      - tool_calling
+    description: "Requirements gathering and analysis expert"
+
+  architect:
+    provider_preferences:
+      - claude_agent
+      - openai
+      - gemini
+    requires:
+      - text_generation
+      - streaming
+      - tool_calling
+    description: "System and solution architect for technical design"
