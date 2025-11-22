@@ -37,6 +37,9 @@ Workflow:
 import asyncio
 import sys
 import json
+import signal
+import threading
+import time
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Set
 from datetime import datetime
@@ -44,6 +47,39 @@ from dataclasses import dataclass, field, asdict
 from enum import Enum
 import logging
 import uuid
+
+# =============================================================================
+# PROGRESS INDICATOR
+# =============================================================================
+
+class ProgressIndicator:
+    """Thread-safe progress indicator for long-running operations."""
+
+    def __init__(self, message: str = "Processing", interval: float = 5.0):
+        self.message = message
+        self.interval = interval
+        self._stop_event = threading.Event()
+        self._thread = None
+        self._start_time = None
+
+    def _spinner_thread(self):
+        elapsed = 0
+        while not self._stop_event.wait(self.interval):
+            elapsed = time.time() - self._start_time
+            logging.info(f"   ⏳ {self.message}... ({elapsed:.0f}s elapsed)")
+
+    def __enter__(self):
+        self._start_time = time.time()
+        self._thread = threading.Thread(target=self._spinner_thread, daemon=True)
+        self._thread.start()
+        return self
+
+    def __exit__(self, *args):
+        self._stop_event.set()
+        if self._thread:
+            self._thread.join(timeout=1)
+        elapsed = time.time() - self._start_time
+        logging.info(f"   ✓ {self.message} completed ({elapsed:.1f}s)")
 
 # Add paths
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -297,12 +333,14 @@ Respond with ONLY the JSON, no other text."""
                 # Use Claude Code API Layer for analysis
                 client = ClaudeCLIClient()
 
-                # Query Claude (synchronous within async function is fine)
-                result = client.query(
-                    prompt=analysis_prompt,
-                    skip_permissions=True,
-                    timeout=300
-                )
+                # Query Claude with progress indicator
+                logger.info("   Querying Claude API (timeout: 300s)...")
+                with ProgressIndicator("AI requirement analysis", interval=10.0):
+                    result = client.query(
+                        prompt=analysis_prompt,
+                        skip_permissions=True,
+                        timeout=300
+                    )
 
                 if result.get('success'):
                     response_text = result.get('output', '')
@@ -318,6 +356,7 @@ Respond with ONLY the JSON, no other text."""
                     raise ValueError(f"Claude query failed: {result.get('error', 'Unknown error')}")
             else:
                 # Fallback: Heuristic-based classification (better than pure hardcoding)
+                logger.info("   Using fallback classification (Claude SDK not available)")
                 analysis_data = self._fallback_classification(requirement)
             
             # Build classification object
@@ -875,10 +914,18 @@ class TeamExecutionEngineV2:
         logger.info(f"📝 Requirement: {requirement[:100]}...")
         logger.info("="*80)
 
+        # Phase timing helper
+        phase_times = {}
+        def log_phase_time(phase_name: str, phase_start: datetime):
+            elapsed = (datetime.now() - phase_start).total_seconds()
+            phase_times[phase_name] = elapsed
+            logger.info(f"   ⏱️  Phase completed in {elapsed:.1f}s")
+
         # Step 0: Project-Level RAG (Template Package Recommendation)
         template_package = None
         if self.rag_client:
             logger.info("\n🔍 Step 0: Project-Level RAG (Template Package Discovery)")
+            step0_start = datetime.now()
             try:
                 template_package = await self.rag_client.get_recommended_package(
                     requirement=requirement,
@@ -887,33 +934,39 @@ class TeamExecutionEngineV2:
 
                 if template_package:
                     logger.info(f"  ✅ Template Package Recommended:")
-                    logger.info(f"     Package: {template_package.name}")
-                    logger.info(f"     Type: {template_package.match_type}")
+                    logger.info(f"     Package: {template_package.best_match_package_name}")
+                    logger.info(f"     Type: {template_package.recommendation_type}")
                     logger.info(f"     Confidence: {template_package.confidence:.0%}")
-                    logger.info(f"     Templates: {len(template_package.templates)}")
-                    if template_package.reasoning:
-                        logger.info(f"     Reasoning: {template_package.reasoning[:100]}...")
+                    logger.info(f"     Templates: {len(template_package.recommended_templates)}")
+                    if template_package.explanation:
+                        logger.info(f"     Reasoning: {template_package.explanation[:100]}...")
                 else:
                     logger.info("  ℹ️  No template package matches found")
             except Exception as e:
                 logger.warning(f"  ⚠️  Template package discovery failed: {e}")
                 template_package = None
+            log_phase_time("RAG Discovery", step0_start)
         else:
             logger.info("\n  ℹ️  Step 0 skipped: RAG client not available")
 
         # Step 1: AI analyzes requirement
         logger.info("\n📊 Step 1: AI Requirement Analysis")
+        step1_start = datetime.now()
         classification = await self.team_composer.analyze_requirement(requirement)
+        log_phase_time("Requirement Analysis", step1_start)
         
         # Step 2: AI recommends blueprint
         logger.info("\n🎯 Step 2: Blueprint Selection")
+        step2_start = datetime.now()
         blueprint_rec = await self.team_composer.recommend_blueprint(
             classification,
             constraints
         )
-        
+        log_phase_time("Blueprint Selection", step2_start)
+
         # Step 3: AI designs contracts
         logger.info("\n📝 Step 3: Contract Design")
+        step3_start = datetime.now()
 
         # ✅ FIXED: Extract previous phase contracts from constraints if present
         previous_phase_contracts = None
@@ -926,18 +979,22 @@ class TeamExecutionEngineV2:
             blueprint_rec,
             previous_phase_contracts  # ✅ NEW: Pass previous contracts
         )
-        
+        log_phase_time("Contract Design", step3_start)
+
         # Step 4: Create session
         logger.info("\n💾 Step 4: Session Creation")
+        step4_start = datetime.now()
         session = self.session_manager.create_session(
             requirement=requirement,
             output_dir=self.output_dir,
             session_id=session_id
         )
         logger.info(f"   Session ID: {session.session_id}")
-        
+        log_phase_time("Session Creation", step4_start)
+
         # Step 5: Execute team
         logger.info("\n🎬 Step 5: Team Execution")
+        step5_start = datetime.now()
         logger.info(f"   Team: {', '.join(blueprint_rec.personas)}")
         logger.info(f"   Pattern: {blueprint_rec.blueprint_name}")
         logger.info(f"   Contracts: {len(contracts)}")
@@ -972,15 +1029,26 @@ class TeamExecutionEngineV2:
         ]
         
         # Execute team
-        execution_result = await coordinator.execute_parallel(
-            requirement=requirement,
-            contracts=contracts_dict,
-            context=constraints or {}
-        )
-        
+        with ProgressIndicator("Team execution", interval=15.0):
+            execution_result = await coordinator.execute_parallel(
+                requirement=requirement,
+                contracts=contracts_dict,
+                context=constraints or {}
+            )
+        log_phase_time("Team Execution", step5_start)
+
         # Build result
         end_time = datetime.now()
         duration = (end_time - start_time).total_seconds()
+
+        # Phase timing summary
+        logger.info("\n" + "="*80)
+        logger.info("⏱️  PHASE TIMING SUMMARY")
+        logger.info("="*80)
+        for phase, elapsed in phase_times.items():
+            logger.info(f"   {phase}: {elapsed:.1f}s")
+        logger.info(f"   TOTAL: {duration:.1f}s")
+        logger.info("="*80)
         
         result = {
             "success": execution_result.success,
@@ -989,12 +1057,12 @@ class TeamExecutionEngineV2:
 
             # Template Package (RAG)
             "template_package": {
-                "package_id": template_package.package_id if template_package else None,
-                "package_name": template_package.name if template_package else None,
-                "match_type": template_package.match_type if template_package else None,
+                "package_id": template_package.best_match_package_id if template_package else None,
+                "package_name": template_package.best_match_package_name if template_package else None,
+                "match_type": template_package.recommendation_type if template_package else None,
                 "confidence": template_package.confidence if template_package else 0.0,
-                "reasoning": template_package.reasoning if template_package else "",
-                "templates_count": len(template_package.templates) if template_package else 0
+                "reasoning": template_package.explanation if template_package else "",
+                "templates_count": len(template_package.recommended_templates) if template_package else 0
             } if template_package else None,
 
             # Classification
