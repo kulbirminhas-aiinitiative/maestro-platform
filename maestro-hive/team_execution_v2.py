@@ -1253,11 +1253,30 @@ Examples:
 
     args = parser.parse_args()
 
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s"
-    )
+    # Configure logging with immediate flush
+    import sys
+
+    # Create handler that flushes immediately
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+
+    # Force immediate flush on every log
+    class FlushHandler(logging.StreamHandler):
+        def emit(self, record):
+            super().emit(record)
+            self.flush()
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    root_logger.handlers = [FlushHandler(sys.stderr)]
+    root_logger.handlers[0].setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+
+    # Make sure we see output immediately
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+
+    print("🚀 Team Execution Engine V2 starting...", flush=True)
 
     # Create engine
     engine = TeamExecutionEngineV2(output_dir=args.output)
