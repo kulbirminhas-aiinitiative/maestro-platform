@@ -91,11 +91,14 @@ from session_manager import SessionManager, SDLCSession
 
 # Try to import contracts from conductor
 try:
-    # Add conductor path (blueprints and contracts are now in conductor)
+    # Add conductor/contracts path directly (missing __init__.py in contracts)
     conductor_path = Path("/home/ec2-user/projects/conductor")
-    sys.path.insert(0, str(conductor_path))
+    contracts_integration_path = conductor_path / "contracts" / "integration"
 
-    from contracts.integration.contract_manager import ContractManager
+    if str(contracts_integration_path) not in sys.path:
+        sys.path.insert(0, str(contracts_integration_path))
+
+    from contract_manager import ContractManager
     CONTRACT_MANAGER_AVAILABLE = True
 except ImportError as e:
     CONTRACT_MANAGER_AVAILABLE = False
@@ -290,16 +293,36 @@ class TeamComposerAgent:
         Contract: Must return RequirementClassification with confidence > 0.7
         """
         logger.info("🤖 AI analyzing requirement...")
-        
+
+        # Build RAG context section if available
+        rag_section = ""
+        if context and "rag_context" in context:
+            rag = context["rag_context"]
+            templates_info = "\n".join([
+                f"  - {t['persona']}: {t['name']} ({t['reason']})"
+                for t in rag.get("templates", [])
+            ])
+            rag_section = f"""
+RAG ANALYSIS (from template matching):
+- Matched Package: {rag.get('package_name', 'None')}
+- Match Type: {rag.get('recommendation_type', 'unknown')}
+- RAG Confidence: {rag.get('confidence', 0):.0%}
+- Reasoning: {rag.get('explanation', 'N/A')[:200]}
+- Recommended Personas/Templates:
+{templates_info}
+
+Use this RAG analysis to inform your classification. The matched templates indicate what personas and work patterns are likely needed.
+"""
+
         analysis_prompt = f"""You are an expert software project analyst.
 
 Analyze this requirement and provide a DETAILED classification:
 
 REQUIREMENT:
 {requirement}
-
-CONTEXT (if any):
-{json.dumps(context or {}, indent=2)}
+{rag_section}
+ADDITIONAL CONTEXT:
+{json.dumps({k: v for k, v in (context or {}).items() if k != 'rag_context'}, indent=2)}
 
 Provide a JSON response with this EXACT structure:
 {{
@@ -314,17 +337,25 @@ Provide a JSON response with this EXACT structure:
     "confidence_score": <0.0 to 1.0>
 }}
 
-Analysis guidelines:
-- fully_parallel: 90%+ can run simultaneously (e.g., frontend + backend + docs)
-- partially_parallel: 50-90% parallel (e.g., backend API + frontend, but need architecture first)
-- mostly_sequential: 10-50% parallel (e.g., incremental feature with tight dependencies)
-- fully_sequential: <10% parallel (e.g., single-threaded algorithm optimization)
+CONFIDENCE SCORING:
+- 0.90-1.00: Clear requirement with RAG match
+- 0.80-0.89: Clear requirement or strong RAG signals
+- 0.70-0.79: Reasonable inference with some uncertainty
+- 0.60-0.69: Ambiguous, educated guess
+- Below 0.60: Cannot classify meaningfully
+
+PARALLELIZABILITY GUIDE:
+- fully_parallel: 90%+ simultaneous (frontend + backend + docs with contracts)
+- partially_parallel: 50-90% parallel (need architecture first, then parallel build)
+- mostly_sequential: 10-50% parallel (tight dependencies between components)
+- fully_sequential: <10% parallel (single-threaded work, debugging, etc.)
 
 Consider:
 - Can frontend and backend work simultaneously with contract/mock?
 - Are there clear interface boundaries?
 - What must be done in order?
 - What can run independently?
+- What do the RAG-matched templates suggest about parallelizability?
 
 Respond with ONLY the JSON, no other text."""
 
@@ -476,17 +507,22 @@ Respond with ONLY the JSON, no other text."""
                     best_match
                 )
                 
+                # BlueprintMetadata is a dataclass - use attribute access, not dict access
+                exec_mode = best_match.archetype.execution.mode.value if hasattr(best_match.archetype.execution.mode, 'value') else str(best_match.archetype.execution.mode)
+                coord_mode = best_match.archetype.coordination.mode.value if hasattr(best_match.archetype.coordination.mode, 'value') else str(best_match.archetype.coordination.mode)
+                scale_strategy = best_match.archetype.scaling.value if hasattr(best_match.archetype.scaling, 'value') else str(best_match.archetype.scaling)
+
                 recommendation = BlueprintRecommendation(
-                    blueprint_id=best_match["id"],
-                    blueprint_name=best_match["name"],
+                    blueprint_id=best_match.id,
+                    blueprint_name=best_match.name,
                     match_score=0.85,  # TODO: Implement proper scoring
                     personas=personas,
-                    rationale=f"Blueprint '{best_match['name']}' matches {classification.parallelizability.value} work pattern",
-                    alternatives=[m for m in matching_blueprints[1:3]],  # Top 2 alternatives
-                    execution_mode=best_match["archetype"]["execution"]["mode"],
-                    coordination_mode=best_match["archetype"]["coordination"]["mode"],
-                    scaling_strategy=best_match["archetype"]["scaling"],
-                    estimated_time_savings=0.4 if "parallel" in best_match["archetype"]["execution"]["mode"] else 0.0
+                    rationale=f"Blueprint '{best_match.name}' matches {classification.parallelizability.value} work pattern",
+                    alternatives=[m.id if hasattr(m, 'id') else str(m) for m in matching_blueprints[1:3]],  # Top 2 alternatives
+                    execution_mode=exec_mode,
+                    coordination_mode=coord_mode,
+                    scaling_strategy=scale_strategy,
+                    estimated_time_savings=0.4 if "parallel" in exec_mode.lower() else 0.0
                 )
                 
                 logger.info(f"  ✅ Selected: {recommendation.blueprint_name}")
@@ -502,7 +538,7 @@ Respond with ONLY the JSON, no other text."""
     def _extract_personas_for_requirement(
         self,
         classification: RequirementClassification,
-        blueprint: Dict[str, Any]
+        blueprint: Any  # BlueprintMetadata dataclass or dict
     ) -> List[str]:
         """Extract appropriate personas based on requirement and blueprint"""
         personas = []
@@ -952,7 +988,23 @@ class TeamExecutionEngineV2:
         # Step 1: AI analyzes requirement
         logger.info("\n📊 Step 1: AI Requirement Analysis")
         step1_start = datetime.now()
-        classification = await self.team_composer.analyze_requirement(requirement)
+
+        # Build context with RAG information for better classification
+        classification_context = constraints.copy() if constraints else {}
+        if template_package:
+            classification_context["rag_context"] = {
+                "package_name": template_package.best_match_package_name,
+                "recommendation_type": template_package.recommendation_type,
+                "confidence": template_package.confidence,
+                "explanation": template_package.explanation,
+                "templates": [
+                    {"persona": t.persona, "name": t.template_name, "reason": t.reason}
+                    for t in template_package.recommended_templates[:5]  # Top 5
+                ]
+            }
+            logger.info(f"   Including RAG context: {template_package.recommendation_type} ({template_package.confidence:.0%})")
+
+        classification = await self.team_composer.analyze_requirement(requirement, classification_context)
         log_phase_time("Requirement Analysis", step1_start)
         
         # Step 2: AI recommends blueprint

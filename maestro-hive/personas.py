@@ -23,13 +23,15 @@ logger = logging.getLogger(__name__)
 # Try to import maestro-engine persona system
 MAESTRO_ENGINE_AVAILABLE = False
 try:
-    # Add maestro-engine to path to access centralized personas
+    # Add maestro-engine/src to path to access centralized personas
     MAESTRO_ENGINE_PATH = Path("/home/ec2-user/projects/maestro-engine")
-    if str(MAESTRO_ENGINE_PATH) not in sys.path:
-        sys.path.insert(0, str(MAESTRO_ENGINE_PATH))
-    
-    # Import maestro-engine persona system
-    from src.personas import get_adapter, MaestroPersonaAdapter
+    MAESTRO_ENGINE_SRC = MAESTRO_ENGINE_PATH / "src"
+
+    if str(MAESTRO_ENGINE_SRC) not in sys.path:
+        sys.path.insert(0, str(MAESTRO_ENGINE_SRC))
+
+    # Import maestro-engine persona system (from src directory)
+    from personas import get_adapter, MaestroPersonaAdapter
     MAESTRO_ENGINE_AVAILABLE = True
     logger.info("✅ Using maestro-engine personas")
 except ImportError as e:
