@@ -47,6 +47,40 @@ from .exceptions import (
     InsufficientPermissionsException
 )
 
+# Enterprise SSO modules
+from .oidc import (
+    OIDCProvider,
+    OIDCProviderConfig,
+    OIDCProviderType,
+    OIDCProviderRegistry,
+    OIDCUserInfo,
+    create_azure_ad_provider,
+    create_google_provider,
+    create_okta_provider
+)
+from .ldap import (
+    LDAPProvider,
+    LDAPConfig,
+    LDAPUserInfo,
+    LDAPProviderRegistry,
+    create_active_directory_provider,
+    create_openldap_provider
+)
+from .scim import (
+    SCIMService,
+    SCIMUser,
+    SCIMGroupResource,
+    SCIMListResponse,
+    SCIMPatchRequest
+)
+from .provisioning import (
+    JITProvisioner,
+    ProvisioningConfig,
+    ProvisionedUser,
+    ProvisioningAction,
+    ProvisioningError
+)
+
 __version__ = "1.0.0"
 __all__ = [
     # Core classes
@@ -81,4 +115,36 @@ __all__ = [
     "InvalidCredentialsException",
     "TokenExpiredException",
     "InsufficientPermissionsException",
+
+    # Enterprise SSO - OIDC
+    "OIDCProvider",
+    "OIDCProviderConfig",
+    "OIDCProviderType",
+    "OIDCProviderRegistry",
+    "OIDCUserInfo",
+    "create_azure_ad_provider",
+    "create_google_provider",
+    "create_okta_provider",
+
+    # Enterprise SSO - LDAP
+    "LDAPProvider",
+    "LDAPConfig",
+    "LDAPUserInfo",
+    "LDAPProviderRegistry",
+    "create_active_directory_provider",
+    "create_openldap_provider",
+
+    # SCIM 2.0
+    "SCIMService",
+    "SCIMUser",
+    "SCIMGroupResource",
+    "SCIMListResponse",
+    "SCIMPatchRequest",
+
+    # JIT Provisioning
+    "JITProvisioner",
+    "ProvisioningConfig",
+    "ProvisionedUser",
+    "ProvisioningAction",
+    "ProvisioningError",
 ]
