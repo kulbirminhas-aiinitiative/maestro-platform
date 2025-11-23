@@ -15,10 +15,19 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 # JWT Configuration (from environment)
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "CHANGE_ME_IN_PRODUCTION")  # TODO: Use secrets manager
+_DEFAULT_SECRET = "CHANGE_ME_IN_PRODUCTION"
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", _DEFAULT_SECRET)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
 REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+
+# Validate secret key in production
+_ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
+if _ENVIRONMENT in ("production", "prod", "staging") and SECRET_KEY == _DEFAULT_SECRET:
+    raise RuntimeError(
+        "SECURITY ERROR: JWT_SECRET_KEY must be set in production! "
+        "Generate a secure secret: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+    )
 
 
 class TokenData(BaseModel):
