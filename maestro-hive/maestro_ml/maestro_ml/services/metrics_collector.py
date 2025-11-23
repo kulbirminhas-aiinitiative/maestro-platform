@@ -41,13 +41,25 @@ class MetricsCollector:
 
         try:
             # Get commit count in last 7 days
-            cmd = f"cd {repo_path} && git log --since='7 days ago' --oneline | wc -l"
-            commits = int(subprocess.check_output(cmd, shell=True).decode().strip())
+            result = subprocess.run(
+                ["git", "log", "--since=7 days ago", "--oneline"],
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            commits = len(result.stdout.strip().split('\n')) if result.stdout.strip() else 0
             metrics["commits_per_week"] = commits
 
             # Get unique contributors
-            cmd = f"cd {repo_path} && git log --since='30 days ago' --format='%an' | sort -u | wc -l"
-            contributors = int(subprocess.check_output(cmd, shell=True).decode().strip())
+            result = subprocess.run(
+                ["git", "log", "--since=30 days ago", "--format=%an"],
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            contributors = len(set(result.stdout.strip().split('\n'))) if result.stdout.strip() else 0
             metrics["unique_contributors"] = contributors
 
             # Save metrics

@@ -3,12 +3,17 @@ Multi-Agent Service - Main FastAPI Application
 Orchestrates teams of AI agents with different engagement modes
 """
 
+import os
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
+
+# CORS configuration from environment
+_CORS_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*")
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in _CORS_ORIGINS.split(",")]
 from .api.v2 import teams_router, chat_router
 
 # Configure logging
@@ -40,10 +45,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS middleware
+# CORS middleware - configure CORS_ALLOWED_ORIGINS env var in production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
