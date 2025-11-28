@@ -1,0 +1,16 @@
+{
+  "session_id": "sdlc_dcbab82e_20251122_121115",
+  "requirement": "Create a simple health check API endpoint",
+  "output_dir": "generated/test-trace",
+  "created_at": "2025-11-22T12:11:15.636417",
+  "last_updated": "2025-11-22T12:11:15.636418",
+  "completed_personas": [],
+  "files_registry": {},
+  "persona_outputs": {},
+  "metadata": {
+    "phase_history": [],
+    "current_phase": null,
+    "iteration_count": 0,
+    "workflow_mode": "sequential"
+  }
+}

@@ -1,0 +1,28 @@
+# Production HA configuration
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: maestro-postgres
+spec:
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      resources:
+        requests:
+          storage: 100Gi  # Larger storage for production
+      storageClassName: gp3
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: maestro-redis
+spec:
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      resources:
+        requests:
+          storage: 50Gi
+      storageClassName: gp3

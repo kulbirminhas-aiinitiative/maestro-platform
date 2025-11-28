@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  edge-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: edge-computing-gateway
+    restart: unless-stopped
+    ports:
+      - "${HEALTH_CHECK_PORT:-8000}:8000"
+      - "${METRICS_PORT:-9090}:9090"
+    environment:
+      # Device Configuration
+      - DEVICE_ID=${DEVICE_ID:-edge-gateway-001}
+      - DEVICE_NAME=${DEVICE_NAME:-Edge Gateway}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+
+      # Cloud Backend
+      - CLOUD_API_URL=${CLOUD_API_URL}
+      - CLOUD_API_KEY=${CLOUD_API_KEY}
+      - CONNECTION_TIMEOUT_SECONDS=${CONNECTION_TIMEOUT_SECONDS:-30}
+      - MAX_RETRY_ATTEMPTS=${MAX_RETRY_ATTEMPTS:-5}
+
+      # Processing
+      - ENABLE_LOCAL_ANALYTICS=${ENABLE_LOCAL_ANALYTICS:-true}
+      - AGGREGATION_WINDOW_SECONDS=${AGGREGATION_WINDOW_SECONDS:-300}
+      - ENABLE_COMPRESSION=${ENABLE_COMPRESSION:-true}
+
+      # Performance
+      - BATCH_SIZE=${BATCH_SIZE:-100}
+      - WORKER_THREADS=${WORKER_THREADS:-2}
+
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+
+      # Security
+      - ENABLE_ENCRYPTION_AT_REST=${ENABLE_ENCRYPTION_AT_REST:-true}
+      - ENABLE_ENCRYPTION_IN_TRANSIT=${ENABLE_ENCRYPTION_IN_TRANSIT:-true}
+
+    volumes:
+      # Persistent data storage
+      - edge-data:/app/data
+      - edge-logs:/app/logs
+
+      # Optional: Mount custom configuration
+      # - ./config:/app/config:ro
+
+    networks:
+      - edge-network
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Resource limits (adjust based on your hardware)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: Local monitoring with Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: edge-prometheus
+    restart: unless-stopped
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    networks:
+      - edge-network
+    profiles:
+      - monitoring
+
+  # Optional: Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: edge-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - edge-network
+    profiles:
+      - monitoring
+    depends_on:
+      - prometheus
+
+volumes:
+  edge-data:
+    driver: local
+  edge-logs:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+networks:
+  edge-network:
+    driver: bridge

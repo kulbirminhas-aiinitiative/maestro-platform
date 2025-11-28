@@ -1,0 +1,136 @@
+manifest_version: '1.0'
+name: refine-admin-panel
+description: Rapid development framework for building data-intensive admin panels and internal tools. Built on Refine with standardized patterns for CRUD operations, authentication, and access control.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: refine
+  tags:
+    - admin
+    - refine
+    - crud
+    - react
+    - typescript
+    - internal-tools
+    - b2b
+    - data-intensive
+  design_system: customizable
+  ui_complexity: advanced
+  use_cases:
+    - internal-tools
+    - admin-panels
+    - b2b-applications
+    - backoffice
+    - data-management
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-refine-admin
+  - variable: APP_TITLE
+    description: Application title displayed in UI
+    type: string
+    required: true
+    default: Admin Panel
+  - variable: UI_FRAMEWORK
+    description: UI framework to use with Refine
+    type: string
+    required: true
+    default: antd
+    choices:
+      - antd
+      - mui
+      - chakra-ui
+      - mantine
+  - variable: DATA_PROVIDER
+    description: Data provider type
+    type: string
+    required: true
+    default: rest
+    choices:
+      - rest
+      - graphql
+      - strapi
+      - supabase
+  - variable: AUTH_PROVIDER
+    description: Authentication provider
+    type: string
+    required: false
+    default: custom
+    choices:
+      - custom
+      - auth0
+      - cognito
+      - keycloak
+  - variable: API_BASE_URL
+    description: Backend API base URL
+    type: string
+    required: false
+    default: http://localhost:8000/api
+
+dependencies:
+  runtime:
+    - react@18.2.0
+    - react-dom@18.2.0
+    - '@refinedev/core@4.45.0'
+    - '@refinedev/react-router-v6@4.5.0'
+    - '@refinedev/antd@5.37.0'
+    - antd@5.12.0
+    - react-router-dom@6.20.0
+  build:
+    - typescript@5.0.0
+    - vite@5.0.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - npm run build
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - dist/**
+    - build/**
+    - .DS_Store
+
+features:
+  - "Automatic CRUD pages generation"
+  - "Built-in authentication and authorization"
+  - "Data provider abstraction (REST, GraphQL)"
+  - "Routing with React Router"
+  - "Form validation and management"
+  - "Notifications and feedback"
+  - "Internationalization support"
+  - "Access control and permissions"
+  - "Audit log capabilities"
+  - "Real-time data updates"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/API.md
+  examples:
+    - examples/basic-crud
+    - examples/custom-auth
+    - examples/access-control

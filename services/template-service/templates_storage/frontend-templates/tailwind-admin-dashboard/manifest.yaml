@@ -1,0 +1,113 @@
+manifest_version: '1.0'
+name: tailwind-admin-dashboard
+description: Professional admin dashboard UI built with Tailwind CSS and React. Features modern application shell, responsive sidebar navigation, data tables, forms, and comprehensive CRUD interfaces.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: react
+  tags:
+    - admin
+    - dashboard
+    - tailwindcss
+    - react
+    - typescript
+    - crud
+    - data-tables
+    - forms
+  design_system: tailwind-ui
+  ui_complexity: intermediate
+  use_cases:
+    - admin-panels
+    - back-office
+    - saas-applications
+    - internal-tools
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-admin-dashboard
+  - variable: APP_TITLE
+    description: Application title displayed in UI
+    type: string
+    required: true
+    default: Admin Dashboard
+  - variable: ENABLE_AUTH
+    description: Include authentication scaffolding
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_DARK_MODE
+    description: Include dark mode support
+    type: boolean
+    required: false
+    default: true
+  - variable: API_BASE_URL
+    description: Backend API base URL
+    type: string
+    required: false
+    default: http://localhost:8000/api
+
+dependencies:
+  runtime:
+    - react@18.2.0
+    - react-dom@18.2.0
+    - tailwindcss@3.4.0
+    - headlessui@1.7.0
+    - heroicons@2.0.0
+    - react-router-dom@6.20.0
+  build:
+    - typescript@5.0.0
+    - vite@5.0.0
+    - postcss@8.4.0
+    - autoprefixer@10.4.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - npm run build
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - dist/**
+    - build/**
+    - .DS_Store
+
+features:
+  - "Responsive sidebar navigation with collapsible menu"
+  - "Data tables with sorting, filtering, and pagination"
+  - "Form components with validation"
+  - "Modal dialogs and notifications"
+  - "User authentication UI (login, register, forgot password)"
+  - "Dark mode support"
+  - "Charts and data visualization components"
+  - "Profile management interface"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/API.md
+  examples:
+    - examples/user-management
+    - examples/product-catalog

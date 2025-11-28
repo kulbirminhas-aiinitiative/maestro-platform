@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "id": "nestjs-winston-logging-v1",
+    "name": "NestJS Production Logging with Winston",
+    "category": "logging",
+    "language": "typescript",
+    "framework": "nestjs",
+    "description": "Production-ready Winston logging with structured logs, log rotation, multiple transports, correlation IDs, and ELK/CloudWatch integration",
+    "tags": [
+      "logging",
+      "winston",
+      "structured-logs",
+      "log-rotation",
+      "monitoring",
+      "elk-stack"
+    ],
+    "quality_score": 89.0,
+    "security_score": 85.0,
+    "performance_score": 86.0,
+    "maintainability_score": 90.0,
+    "test_coverage": 83.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-04T20:00:00.000000",
+    "updated_at": "2025-10-04T20:00:00.000000",
+    "created_by": "template_enhancement_phase1",
+    "persona": "backend_developer"
+  },
+  "content": "// src/common/logging/winston-logger.service.ts\nimport { Injectable, LoggerService, Scope } from '@nestjs/common';\nimport * as winston from 'winston';\nimport * as DailyRotateFile from 'winston-daily-rotate-file';\nimport { ElasticsearchTransport } from 'winston-elasticsearch';\nimport { utilities as nestWinstonModuleUtilities } from 'nest-winston';\n\ninterface LogMetadata {\n  context?: string;\n  correlationId?: string;\n  userId?: string;\n  [key: string]: any;\n}\n\n@Injectable({ scope: Scope.TRANSIENT })\nexport class WinstonLoggerService implements LoggerService {\n  private logger: winston.Logger;\n  private context?: string;\n\n  constructor() {\n    this.logger = this.createLogger();\n  }\n\n  private createLogger(): winston.Logger {\n    const environment = process.env.NODE_ENV || 'development';\n    const isProduction = environment === 'production';\n\n    // Define log format\n    const logFormat = winston.format.combine(\n      winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),\n      winston.format.errors({ stack: true }),\n      winston.format.splat(),\n      winston.format.json(),\n      winston.format.printf(({ timestamp, level, message, context, correlationId, ...meta }) => {\n        let log = `${timestamp} [${level.toUpperCase()}]`;\n        \n        if (context) {\n          log += ` [${context}]`;\n        }\n        \n        if (correlationId) {\n          log += ` [${correlationId}]`;\n        }\n        \n        log += ` ${message}`;\n        \n        if (Object.keys(meta).length > 0) {\n          log += ` ${JSON.stringify(meta)}`;\n        }\n        \n        return log;\n      }),\n    );\n\n    // Console transport for development\n    const consoleTransport = new winston.transports.Console({\n      format: winston.format.combine(\n        winston.format.colorize({ all: true }),\n        winston.format.printf(({ timestamp, level, message, context, ...meta }) => {\n          return `${timestamp} ${level} [${context || 'App'}]: ${message} ${Object.keys(meta).length > 0 ? JSON.stringify(meta) : ''}`;\n        }),\n      ),\n    });\n\n    // File transport with daily rotation\n    const fileRotateTransport = new DailyRotateFile({\n      filename: 'logs/application-%DATE%.log',\n      datePattern: 'YYYY-MM-DD',\n      zippedArchive: true,\n      maxSize: '20m',\n      maxFiles: '14d',\n      format: logFormat,\n    });\n\n    // Error file transport\n    const errorFileTransport = new DailyRotateFile({\n      filename: 'logs/error-%DATE%.log',\n      datePattern: 'YYYY-MM-DD',\n      zippedArchive: true,\n      maxSize: '20m',\n      maxFiles: '30d',\n      level: 'error',\n      format: logFormat,\n    });\n\n    // Elasticsearch transport for production (optional)\n    const elasticsearchTransport = isProduction && process.env.ELASTICSEARCH_NODE\n      ? new ElasticsearchTransport({\n          level: 'info',\n          clientOpts: {\n            node: process.env.ELASTICSEARCH_NODE,\n            auth: {\n              username: process.env.ELASTICSEARCH_USERNAME || '',\n              password: process.env.ELASTICSEARCH_PASSWORD || '',\n            },\n          },\n          index: 'logs',\n        })\n      : null;\n\n    // Build transports array\n    const transports: winston.transport[] = [\n      consoleTransport,\n      fileRotateTransport,\n      errorFileTransport,\n    ];\n\n    if (elasticsearchTransport) {\n      transports.push(elasticsearchTransport);\n    }\n\n    return winston.createLogger({\n      level: process.env.LOG_LEVEL || 'info',\n      format: logFormat,\n      transports,\n      exitOnError: false,\n    });\n  }\n\n  setContext(context: string) {\n    this.context = context;\n  }\n\n  log(message: string, metadata?: LogMetadata) {\n    this.logger.info(message, { context: this.context, ...metadata });\n  }\n\n  error(message: string, trace?: string, metadata?: LogMetadata) {\n    this.logger.error(message, {\n      context: this.context,\n      stack: trace,\n      ...metadata,\n    });\n  }\n\n  warn(message: string, metadata?: LogMetadata) {\n    this.logger.warn(message, { context: this.context, ...metadata });\n  }\n\n  debug(message: string, metadata?: LogMetadata) {\n    this.logger.debug(message, { context: this.context, ...metadata });\n  }\n\n  verbose(message: string, metadata?: LogMetadata) {\n    this.logger.verbose(message, { context: this.context, ...metadata });\n  }\n\n  // Custom method with full metadata support\n  logWithMetadata(level: string, message: string, metadata: LogMetadata) {\n    this.logger.log(level, message, { context: this.context, ...metadata });\n  }\n}\n\n// src/common/logging/logging.module.ts\nimport { Module, Global } from '@nestjs/common';\nimport { WinstonLoggerService } from './winston-logger.service';\n\n@Global()\n@Module({\n  providers: [WinstonLoggerService],\n  exports: [WinstonLoggerService],\n})\nexport class LoggingModule {}\n\n// src/common/middleware/correlation-id.middleware.ts\nimport { Injectable, NestMiddleware } from '@nestjs/common';\nimport { Request, Response, NextFunction } from 'express';\nimport { v4 as uuidv4 } from 'uuid';\n\n@Injectable()\nexport class CorrelationIdMiddleware implements NestMiddleware {\n  use(req: Request, res: Response, next: NextFunction) {\n    const correlationId = (req.headers['x-correlation-id'] as string) || uuidv4();\n    \n    // Add correlation ID to request\n    (req as any).correlationId = correlationId;\n    \n    // Add correlation ID to response headers\n    res.setHeader('X-Correlation-Id', correlationId);\n    \n    next();\n  }\n}\n\n// src/common/decorators/log-execution.decorator.ts\nimport { WinstonLoggerService } from '../logging/winston-logger.service';\n\nexport function LogExecution() {\n  return function (\n    target: any,\n    propertyKey: string,\n    descriptor: PropertyDescriptor,\n  ) {\n    const originalMethod = descriptor.value;\n    const logger = new WinstonLoggerService();\n    logger.setContext(target.constructor.name);\n\n    descriptor.value = async function (...args: any[]) {\n      const start = Date.now();\n      \n      logger.debug(`Executing ${propertyKey}`, {\n        method: propertyKey,\n        args: JSON.stringify(args),\n      });\n\n      try {\n        const result = await originalMethod.apply(this, args);\n        const duration = Date.now() - start;\n        \n        logger.debug(`Completed ${propertyKey}`, {\n          method: propertyKey,\n          duration: `${duration}ms`,\n        });\n        \n        return result;\n      } catch (error) {\n        const duration = Date.now() - start;\n        \n        logger.error(`Failed ${propertyKey}`, error.stack, {\n          method: propertyKey,\n          duration: `${duration}ms`,\n          error: error.message,\n        });\n        \n        throw error;\n      }\n    };\n\n    return descriptor;\n  };\n}\n\n// Usage example in a service\nimport { Injectable } from '@nestjs/common';\nimport { WinstonLoggerService } from './common/logging/winston-logger.service';\nimport { LogExecution } from './common/decorators/log-execution.decorator';\n\n@Injectable()\nexport class UsersService {\n  constructor(private readonly logger: WinstonLoggerService) {\n    this.logger.setContext(UsersService.name);\n  }\n\n  @LogExecution()\n  async createUser(userData: any) {\n    this.logger.log('Creating new user', {\n      email: userData.email,\n      correlationId: userData.correlationId,\n    });\n\n    try {\n      // Business logic here\n      const user = { id: 1, ...userData };\n      \n      this.logger.log('User created successfully', {\n        userId: user.id,\n        correlationId: userData.correlationId,\n      });\n      \n      return user;\n    } catch (error) {\n      this.logger.error('Failed to create user', error.stack, {\n        email: userData.email,\n        error: error.message,\n        correlationId: userData.correlationId,\n      });\n      throw error;\n    }\n  }\n}\n\n// src/app.module.ts - Configuration\nimport { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';\nimport { LoggingModule } from './common/logging/logging.module';\nimport { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';\n\n@Module({\n  imports: [LoggingModule],\n})\nexport class AppModule implements NestModule {\n  configure(consumer: MiddlewareConsumer) {\n    consumer.apply(CorrelationIdMiddleware).forRoutes('*');\n  }\n}\n\n// src/main.ts - Bootstrap with Winston\nimport { NestFactory } from '@nestjs/core';\nimport { AppModule } from './app.module';\nimport { WinstonLoggerService } from './common/logging/winston-logger.service';\n\nasync function bootstrap() {\n  const app = await NestFactory.create(AppModule, {\n    bufferLogs: true,\n  });\n  \n  // Use custom Winston logger\n  const logger = app.get(WinstonLoggerService);\n  logger.setContext('Bootstrap');\n  app.useLogger(logger);\n  \n  await app.listen(3000);\n  logger.log('Application started on port 3000');\n}\nbootstrap();",
+  "variables": {
+    "LOG_LEVEL": "info",
+    "ELASTICSEARCH_NODE": "http://localhost:9200",
+    "LOG_RETENTION_DAYS": "14"
+  },
+  "dependencies": [
+    "@nestjs/common@^10.0.0",
+    "winston@^3.11.0",
+    "winston-daily-rotate-file@^4.7.1",
+    "winston-elasticsearch@^0.17.4",
+    "nest-winston@^1.9.4",
+    "uuid@^9.0.1"
+  ],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Production logging with Winston in NestJS",
+      "Structured logging with correlation IDs",
+      "Log rotation and archival",
+      "ELK stack integration"
+    ],
+    "team_composition": [
+      "backend_developer",
+      "devops_engineer"
+    ],
+    "estimated_time_minutes": 50,
+    "prerequisites": [
+      "NestJS project setup",
+      "Understanding of logging levels",
+      "Optional: Elasticsearch for log aggregation"
+    ],
+    "related_templates": [
+      "elk-stack-docker",
+      "nestjs-monitoring-prometheus",
+      "distributed-tracing-opentelemetry"
+    ]
+  }
+}

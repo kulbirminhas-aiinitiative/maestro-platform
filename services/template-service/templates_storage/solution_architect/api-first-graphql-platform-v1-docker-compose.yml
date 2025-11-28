@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  api_first_graphql_platform:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-first-graphql-platform-v1
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - API_PORT=${API_PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - REDIS_URL=${REDIS_URL}
+      - CACHE_TTL_SECONDS=${CACHE_TTL_SECONDS}
+      - MAX_QUERY_COMPLEXITY=${MAX_QUERY_COMPLEXITY}
+      - PAGE_SIZE_DEFAULT=${PAGE_SIZE_DEFAULT}
+      - PAGE_SIZE_MAX=${PAGE_SIZE_MAX}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - app-data:/app/data
+      - app-logs:/app/logs
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+volumes:
+  app-data:
+  app-logs:
+
+networks:
+  app-network:
+    driver: bridge

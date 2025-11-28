@@ -1,0 +1,64 @@
+# Resilience Configuration - ADR-006 Compliant
+# Circuit breakers, retry policies, timeouts, and fallback strategies
+
+circuit_breakers:
+  workflow_execution:
+    failure_threshold: 5
+    success_threshold: 2
+    timeout: 60
+    description: "Protects workflow execution engine"
+
+  task_execution:
+    failure_threshold: 3
+    success_threshold: 2
+    timeout: 30
+    description: "Protects individual task execution"
+
+  database:
+    failure_threshold: 5
+    success_threshold: 2
+    timeout: 60
+    description: "Protects database connections"
+
+retry_policies:
+  workflow:
+    max_retries: 3
+    initial_delay: 2.0
+    backoff_factor: 2.0
+    max_delay: 60.0
+    retryable_errors:
+      - "DatabaseError"
+      - "ConnectionError"
+      - "TimeoutError"
+
+  task:
+    max_retries: 2
+    initial_delay: 1.0
+    backoff_factor: 2.0
+    max_delay: 30.0
+    retryable_errors:
+      - "TransientError"
+      - "ResourceTemporarilyUnavailable"
+
+  database:
+    max_retries: 3
+    initial_delay: 1.0
+    backoff_factor: 2.0
+    max_delay: 30.0
+
+timeouts:
+  workflow_execution: 3600  # 1 hour max for full workflow
+  task_execution: 1800      # 30 minutes max per task
+  database_query: 10        # 10 seconds for DB queries
+  api_request: 30           # 30 seconds for API calls
+
+fallback_strategies:
+  workflow_state:
+    primary: "database"
+    fallback: "in_memory"
+    description: "Falls back to in-memory state if DB unavailable"
+
+  task_results:
+    primary: "cache"
+    fallback: "recompute"
+    description: "Recomputes if cached results unavailable"

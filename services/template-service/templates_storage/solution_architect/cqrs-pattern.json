@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "id": "cqrs-pattern-v1",
+    "name": "CQRS (Command Query Responsibility Segregation) Pattern",
+    "category": "backend",
+    "language": "python",
+    "framework": "fastapi",
+    "description": "CQRS pattern implementation with separate read and write models, optimized queries, eventual consistency, and materialized views for high-performance systems",
+    "tags": [
+      "cqrs",
+      "event-sourcing",
+      "read-write-separation",
+      "performance",
+      "scalability",
+      "architecture-pattern"
+    ],
+    "quality_score": 90.0,
+    "security_score": 82.0,
+    "performance_score": 93.0,
+    "maintainability_score": 87.0,
+    "test_coverage": 85.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T11:00:00.000000",
+    "updated_at": "2025-10-10T11:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "solution_architect"
+  },
+  "content": "from fastapi import FastAPI, Depends, HTTPException\nfrom pydantic import BaseModel\nfrom typing import List, Optional\nfrom datetime import datetime\nimport asyncio\n\n\"\"\"\nCQRS Pattern: Separate Read and Write Models\n\nBenefits:\n- Optimized read queries (denormalized views)\n- Optimized write operations (normalized data)\n- Independent scaling of reads and writes\n- Better performance under high read load\n- Flexible query models\n\nUse when:\n- Read/write ratio is heavily skewed\n- Complex reporting requirements\n- Need for multiple representations of data\n- High scalability requirements\n\"\"\"\n\napp = FastAPI()\n\n# ============================================================================= \n# WRITE MODEL (Commands)\n# =============================================================================\n\nclass CreateOrderCommand(BaseModel):\n    customer_id: str\n    items: List[dict]\n    shipping_address: dict\n\nclass UpdateOrderStatusCommand(BaseModel):\n    order_id: str\n    status: str\n\nclass OrderWriteModel:\n    \"\"\"Write model - Normalized, transactional\"\"\"\n    \n    @staticmethod\n    async def create_order(command: CreateOrderCommand) -> str:\n        # Write to normalized database\n        order_id = generate_id()\n        # Save to write database\n        # Publish domain event\n        await publish_event('OrderCreated', {'order_id': order_id, **command.dict()})\n        return order_id\n    \n    @staticmethod\n    async def update_order_status(command: UpdateOrderStatusCommand):\n        # Update write model\n        # Publish event\n        await publish_event('OrderStatusUpdated', command.dict())\n\n# =============================================================================\n# READ MODEL (Queries) - Denormalized, optimized for reads\n# =============================================================================\n\nclass OrderSummary(BaseModel):\n    order_id: str\n    customer_name: str\n    total_amount: float\n    status: str\n    created_at: datetime\n\nclass OrderDetails(BaseModel):\n    order_id: str\n    customer: dict\n    items: List[dict]\n    shipping: dict\n    payment: dict\n    status: str\n    timeline: List[dict]\n\nclass OrderReadModel:\n    \"\"\"Read model - Denormalized views, eventually consistent\"\"\"\n    \n    # In-memory cache (use Redis in production)\n    orders_summary: dict = {}\n    orders_detail: dict = {}\n    \n    @staticmethod\n    async def get_order_summary(order_id: str) -> Optional[OrderSummary]:\n        return OrderReadModel.orders_summary.get(order_id)\n    \n    @staticmethod\n    async def get_order_details(order_id: str) -> Optional[OrderDetails]:\n        return OrderReadModel.orders_detail.get(order_id)\n    \n    @staticmethod\n    async def search_orders(customer_id: Optional[str] = None,\n                           status: Optional[str] = None) -> List[OrderSummary]:\n        # Optimized query on read model\n        results = []\n        for order in OrderReadModel.orders_summary.values():\n            if customer_id and order.customer_id != customer_id:\n                continue\n            if status and order.status != status:\n                continue\n            results.append(order)\n        return results\n\n# =============================================================================\n# Event Handlers (Update Read Models)\n# =============================================================================\n\nasync def handle_order_created(event: dict):\n    \"\"\"Update read model when order created\"\"\"\n    order_id = event['order_id']\n    \n    # Build denormalized view\n    summary = OrderSummary(\n        order_id=order_id,\n        customer_name=event.get('customer_name', 'Unknown'),\n        total_amount=sum(item['price'] * item['quantity'] for item in event['items']),\n        status='CREATED',\n        created_at=datetime.now()\n    )\n    \n    OrderReadModel.orders_summary[order_id] = summary\n\nasync def handle_order_status_updated(event: dict):\n    \"\"\"Update read model when status changes\"\"\"\n    order_id = event['order_id']\n    if order_id in OrderReadModel.orders_summary:\n        OrderReadModel.orders_summary[order_id].status = event['status']\n\n# =============================================================================\n# API Endpoints\n# =============================================================================\n\n# WRITE endpoints (Commands)\n@app.post(\"/orders\")\nasync def create_order(command: CreateOrderCommand):\n    order_id = await OrderWriteModel.create_order(command)\n    return {\"order_id\": order_id}\n\n@app.put(\"/orders/{order_id}/status\")\nasync def update_status(order_id: str, status: str):\n    await OrderWriteModel.update_order_status(\n        UpdateOrderStatusCommand(order_id=order_id, status=status)\n    )\n    return {\"status\": \"updated\"}\n\n# READ endpoints (Queries)\n@app.get(\"/orders/{order_id}/summary\")\nasync def get_order_summary(order_id: str):\n    summary = await OrderReadModel.get_order_summary(order_id)\n    if not summary:\n        raise HTTPException(404, \"Order not found\")\n    return summary\n\n@app.get(\"/orders/search\")\nasync def search_orders(customer_id: Optional[str] = None, status: Optional[str] = None):\n    return await OrderReadModel.search_orders(customer_id, status)\n\n# Helper functions\ndef generate_id() -> str:\n    import uuid\n    return str(uuid.uuid4())\n\nasync def publish_event(event_type: str, data: dict):\n    # Publish to event bus (Kafka, RabbitMQ, etc.)\n    if event_type == 'OrderCreated':\n        await handle_order_created(data)\n    elif event_type == 'OrderStatusUpdated':\n        await handle_order_status_updated(data)\n",
+  "variables": {
+    "READ_DB_URL": "postgresql://localhost/orders_read",
+    "WRITE_DB_URL": "postgresql://localhost/orders_write"
+  },
+  "dependencies": [
+    "fastapi==0.109.0",
+    "pydantic==2.5.3",
+    "sqlalchemy==2.0.25"
+  ],
+  "workflow_context": {
+    "typical_use_cases": [
+      "High-read systems (90%+ reads)",
+      "Complex reporting requirements",
+      "Event-driven microservices",
+      "E-commerce order systems",
+      "Analytics dashboards"
+    ],
+    "team_composition": [
+      "solution_architect",
+      "backend_developer",
+      "database_specialist"
+    ],
+    "estimated_time_minutes": 180,
+    "prerequisites": [
+      "Event bus configured",
+      "Separate read/write databases",
+      "Understanding of eventual consistency"
+    ],
+    "related_templates": [
+      "event-driven-architecture",
+      "event-sourcing-pattern"
+    ]
+  }
+}

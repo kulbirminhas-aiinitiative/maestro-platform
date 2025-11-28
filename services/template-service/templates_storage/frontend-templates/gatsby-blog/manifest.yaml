@@ -1,0 +1,120 @@
+manifest_version: '1.0'
+name: gatsby-blog
+description: Performance-optimized blog built with Gatsby and React. Features GraphQL data layer, plugin ecosystem, and excellent SEO for content creators.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: gatsby
+  tags:
+    - blog
+    - gatsby
+    - react
+    - graphql
+    - static-site
+    - typescript
+    - content
+  design_system: custom
+  ui_complexity: intermediate
+  use_cases:
+    - blog
+    - content-site
+    - personal-blog
+    - magazine
+    - publication
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-gatsby-blog
+  - variable: BLOG_TITLE
+    description: Blog title
+    type: string
+    required: true
+    default: My Blog
+  - variable: AUTHOR_NAME
+    description: Author name
+    type: string
+    required: true
+    default: Your Name
+  - variable: CMS_PROVIDER
+    description: Content management system
+    type: string
+    required: false
+    default: contentful
+    choices:
+      - contentful
+      - sanity
+      - wordpress
+      - markdown
+  - variable: ENABLE_COMMENTS
+    description: Enable comments system
+    type: boolean
+    required: false
+    default: true
+
+dependencies:
+  runtime:
+    - react@18.2.0
+    - react-dom@18.2.0
+    - gatsby@5.12.0
+    - gatsby-plugin-image@3.12.0
+    - gatsby-plugin-sharp@5.12.0
+    - gatsby-transformer-sharp@5.12.0
+  build:
+    - typescript@5.0.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - npm run build
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - public/**
+    - .cache/**
+    - .DS_Store
+
+features:
+  - "GraphQL data layer"
+  - "Optimized image loading"
+  - "Blog post listings with pagination"
+  - "Category and tag filtering"
+  - "Author pages"
+  - "Related posts"
+  - "Search functionality"
+  - "RSS feed generation"
+  - "SEO with React Helmet"
+  - "Progressive Web App (PWA)"
+  - "Analytics integration"
+  - "Comments support"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/CMS_INTEGRATION.md
+  examples:
+    - examples/blog-post
+    - examples/custom-page
+    - examples/plugin-setup

@@ -1,0 +1,115 @@
+manifest_version: '1.0'
+name: blameless-postmortem-template
+description: Google SRE-style blameless postmortem template for incident analysis with timeline, root cause, impact assessment, and action items for continuous improvement.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: incident-management
+  sdlc_phase: operations
+  language: markdown
+  framework: sre
+  tags:
+    - postmortem
+    - incident-management
+    - sre
+    - blameless
+    - root-cause-analysis
+    - documentation
+  methodology: sre
+  complexity: simple
+  use_cases:
+    - incident-analysis
+    - root-cause-analysis
+    - process-improvement
+    - team-learning
+  license: MIT
+
+placeholders:
+  - variable: INCIDENT_ID
+    description: Unique incident identifier
+    type: string
+    required: true
+  - variable: INCIDENT_TITLE
+    description: Short incident title
+    type: string
+    required: true
+  - variable: INCIDENT_DATE
+    description: Date of incident
+    type: string
+    required: true
+  - variable: SEVERITY
+    description: Incident severity
+    type: string
+    required: true
+    default: sev2
+    choices: [sev1, sev2, sev3, sev4]
+  - variable: INCIDENT_COMMANDER
+    description: Incident commander name
+    type: string
+    required: true
+  - variable: DURATION
+    description: Total incident duration
+    type: string
+    required: true
+
+dependencies:
+  runtime: []
+  build: []
+
+hooks:
+  pre_generation: []
+  post_generation: []
+
+files:
+  include:
+    - postmortems/**/*.md
+  exclude:
+    - .git/**
+
+features:
+  - "Executive summary (one-liner and impact)"
+  - "Incident timeline with key events"
+  - "Root cause analysis (5 Whys technique)"
+  - "Impact assessment (users, revenue, systems)"
+  - "What went well / What went wrong"
+  - "Action items with owners and deadlines"
+  - "Detection and response analysis"
+  - "Contributing factors identification"
+  - "Lessons learned documentation"
+  - "Prevention strategies"
+  - "Follow-up tasks tracking"
+  - "Blameless culture focus"
+  - "Appendix for technical details"
+
+configuration:
+  sections:
+    - incident_summary
+    - impact
+    - timeline
+    - root_cause_analysis
+    - what_went_well
+    - what_went_wrong
+    - action_items
+    - lessons_learned
+    - appendix
+  severity_levels:
+    sev1: "Critical - Total service outage"
+    sev2: "High - Significant degradation"
+    sev3: "Medium - Partial degradation"
+    sev4: "Low - Minor issue"
+  action_item_format:
+    - description
+    - owner
+    - deadline
+    - priority
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  best_practices: docs/BEST_PRACTICES.md
+  examples:
+    - examples/database-outage-postmortem
+    - examples/deployment-rollback-postmortem
+    - examples/security-incident-postmortem

@@ -1,0 +1,122 @@
+manifest_version: '1.0'
+name: modular-monolith-dotnet
+description: .NET 8 modular monolith template with DDD, Clean Architecture, vertical slices per module, and independent deployable modules with shared infrastructure.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: backend
+  sdlc_phase: development
+  language: csharp
+  framework: dotnet
+  tags:
+    - modular-monolith
+    - dotnet
+    - clean-architecture
+    - ddd
+    - vertical-slices
+    - csharp
+  architecture: modular-monolith
+  complexity: advanced
+  use_cases:
+    - enterprise-applications
+    - scalable-monolith
+    - domain-driven-design
+    - modular-systems
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the application
+    type: string
+    required: true
+    default: MyApp
+  - variable: DOTNET_VERSION
+    description: .NET version
+    type: string
+    required: true
+    default: "8.0"
+  - variable: DATABASE_PROVIDER
+    description: Database provider
+    type: string
+    required: true
+    default: postgresql
+    choices: [postgresql, sqlserver, mysql, sqlite]
+  - variable: MODULES
+    description: List of business modules
+    type: list
+    required: true
+    default: [Users, Products, Orders]
+
+dependencies:
+  runtime:
+    - Microsoft.AspNetCore.App@8.0.0
+    - Microsoft.EntityFrameworkCore@8.0.0
+    - MediatR@12.0.0
+    - FluentValidation@11.0.0
+    - Serilog.AspNetCore@8.0.0
+  build:
+    - dotnet-sdk@8.0.0
+  testing:
+    - xUnit@2.6.0
+    - FluentAssertions@6.12.0
+    - Moq@4.20.0
+    - Testcontainers@3.6.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - dotnet restore
+    - dotnet build
+    - dotnet test
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - bin/**
+    - obj/**
+    - .DS_Store
+
+features:
+  - ".NET 8 minimal APIs and WebAPI"
+  - "Modular monolith architecture with bounded contexts"
+  - "Each module has its own database schema"
+  - "Clean Architecture per module (Domain, Application, Infrastructure)"
+  - "Vertical slice architecture for features"
+  - "MediatR for CQRS and event handling"
+  - "Domain events for inter-module communication"
+  - "Entity Framework Core with migrations per module"
+  - "FluentValidation for request validation"
+  - "Serilog structured logging"
+  - "JWT authentication and authorization"
+  - "Swagger/OpenAPI documentation"
+  - "Health checks per module"
+  - "Unit of Work and Repository patterns"
+  - "Domain-Driven Design tactical patterns"
+  - "Comprehensive testing (unit, integration, architectural)"
+
+configuration:
+  dotnet_version: 8.0
+  architecture:
+    style: modular-monolith
+    module_isolation: true
+    shared_kernel: true
+  modules:
+    communication: domain-events
+    data_isolation: schema-per-module
+  testing:
+    frameworks: [xUnit, FluentAssertions]
+    coverage_threshold: 80
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  architecture: docs/ARCHITECTURE.md
+  modules: docs/MODULES.md
+  examples:
+    - examples/adding-new-module
+    - examples/domain-events
+    - examples/integration-events

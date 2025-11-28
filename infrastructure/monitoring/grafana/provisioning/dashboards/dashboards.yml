@@ -1,0 +1,52 @@
+# Grafana Dashboard Provisioning
+# NOTE: Organizations must be created manually before adding orgId-specific provisioning
+# For now, all dashboards provision to default organization (ID: 1)
+apiVersion: 1
+
+providers:
+  # Platform-wide dashboards
+  - name: 'Maestro Platform'
+    orgId: 1
+    folder: 'Platform'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/platform
+
+  # Quality Fabric dashboards (currently in default org)
+  # TODO: Move to orgId: 2 after creating "Quality Fabric" organization
+  - name: 'Quality Fabric'
+    orgId: 1
+    folder: 'Quality Fabric'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/quality-fabric
+
+  # Maestro V2 dashboards (currently in default org)
+  # TODO: Move to orgId: 3 after creating "Maestro V2" organization
+  - name: 'Maestro V2'
+    orgId: 1
+    folder: 'Maestro V2'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/maestro-v2
+
+  # Maestro Frontend dashboards (currently in default org)
+  # TODO: Move to orgId: 4 after creating "Maestro Frontend" organization
+  - name: 'Maestro Frontend'
+    orgId: 1
+    folder: 'Frontend'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/maestro-frontend

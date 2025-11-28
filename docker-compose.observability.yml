@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # Jaeger - Distributed Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "14268:14268"   # HTTP collector
+      - "6831:6831/udp" # UDP thrift compact
+      - "6832:6832/udp" # UDP thrift binary
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - quality-fabric-network
+    volumes:
+      - jaeger_data:/tmp
+    restart: unless-stopped
+
+  # MLflow - ML Model Management
+  mlflow:
+    image: python:3.11-slim
+    ports:
+      - "5000:5000"
+    command: >
+      sh -c "
+        pip install mlflow boto3 &&
+        mlflow server
+          --host 0.0.0.0
+          --port 5000
+          --default-artifact-root ./mlruns
+          --backend-store-uri sqlite:///mlflow.db
+      "
+    volumes:
+      - mlflow_data:/mlruns
+      - mlflow_db:/
+    networks:
+      - quality-fabric-network
+    restart: unless-stopped
+
+  # Prometheus - Metrics Collection
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - quality-fabric-network
+    restart: unless-stopped
+
+  # Grafana - Metrics Visualization
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - quality-fabric-network
+    restart: unless-stopped
+
+  # OWASP ZAP - Security Scanning
+  zap:
+    image: softwaresecurityproject/zap-stable:latest
+    ports:
+      - "8080:8080"
+    command: zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true
+    networks:
+      - quality-fabric-network
+    restart: unless-stopped
+
+  # Redis - For caching and job queues (future KEDA integration)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - quality-fabric-network
+    restart: unless-stopped
+
+  # PostgreSQL - For persistent data storage
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=quality_fabric
+      - POSTGRES_USER=quality_fabric
+      - POSTGRES_PASSWORD=quality_fabric_2023
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - quality-fabric-network
+    restart: unless-stopped
+
+volumes:
+  jaeger_data:
+  mlflow_data:
+  mlflow_db:
+  prometheus_data:
+  grafana_data:
+  redis_data:
+  postgres_data:
+
+networks:
+  quality-fabric-network:
+    driver: bridge

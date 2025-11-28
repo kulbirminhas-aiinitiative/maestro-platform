@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "id": "epic-template-v1",
+    "name": "Agile Epic Template with Story Mapping",
+    "category": "documentation",
+    "language": "markdown",
+    "framework": "agile",
+    "description": "Comprehensive epic template for large features with user story mapping, acceptance criteria, roadmap planning, and value stream definition",
+    "tags": [
+      "epic",
+      "agile",
+      "story-mapping",
+      "product-management",
+      "roadmap",
+      "backlog"
+    ],
+    "quality_score": 88.0,
+    "security_score": 70.0,
+    "performance_score": 70.0,
+    "maintainability_score": 90.0,
+    "test_coverage": 82.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T11:00:00.000000",
+    "updated_at": "2025-10-10T11:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "requirement_analyst"
+  },
+  "content": "# Epic: {{EPIC_TITLE}}\n\n## Epic Information\n\n**Epic ID:** {{EPIC_ID}}  \n**Initiative/Theme:** {{INITIATIVE}}  \n**Epic Owner:** {{EPIC_OWNER}}  \n**Status:** {{STATUS}}  \n**Priority:** {{PRIORITY}}  \n**Target Release:** {{TARGET_RELEASE}}  \n**Estimated Story Points:** {{TOTAL_STORY_POINTS}}  \n\n---\n\n## Epic Statement\n\n**As a** {{USER_ROLE}}  \n**I want** {{EPIC_GOAL}}  \n**So that** {{EPIC_BENEFIT}}  \n\n## Problem Statement\n\n{{PROBLEM_DESCRIPTION}}\n\n### Current Pain Points\n- {{PAIN_1}}\n- {{PAIN_2}}\n- {{PAIN_3}}\n\n### Business Impact\n- Revenue Impact: {{REVENUE_IMPACT}}\n- User Impact: {{USER_IMPACT}}\n- Strategic Value: {{STRATEGIC_VALUE}}\n\n---\n\n## Success Metrics (KPIs)\n\n| Metric | Current | Target | Timeline |\n|--------|---------|--------|----------|\n| {{METRIC_1}} | {{CURRENT_1}} | {{TARGET_1}} | {{TIMELINE_1}} |\n| {{METRIC_2}} | {{CURRENT_2}} | {{TARGET_2}} | {{TIMELINE_2}} |\n| {{METRIC_3}} | {{CURRENT_3}} | {{TARGET_3}} | {{TIMELINE_3}} |\n\n---\n\n## User Stories\n\n### MVP Stories (Must Have)\n\n1. **{{STORY_1_ID}}**: {{STORY_1_TITLE}}  \n   - Story Points: {{STORY_1_POINTS}}  \n   - Priority: High  \n   - Sprint: {{STORY_1_SPRINT}}  \n\n2. **{{STORY_2_ID}}**: {{STORY_2_TITLE}}  \n   - Story Points: {{STORY_2_POINTS}}  \n   - Priority: High  \n   - Sprint: {{STORY_2_SPRINT}}  \n\n### Post-MVP Stories (Should Have)\n\n3. **{{STORY_3_ID}}**: {{STORY_3_TITLE}}  \n   - Story Points: {{STORY_3_POINTS}}  \n   - Priority: Medium  \n   - Sprint: {{STORY_3_SPRINT}}  \n\n### Future Enhancements (Could Have)\n\n4. **{{STORY_4_ID}}**: {{STORY_4_TITLE}}  \n   - Story Points: {{STORY_4_POINTS}}  \n   - Priority: Low  \n   - Sprint: Backlog  \n\n---\n\n## Acceptance Criteria\n\n- [ ] {{EPIC_AC_1}}\n- [ ] {{EPIC_AC_2}}\n- [ ] {{EPIC_AC_3}}\n- [ ] {{EPIC_AC_4}}\n- [ ] All user stories completed\n- [ ] Performance requirements met\n- [ ] Security requirements met\n- [ ] Documentation completed\n\n---\n\n## Dependencies\n\n### External Dependencies\n- {{EXTERNAL_DEP_1}}\n- {{EXTERNAL_DEP_2}}\n\n### Epic Dependencies\n- {{EPIC_DEP_1}}\n- {{EPIC_DEP_2}}\n\n---\n\n## Timeline & Milestones\n\n| Milestone | Target Date | Status | Deliverables |\n|-----------|-------------|--------|-------------|\n| {{MILESTONE_1}} | {{DATE_1}} | {{STATUS_1}} | {{DELIVERABLE_1}} |\n| {{MILESTONE_2}} | {{DATE_2}} | {{STATUS_2}} | {{DELIVERABLE_2}} |\n| {{MILESTONE_3}} | {{DATE_3}} | {{STATUS_3}} | {{DELIVERABLE_3}} |\n\n---\n\n## Risks\n\n| Risk | Likelihood | Impact | Mitigation |\n|------|------------|--------|-----------|\n| {{RISK_1}} | H/M/L | H/M/L | {{MITIGATION_1}} |\n| {{RISK_2}} | H/M/L | H/M/L | {{MITIGATION_2}} |\n\n---\n\n## Notes\n\n{{NOTES}}\n",
+  "variables": {
+    "EPIC_ID": "EPIC-001",
+    "EPIC_TITLE": "Epic Title",
+    "INITIATIVE": "Initiative Name",
+    "EPIC_OWNER": "Product Owner",
+    "STATUS": "Draft/In Progress/Complete",
+    "PRIORITY": "High/Medium/Low",
+    "TARGET_RELEASE": "Q4 2025",
+    "TOTAL_STORY_POINTS": "55"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Large feature planning",
+      "Multi-sprint initiatives",
+      "Product roadmap planning",
+      "Portfolio management",
+      "Release planning"
+    ],
+    "team_composition": [
+      "requirement_analyst",
+      "solution_architect",
+      "backend_developer"
+    ],
+    "estimated_time_minutes": 90,
+    "prerequisites": [
+      "Initiative approved",
+      "Stakeholder alignment",
+      "Resource capacity estimated"
+    ],
+    "related_templates": [
+      "user-story-template",
+      "business-requirements-document"
+    ]
+  }
+}

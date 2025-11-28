@@ -1,0 +1,52 @@
+name: Deploy Maestro Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+      - demo
+    paths:
+      - 'infrastructure/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - demo
+          - staging
+          - prod
+
+env:
+  TF_VERSION: '1.6.0'
+
+jobs:
+  deploy:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: infrastructure/terraform/environments/demo
+
+      - name: Terraform Apply
+        env:
+          TF_VAR_postgres_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+          TF_VAR_redis_password: ${{ secrets.REDIS_PASSWORD }}
+          TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+        run: terraform apply -auto-approve
+        working-directory: infrastructure/terraform/environments/demo
+
+      - name: Health Check
+        run: |
+          curl -f http://localhost:29090/-/healthy
+          curl -f http://localhost:23000/api/health

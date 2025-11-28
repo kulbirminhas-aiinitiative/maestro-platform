@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "id": "zero-downtime-migration-v1",
+    "name": "Zero-Downtime Database Migration Strategy",
+    "category": "backend",
+    "language": "sql",
+    "framework": "postgresql",
+    "description": "Production-proven strategies for zero-downtime database migrations using expand-contract pattern, blue-green deployments, shadow writing, and backward compatibility techniques",
+    "tags": [
+      "database-migration",
+      "zero-downtime",
+      "expand-contract",
+      "blue-green",
+      "devops",
+      "continuous-deployment"
+    ],
+    "quality_score": 94.0,
+    "security_score": 87.0,
+    "performance_score": 88.0,
+    "maintainability_score": 91.0,
+    "test_coverage": 85.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T12:00:00.000000",
+    "updated_at": "2025-10-10T12:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase2",
+    "persona": "database_specialist"
+  },
+  "content": "# Zero-Downtime Database Migration Strategy\n\n## Migration Overview\n\n**Migration:** {{MIGRATION_NAME}}  \n**Target Schema Version:** {{TARGET_VERSION}}  \n**Expected Duration:** {{DURATION}} hours  \n**Risk Level:** {{RISK_LEVEL}} (Low/Medium/High)  \n**Rollback Strategy:** {{ROLLBACK_STRATEGY}}  \n**DBA:** {{DBA_NAME}}  \n**Date:** {{DATE}}  \n\n---\n\n## Expand-Contract Pattern (Recommended)\n\nThe expand-contract pattern is the industry standard for zero-downtime migrations:\n\n### Phase 1: Expand (Add New Structure)\n- Add new columns/tables alongside existing ones\n- Maintain backward compatibility\n- Deploy application code that writes to BOTH old and new structures\n\n### Phase 2: Migrate (Dual-Write + Backfill)\n- Application writes to both old and new structures (shadow writing)\n- Backfill historical data to new structure\n- Validate data consistency\n\n### Phase 3: Contract (Remove Old Structure)\n- Switch reads to new structure\n- Deploy application code that only uses new structure\n- Remove old columns/tables\n\n---\n\n## Migration Example: Renaming a Column\n\n### Scenario: Rename `email` to `email_address` in `users` table\n\n#### Step 1: Expand - Add New Column\n\n```sql\n-- Migration V1: Add new column (non-blocking)\nBEGIN;\n\nALTER TABLE users \n    ADD COLUMN email_address VARCHAR(255);\n\n-- Create partial index (only on non-null values)\nCREATE INDEX CONCURRENTLY idx_users_email_address \n    ON users(email_address) \n    WHERE email_address IS NOT NULL;\n\nCOMMIT;\n\n-- Backfill data (can be done in batches to avoid locks)\nUPDATE users \nSET email_address = email \nWHERE email_address IS NULL;\n```\n\n#### Step 2: Migrate - Dual-Write Application Code\n\n```python\n# Version 2 application code (writes to both columns)\nclass User:\n    def update_email(self, new_email: str):\n        # Write to BOTH columns during migration period\n        self.email = new_email\n        self.email_address = new_email  # Shadow write\n        db.session.commit()\n    \n    def get_email(self) -> str:\n        # Read from new column if available, fallback to old\n        return self.email_address or self.email\n```\n\n#### Step 3: Validate Data Consistency\n\n```sql\n-- Check for inconsistencies\nSELECT COUNT(*) \nFROM users \nWHERE email != email_address OR email_address IS NULL;\n\n-- Should return 0 before proceeding\n```\n\n#### Step 4: Contract - Remove Old Column\n\n```sql\n-- Migration V3: Remove old column (after all apps updated)\nBEGIN;\n\nALTER TABLE users DROP COLUMN email;\n\n-- Add NOT NULL constraint now that data is migrated\nALTER TABLE users ALTER COLUMN email_address SET NOT NULL;\n\n-- Add unique constraint\nALTER TABLE users ADD CONSTRAINT users_email_address_unique \n    UNIQUE (email_address);\n\nCOMMIT;\n```\n\n---\n\n## Migration Example: Splitting a Table\n\n### Scenario: Extract addresses from `users` table to separate `addresses` table\n\n#### Step 1: Expand - Create New Table\n\n```sql\n-- Migration V1: Create addresses table\nCREATE TABLE addresses (\n    address_id SERIAL PRIMARY KEY,\n    user_id INT NOT NULL,\n    street VARCHAR(200),\n    city VARCHAR(100),\n    state VARCHAR(50),\n    zip_code VARCHAR(10),\n    country VARCHAR(50) DEFAULT 'USA',\n    address_type VARCHAR(20) DEFAULT 'primary',\n    created_at TIMESTAMP DEFAULT NOW(),\n    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE\n);\n\nCREATE INDEX idx_addresses_user_id ON addresses(user_id);\n\n-- Backfill data from users table\nINSERT INTO addresses (user_id, street, city, state, zip_code)\nSELECT \n    user_id, \n    street, \n    city, \n    state, \n    zip_code\nFROM users\nWHERE street IS NOT NULL;\n```\n\n#### Step 2: Migrate - Application Dual-Write\n\n```python\n# Version 2 application code\nclass User:\n    def update_address(self, street: str, city: str, state: str, zip_code: str):\n        # Write to NEW structure (addresses table)\n        address = Address(\n            user_id=self.user_id,\n            street=street,\n            city=city,\n            state=state,\n            zip_code=zip_code\n        )\n        db.session.add(address)\n        \n        # Also write to OLD structure for backward compatibility\n        self.street = street\n        self.city = city\n        self.state = state\n        self.zip_code = zip_code\n        \n        db.session.commit()\n```\n\n#### Step 3: Validate and Monitor\n\n```sql\n-- Validation query: Check data consistency\nSELECT \n    u.user_id,\n    u.street AS old_street,\n    a.street AS new_street\nFROM users u\nLEFT JOIN addresses a ON u.user_id = a.user_id AND a.address_type = 'primary'\nWHERE u.street != a.street OR a.street IS NULL;\n```\n\n#### Step 4: Contract - Remove Old Columns\n\n```sql\n-- Migration V3: Remove address columns from users table\nALTER TABLE users \n    DROP COLUMN street,\n    DROP COLUMN city,\n    DROP COLUMN state,\n    DROP COLUMN zip_code;\n```\n\n---\n\n## Blue-Green Database Deployment\n\n### Architecture\n\n```\n┌─────────────┐\n│ Application │\n│   (Blue)    │───┐\n└─────────────┘   │\n                  ▼\n            ┌─────────────┐      ┌──────────────┐\n            │ Load        │      │  Database    │\n            │ Balancer    │─────▶│   (Blue)     │\n            └─────────────┘      └──────────────┘\n                  │                      │\n                  │                      │ Replication\n                  │                      ▼\n                  │              ┌──────────────┐\n                  └─────────────▶│  Database    │\n                                 │   (Green)    │\n┌─────────────┐                 └──────────────┘\n│ Application │                        ▲\n│   (Green)   │────────────────────────┘\n└─────────────┘\n```\n\n### Implementation Steps\n\n```bash\n#!/bin/bash\n# Blue-Green Database Migration Script\n\n# 1. Setup replication from Blue to Green\npsql -h blue-db -c \"SELECT pg_create_physical_replication_slot('green_slot');\"\n\n# 2. Clone Blue database to Green\npg_basebackup -h blue-db -D /var/lib/postgresql/green -P -v\n\n# 3. Apply schema changes to Green (offline)\npsql -h green-db -f migration_v2.sql\n\n# 4. Stop replication lag monitoring\n# 5. Switch application connection string to Green\n# 6. Monitor for errors\n# 7. If successful, decommission Blue after retention period\n```\n\n---\n\n## Online Schema Changes (PostgreSQL)\n\n### Adding Columns (Safe)\n\n```sql\n-- ✅ SAFE: Adding nullable column (instant in PG 11+)\nALTER TABLE users ADD COLUMN middle_name VARCHAR(50);\n\n-- ✅ SAFE: Adding column with volatile default (PG 11+)\nALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT NOW();\n```\n\n### Adding Indexes (Use CONCURRENTLY)\n\n```sql\n-- ✅ SAFE: Build index without blocking writes\nCREATE INDEX CONCURRENTLY idx_users_email ON users(email);\n\n-- ❌ DANGEROUS: Blocks all writes until complete\n-- CREATE INDEX idx_users_email ON users(email);\n```\n\n### Adding NOT NULL Constraints (Requires Validation)\n\n```sql\n-- Step 1: Add constraint as NOT VALID (instant)\nALTER TABLE users \n    ADD CONSTRAINT users_email_not_null \n    CHECK (email IS NOT NULL) NOT VALID;\n\n-- Step 2: Validate constraint (scans table but doesn't block writes)\nALTER TABLE users \n    VALIDATE CONSTRAINT users_email_not_null;\n\n-- Step 3: Replace with real NOT NULL (instant now)\nALTER TABLE users ALTER COLUMN email SET NOT NULL;\nALTER TABLE users DROP CONSTRAINT users_email_not_null;\n```\n\n### Adding Foreign Keys (Requires Validation)\n\n```sql\n-- Step 1: Add FK as NOT VALID (instant)\nALTER TABLE orders \n    ADD CONSTRAINT fk_orders_customer \n    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) \n    NOT VALID;\n\n-- Step 2: Validate FK (scans table but doesn't block writes)\nALTER TABLE orders \n    VALIDATE CONSTRAINT fk_orders_customer;\n```\n\n---\n\n## Batched Data Migrations\n\n### Large Table Update Strategy\n\n```sql\n-- DON'T: Update entire table (locks table for hours)\n-- UPDATE users SET status = 'active' WHERE status IS NULL;\n\n-- DO: Batch updates to avoid long locks\nDO $$\nDECLARE\n    batch_size INT := 10000;\n    rows_updated INT;\nBEGIN\n    LOOP\n        UPDATE users \n        SET status = 'active'\n        WHERE user_id IN (\n            SELECT user_id \n            FROM users \n            WHERE status IS NULL \n            LIMIT batch_size\n        );\n        \n        GET DIAGNOSTICS rows_updated = ROW_COUNT;\n        \n        -- Exit when no more rows to update\n        EXIT WHEN rows_updated = 0;\n        \n        -- Sleep to allow other transactions\n        PERFORM pg_sleep(0.1);\n        \n        RAISE NOTICE 'Updated % rows', rows_updated;\n    END LOOP;\nEND $$;\n```\n\n---\n\n## Rollback Strategies\n\n### 1. Keep Old Structure During Migration\n```sql\n-- Can rollback by reverting application to read from old column\n-- No data loss\n```\n\n### 2. Database Transaction Rollback\n```sql\nBEGIN;\n    -- Migration statements\n    ALTER TABLE users ADD COLUMN new_field VARCHAR(100);\n    -- If any errors occur:\n    -- ROLLBACK;\nCOMMIT;\n```\n\n### 3. Restore from Backup\n```bash\n# Take backup before migration\npg_dump -h localhost -U postgres dbname > pre_migration_backup.sql\n\n# Rollback if needed\npsql -h localhost -U postgres dbname < pre_migration_backup.sql\n```\n\n---\n\n## Migration Checklist\n\n### Pre-Migration\n- [ ] Take full database backup\n- [ ] Test migration on staging environment\n- [ ] Estimate migration duration\n- [ ] Verify disk space (3x table size for index builds)\n- [ ] Schedule during low-traffic window\n- [ ] Prepare rollback plan\n- [ ] Set up monitoring/alerting\n- [ ] Communicate maintenance window to stakeholders\n\n### During Migration\n- [ ] Monitor replication lag (if applicable)\n- [ ] Check for blocking queries: `SELECT * FROM pg_stat_activity WHERE wait_event_type = 'Lock';`\n- [ ] Monitor disk space: `df -h`\n- [ ] Track migration progress\n- [ ] Monitor application error rates\n\n### Post-Migration\n- [ ] Validate data consistency\n- [ ] Run ANALYZE on affected tables\n- [ ] Monitor query performance\n- [ ] Check for N+1 queries with new schema\n- [ ] Verify application functionality\n- [ ] Keep old structure for {{RETENTION_PERIOD}} before final cleanup\n\n---\n\n## Common Pitfalls\n\n| Pitfall | Impact | Solution |\n|---------|--------|----------|\n| Adding NOT NULL to existing column | Table lock, downtime | Use CHECK constraint first, validate, then add NOT NULL |\n| Creating index without CONCURRENTLY | Blocks writes | Always use CONCURRENTLY |\n| Large UPDATE in single transaction | Long locks, replication lag | Batch updates in small transactions |\n| Dropping column immediately | No rollback possible | Deprecate first, drop after retention period |\n| Not testing on production-size data | Unexpected duration | Test on copy of production database |\n\n---\n\n**Migration Lead:** {{MIGRATION_LEAD}}  \n**Reviewed By:** {{REVIEWER}}  \n**Approved:** {{APPROVAL_DATE}}  \n",
+  "variables": {
+    "MIGRATION_NAME": "Add email_address column",
+    "TARGET_VERSION": "2.0.0",
+    "DURATION": "4",
+    "RISK_LEVEL": "Low",
+    "ROLLBACK_STRATEGY": "Revert application to read from old column",
+    "DBA_NAME": "Database Administrator",
+    "DATE": "YYYY-MM-DD",
+    "RETENTION_PERIOD": "30 days",
+    "MIGRATION_LEAD": "DBA Name",
+    "REVIEWER": "Tech Lead Name",
+    "APPROVAL_DATE": "YYYY-MM-DD"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Production database schema changes",
+      "Column rename/restructure",
+      "Table splitting/merging",
+      "Adding constraints to existing tables",
+      "Large-scale data migrations"
+    ],
+    "team_composition": [
+      "database_specialist",
+      "devops_engineer",
+      "backend_developer",
+      "sre"
+    ],
+    "estimated_time_minutes": 180,
+    "prerequisites": [
+      "Database backup completed",
+      "Staging environment tested",
+      "Rollback plan documented",
+      "Monitoring configured"
+    ],
+    "related_templates": [
+      "database-indexing-strategy",
+      "normalized-schema-design-3nf",
+      "database-backup-recovery"
+    ]
+  }
+}

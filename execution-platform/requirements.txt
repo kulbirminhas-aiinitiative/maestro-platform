@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic
+httpx
+anyio
+openai
+anthropic
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi

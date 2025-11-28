@@ -1,0 +1,74 @@
+{
+  "metadata": {
+    "id": "requirements-validation-checklist-v1",
+    "name": "Requirements Validation & Verification Checklist",
+    "category": "documentation",
+    "language": "markdown",
+    "framework": "requirements",
+    "description": "Comprehensive checklist for validating and verifying requirements completeness, consistency, feasibility, and testability using industry best practices",
+    "tags": [
+      "validation",
+      "verification",
+      "requirements",
+      "quality-assurance",
+      "checklist",
+      "review",
+      "completeness"
+    ],
+    "quality_score": 91.0,
+    "security_score": 75.0,
+    "performance_score": 70.0,
+    "maintainability_score": 93.0,
+    "test_coverage": 90.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T10:00:00.000000",
+    "updated_at": "2025-10-10T10:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "requirement_analyst"
+  },
+  "content": "# Requirements Validation & Verification Checklist\n\n## Document Information\n\n**Project:** {{PROJECT_NAME}}  \n**Requirements Document:** {{DOCUMENT_NAME}}  \n**Version:** {{VERSION}}  \n**Review Date:** {{REVIEW_DATE}}  \n**Reviewer:** {{REVIEWER_NAME}}  \n**Review Type:** {{REVIEW_TYPE}}  \n\n---\n\n## 1. Completeness Criteria\n\n### 1.1 Requirement Coverage\n- [ ] All functional requirements documented\n- [ ] All non-functional requirements documented\n- [ ] All system interfaces identified\n- [ ] All external dependencies listed\n- [ ] All constraints documented\n- [ ] All assumptions stated explicitly\n- [ ] Data requirements specified\n- [ ] Security requirements defined\n- [ ] Performance requirements quantified\n\n**Notes:** {{COMPLETENESS_NOTES}}\n\n### 1.2 Requirement Attributes\nEach requirement has:\n- [ ] Unique identifier (REQ-XXX)\n- [ ] Clear description\n- [ ] Priority level (High/Medium/Low)\n- [ ] Source/originator\n- [ ] Rationale/justification\n- [ ] Acceptance criteria\n- [ ] Dependencies identified\n- [ ] Status indicator\n\n**Missing Attributes:** {{MISSING_ATTRIBUTES}}\n\n---\n\n## 2. Consistency Criteria\n\n### 2.1 Internal Consistency\n- [ ] No conflicting requirements\n- [ ] Terminology used consistently\n- [ ] Requirements don't contradict each other\n- [ ] Same requirement not stated differently in multiple places\n- [ ] Dependencies are bidirectional and consistent\n- [ ] Priorities are logically consistent\n\n**Inconsistencies Found:** {{INCONSISTENCIES}}\n\n### 2.2 External Consistency\n- [ ] Aligns with business objectives\n- [ ] Consistent with existing systems\n- [ ] Complies with regulations and standards\n- [ ] Matches stakeholder expectations\n- [ ] Compatible with technology constraints\n- [ ] Aligns with architectural decisions\n\n**External Conflicts:** {{EXTERNAL_CONFLICTS}}\n\n---\n\n## 3. Clarity & Unambiguity\n\n### 3.1 Language Quality\n- [ ] Requirements written in clear, simple language\n- [ ] No vague terms (\"user-friendly\", \"fast\", \"easy\")\n- [ ] Quantifiable metrics provided where applicable\n- [ ] Technical jargon defined in glossary\n- [ ] Each requirement has single interpretation\n- [ ] Active voice used (not passive)\n- [ ] No compound requirements (one req per statement)\n\n**Ambiguous Requirements:** {{AMBIGUOUS_REQS}}\n\n### 3.2 Measurability\n- [ ] Performance metrics quantified (e.g., \"< 200ms\")\n- [ ] Capacity requirements specified with numbers\n- [ ] Availability targets defined (e.g., \"99.9% uptime\")\n- [ ] User load specified (e.g., \"10,000 concurrent users\")\n- [ ] Response times quantified\n- [ ] Error rates specified\n\n**Non-Measurable Requirements:** {{NON_MEASURABLE}}\n\n---\n\n## 4. Feasibility & Realism\n\n### 4.1 Technical Feasibility\n- [ ] Requirements achievable with current technology\n- [ ] No physics/mathematical impossibilities\n- [ ] Team has necessary technical skills\n- [ ] Required tools and platforms available\n- [ ] Integration with existing systems feasible\n- [ ] Performance targets realistic\n\n**Feasibility Concerns:** {{FEASIBILITY_CONCERNS}}\n\n### 4.2 Resource Feasibility\n- [ ] Achievable within budget constraints\n- [ ] Sufficient development time allocated\n- [ ] Required infrastructure available or acquirable\n- [ ] Third-party services accessible\n- [ ] Team capacity sufficient\n\n**Resource Constraints:** {{RESOURCE_CONSTRAINTS}}\n\n---\n\n## 5. Testability & Verifiability\n\n### 5.1 Test Criteria\n- [ ] Each requirement has acceptance criteria\n- [ ] Acceptance criteria are measurable\n- [ ] Test scenarios can be derived\n- [ ] Success/failure criteria are clear\n- [ ] Test data requirements identified\n- [ ] Test environment needs specified\n\n**Non-Testable Requirements:** {{NON_TESTABLE}}\n\n### 5.2 Verification Methods\nFor each requirement, verification method defined:\n- [ ] Testing/demonstration\n- [ ] Inspection/review\n- [ ] Analysis/simulation\n- [ ] Certification/compliance check\n\n**Missing Verification Methods:** {{MISSING_VERIFICATION}}\n\n---\n\n## 6. Necessity & Value\n\n### 6.1 Business Value\n- [ ] Each requirement traceable to business objective\n- [ ] Value proposition clearly stated\n- [ ] Cost-benefit justified\n- [ ] Aligns with product vision\n- [ ] Stakeholder approval obtained\n- [ ] No \"nice-to-have\" requirements in \"must-have\" category\n\n**Questionable Requirements:** {{QUESTIONABLE_REQS}}\n\n### 6.2 User Needs\n- [ ] Requirements address actual user needs\n- [ ] User personas identified\n- [ ] User workflows considered\n- [ ] User feedback incorporated\n- [ ] Accessibility requirements included\n\n**User Need Gaps:** {{USER_GAPS}}\n\n---\n\n## 7. Maintainability\n\n### 7.1 Documentation Quality\n- [ ] Well-organized structure\n- [ ] Table of contents present\n- [ ] Searchable format (digital)\n- [ ] Version control in place\n- [ ] Change history tracked\n- [ ] Cross-references working\n- [ ] Diagrams/visuals included where helpful\n\n**Documentation Issues:** {{DOC_ISSUES}}\n\n### 7.2 Traceability\n- [ ] Requirements traceable to source (stakeholder/regulation)\n- [ ] Forward traceability to design/code/tests established\n- [ ] Traceability matrix maintained\n- [ ] Impact analysis possible\n- [ ] Coverage gaps identifiable\n\n**Traceability Gaps:** {{TRACEABILITY_GAPS}}\n\n---\n\n## 8. Legal & Compliance\n\n### 8.1 Regulatory Compliance\n- [ ] GDPR requirements addressed (if applicable)\n- [ ] HIPAA requirements addressed (if applicable)\n- [ ] SOC 2 requirements addressed (if applicable)\n- [ ] Industry-specific regulations considered\n- [ ] Data retention policies defined\n- [ ] Privacy requirements specified\n- [ ] Audit trail requirements included\n\n**Compliance Gaps:** {{COMPLIANCE_GAPS}}\n\n### 8.2 Intellectual Property\n- [ ] No IP conflicts identified\n- [ ] Third-party license requirements noted\n- [ ] Open-source usage compliant\n- [ ] Patent considerations addressed\n\n**IP Issues:** {{IP_ISSUES}}\n\n---\n\n## 9. Security Requirements\n\n### 9.1 Security Coverage\n- [ ] Authentication requirements defined\n- [ ] Authorization/access control specified\n- [ ] Data encryption requirements stated\n- [ ] Security audit requirements included\n- [ ] Vulnerability management addressed\n- [ ] Incident response requirements defined\n- [ ] Security testing requirements specified\n\n**Security Gaps:** {{SECURITY_GAPS}}\n\n### 9.2 Threat Modeling\n- [ ] Threat scenarios identified\n- [ ] Attack surface analyzed\n- [ ] Mitigation strategies defined\n- [ ] Security risk assessment completed\n\n**Threat Analysis Status:** {{THREAT_STATUS}}\n\n---\n\n## 10. Stakeholder Review\n\n### 10.1 Stakeholder Sign-off\n\n| Stakeholder | Role | Review Date | Status | Comments |\n|-------------|------|-------------|--------|----------|\n| {{STAKEHOLDER_1}} | {{ROLE_1}} | {{DATE_1}} | {{STATUS_1}} | {{COMMENTS_1}} |\n| {{STAKEHOLDER_2}} | {{ROLE_2}} | {{DATE_2}} | {{STATUS_2}} | {{COMMENTS_2}} |\n| {{STAKEHOLDER_3}} | {{ROLE_3}} | {{DATE_3}} | {{STATUS_3}} | {{COMMENTS_3}} |\n\n### 10.2 Stakeholder Feedback\n- [ ] All stakeholder comments addressed\n- [ ] Conflicting feedback resolved\n- [ ] Change requests processed\n- [ ] Approval obtained from key stakeholders\n\n**Outstanding Feedback:** {{OUTSTANDING_FEEDBACK}}\n\n---\n\n## 11. Quality Gates\n\n### Gate 1: Initial Review (Before Detailed Design)\n- [ ] All completeness criteria met\n- [ ] All consistency criteria met\n- [ ] All clarity criteria met\n- [ ] Stakeholder approval obtained\n\n**Gate 1 Status:** {{GATE1_STATUS}} ✅/❌\n\n### Gate 2: Design Review (After Design)\n- [ ] All testability criteria met\n- [ ] Design-requirement traceability established\n- [ ] Feasibility confirmed\n\n**Gate 2 Status:** {{GATE2_STATUS}} ✅/❌\n\n### Gate 3: Implementation Review (Before Coding)\n- [ ] All requirements prioritized\n- [ ] Sprint planning completed\n- [ ] Test cases defined\n\n**Gate 3 Status:** {{GATE3_STATUS}} ✅/❌\n\n---\n\n## 12. Risk Assessment\n\n### High-Risk Requirements\n\n| Requirement ID | Risk Description | Likelihood | Impact | Mitigation Strategy |\n|----------------|------------------|------------|--------|---------------------|\n| {{REQ_ID_1}} | {{RISK_1}} | H/M/L | H/M/L | {{MITIGATION_1}} |\n| {{REQ_ID_2}} | {{RISK_2}} | H/M/L | H/M/L | {{MITIGATION_2}} |\n\n---\n\n## 13. Validation Summary\n\n### Overall Assessment\n\n**Total Requirements Reviewed:** {{TOTAL_REQUIREMENTS}}  \n**Requirements Passed:** {{PASSED_COUNT}}  \n**Requirements Failed:** {{FAILED_COUNT}}  \n**Requirements Needing Clarification:** {{CLARIFICATION_COUNT}}  \n\n**Pass Rate:** {{PASS_RATE}}%\n\n### Critical Issues (Must Fix)\n1. {{CRITICAL_ISSUE_1}}\n2. {{CRITICAL_ISSUE_2}}\n3. {{CRITICAL_ISSUE_3}}\n\n### Major Issues (Should Fix)\n1. {{MAJOR_ISSUE_1}}\n2. {{MAJOR_ISSUE_2}}\n3. {{MAJOR_ISSUE_3}}\n\n### Minor Issues (Nice to Fix)\n1. {{MINOR_ISSUE_1}}\n2. {{MINOR_ISSUE_2}}\n\n---\n\n## 14. Recommendations\n\n### Immediate Actions Required\n1. {{ACTION_1}}\n2. {{ACTION_2}}\n3. {{ACTION_3}}\n\n### Long-term Improvements\n1. {{IMPROVEMENT_1}}\n2. {{IMPROVEMENT_2}}\n3. {{IMPROVEMENT_3}}\n\n---\n\n## 15. Final Approval\n\n**Validation Status:** ✅ Approved / ⚠️ Approved with Conditions / ❌ Rejected\n\n**Conditions (if applicable):**\n- {{CONDITION_1}}\n- {{CONDITION_2}}\n\n**Next Review Date:** {{NEXT_REVIEW_DATE}}\n\n**Validator Signature:** ___________________________  \n**Date:** {{SIGNATURE_DATE}}\n\n---\n\n## Revision History\n\n| Version | Date | Reviewer | Changes Made | Approval Status |\n|---------|------|----------|--------------|----------------|\n| {{VER_1}} | {{DATE_V1}} | {{REVIEWER_V1}} | {{CHANGES_1}} | {{APPROVAL_1}} |\n| {{VER_2}} | {{DATE_V2}} | {{REVIEWER_V2}} | {{CHANGES_2}} | {{APPROVAL_2}} |\n",
+  "variables": {
+    "PROJECT_NAME": "Your Project Name",
+    "DOCUMENT_NAME": "SRS Document v1.0",
+    "VERSION": "1.0",
+    "REVIEW_DATE": "YYYY-MM-DD",
+    "REVIEWER_NAME": "Reviewer Name",
+    "REVIEW_TYPE": "Initial/Follow-up/Final",
+    "TOTAL_REQUIREMENTS": "50",
+    "PASSED_COUNT": "45",
+    "FAILED_COUNT": "3",
+    "CLARIFICATION_COUNT": "2",
+    "PASS_RATE": "90"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Validating SRS documents before design phase",
+      "Reviewing user stories in Agile sprints",
+      "Quality assurance for requirements documentation",
+      "Stakeholder requirement review sessions",
+      "Pre-development requirement verification"
+    ],
+    "team_composition": [
+      "requirement_analyst",
+      "solution_architect",
+      "qa_engineer",
+      "backend_developer"
+    ],
+    "estimated_time_minutes": 90,
+    "prerequisites": [
+      "Requirements document completed",
+      "Stakeholders identified",
+      "Review criteria understood",
+      "Access to related documentation"
+    ],
+    "related_templates": [
+      "srs-document-template",
+      "user-story-template",
+      "stakeholder-analysis-matrix",
+      "requirements-traceability-matrix"
+    ]
+  }
+}

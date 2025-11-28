@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "id": "fastapi-pagination-v1",
+    "name": "FastAPI Advanced Pagination & Filtering",
+    "category": "api",
+    "language": "python",
+    "framework": "fastapi",
+    "description": "Reusable pagination, sorting, and filtering utilities with cursor-based and offset-based pagination, field selection, and search",
+    "tags": [
+      "pagination",
+      "filtering",
+      "sorting",
+      "cursor-pagination",
+      "search",
+      "helpers"
+    ],
+    "quality_score": 86.0,
+    "security_score": 80.0,
+    "performance_score": 90.0,
+    "maintainability_score": 88.0,
+    "test_coverage": 80.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-04T20:00:00.000000",
+    "updated_at": "2025-10-04T20:00:00.000000",
+    "created_by": "template_enhancement_phase1",
+    "persona": "backend_developer"
+  },
+  "content": "from fastapi import Query, HTTPException, status\nfrom pydantic import BaseModel, Field, field_validator\nfrom sqlalchemy.ext.asyncio import AsyncSession\nfrom sqlalchemy import select, func, or_, asc, desc\nfrom typing import Generic, TypeVar, List, Optional, Any\nfrom datetime import datetime\nfrom enum import Enum\nimport base64\nimport json\n\n# Generic type for pagination\nT = TypeVar('T')\n\nclass SortOrder(str, Enum):\n    ASC = \"asc\"\n    DESC = \"desc\"\n\nclass PaginationParams(BaseModel):\n    \"\"\"Offset-based pagination parameters\"\"\"\n    page: int = Field(1, ge=1, description=\"Page number\")\n    page_size: int = Field(10, ge=1, le=100, description=\"Items per page\")\n    \n    @property\n    def offset(self) -> int:\n        return (self.page - 1) * self.page_size\n    \n    @property\n    def limit(self) -> int:\n        return self.page_size\n\nclass CursorParams(BaseModel):\n    \"\"\"Cursor-based pagination parameters\"\"\"\n    cursor: Optional[str] = Field(None, description=\"Cursor for next page\")\n    limit: int = Field(10, ge=1, le=100, description=\"Items per page\")\n    \n    def decode_cursor(self) -> Optional[dict]:\n        \"\"\"Decode cursor from base64\"\"\"\n        if not self.cursor:\n            return None\n        try:\n            decoded = base64.b64decode(self.cursor).decode('utf-8')\n            return json.loads(decoded)\n        except (ValueError, json.JSONDecodeError):\n            raise HTTPException(\n                status_code=status.HTTP_400_BAD_REQUEST,\n                detail=\"Invalid cursor format\"\n            )\n    \n    @staticmethod\n    def encode_cursor(data: dict) -> str:\n        \"\"\"Encode cursor to base64\"\"\"\n        json_str = json.dumps(data)\n        return base64.b64encode(json_str.encode('utf-8')).decode('utf-8')\n\nclass SortParams(BaseModel):\n    \"\"\"Sorting parameters\"\"\"\n    sort_by: Optional[str] = Field(None, description=\"Field to sort by\")\n    sort_order: SortOrder = Field(SortOrder.ASC, description=\"Sort order\")\n    \n    @field_validator('sort_by')\n    @classmethod\n    def validate_sort_field(cls, v: Optional[str]) -> Optional[str]:\n        if v and not v.replace('_', '').isalnum():\n            raise ValueError(\"Invalid sort field name\")\n        return v\n\nclass FilterParams(BaseModel):\n    \"\"\"Generic filtering parameters\"\"\"\n    search: Optional[str] = Field(None, max_length=100, description=\"Search query\")\n    fields: Optional[str] = Field(None, description=\"Comma-separated fields to return\")\n    \n    def get_selected_fields(self) -> Optional[List[str]]:\n        \"\"\"Parse selected fields\"\"\"\n        if not self.fields:\n            return None\n        return [f.strip() for f in self.fields.split(',') if f.strip()]\n\nclass PaginatedResponse(BaseModel, Generic[T]):\n    \"\"\"Offset-based paginated response\"\"\"\n    items: List[T]\n    total: int\n    page: int\n    page_size: int\n    total_pages: int\n    has_next: bool\n    has_prev: bool\n\nclass CursorPaginatedResponse(BaseModel, Generic[T]):\n    \"\"\"Cursor-based paginated response\"\"\"\n    items: List[T]\n    next_cursor: Optional[str] = None\n    has_next: bool\n    limit: int\n\nclass PaginationHelper:\n    \"\"\"Helper class for pagination operations\"\"\"\n    \n    @staticmethod\n    async def paginate_offset(\n        db: AsyncSession,\n        query: Any,\n        params: PaginationParams,\n        count_query: Optional[Any] = None\n    ) -> tuple[List[Any], int]:\n        \"\"\"Execute offset-based pagination\"\"\"\n        # Get total count\n        if count_query is None:\n            count_query = select(func.count()).select_from(query.subquery())\n        \n        total = await db.scalar(count_query) or 0\n        \n        # Apply pagination\n        paginated_query = query.offset(params.offset).limit(params.limit)\n        result = await db.execute(paginated_query)\n        items = result.scalars().all()\n        \n        return items, total\n    \n    @staticmethod\n    def build_paginated_response(\n        items: List[T],\n        total: int,\n        params: PaginationParams\n    ) -> PaginatedResponse[T]:\n        \"\"\"Build paginated response object\"\"\"\n        total_pages = (total + params.page_size - 1) // params.page_size\n        \n        return PaginatedResponse[\n            items=items,\n            total=total,\n            page=params.page,\n            page_size=params.page_size,\n            total_pages=total_pages,\n            has_next=params.page < total_pages,\n            has_prev=params.page > 1\n        ]\n    \n    @staticmethod\n    async def paginate_cursor(\n        db: AsyncSession,\n        query: Any,\n        params: CursorParams,\n        cursor_field: str = \"id\"\n    ) -> tuple[List[Any], Optional[str]]:\n        \"\"\"Execute cursor-based pagination\"\"\"\n        # Decode cursor if present\n        cursor_data = params.decode_cursor()\n        \n        if cursor_data:\n            # Apply cursor filter\n            cursor_value = cursor_data.get(cursor_field)\n            query = query.filter(getattr(query.column_descriptions[0]['entity'], cursor_field) > cursor_value)\n        \n        # Fetch one extra item to determine if there's a next page\n        result = await db.execute(query.limit(params.limit + 1))\n        items = result.scalars().all()\n        \n        has_next = len(items) > params.limit\n        items = items[:params.limit]\n        \n        # Create next cursor\n        next_cursor = None\n        if has_next and items:\n            last_item = items[-1]\n            next_cursor_data = {cursor_field: getattr(last_item, cursor_field)}\n            next_cursor = CursorParams.encode_cursor(next_cursor_data)\n        \n        return items, next_cursor\n    \n    @staticmethod\n    def build_cursor_response(\n        items: List[T],\n        next_cursor: Optional[str],\n        params: CursorParams\n    ) -> CursorPaginatedResponse[T]:\n        \"\"\"Build cursor-paginated response object\"\"\"\n        return CursorPaginatedResponse(\n            items=items,\n            next_cursor=next_cursor,\n            has_next=next_cursor is not None,\n            limit=params.limit\n        )\n    \n    @staticmethod\n    def apply_sorting(query: Any, params: SortParams, model: Any) -> Any:\n        \"\"\"Apply sorting to query\"\"\"\n        if not params.sort_by:\n            return query\n        \n        # Validate sort field exists on model\n        if not hasattr(model, params.sort_by):\n            raise HTTPException(\n                status_code=status.HTTP_400_BAD_REQUEST,\n                detail=f\"Invalid sort field: {params.sort_by}\"\n            )\n        \n        sort_column = getattr(model, params.sort_by)\n        \n        if params.sort_order == SortOrder.DESC:\n            return query.order_by(desc(sort_column))\n        return query.order_by(asc(sort_column))\n    \n    @staticmethod\n    def apply_search(query: Any, search: str, search_fields: List[str], model: Any) -> Any:\n        \"\"\"Apply search filter across multiple fields\"\"\"\n        if not search or not search_fields:\n            return query\n        \n        search_conditions = []\n        for field in search_fields:\n            if hasattr(model, field):\n                column = getattr(model, field)\n                search_conditions.append(column.ilike(f\"%{search}%\"))\n        \n        if search_conditions:\n            return query.filter(or_(*search_conditions))\n        \n        return query\n\n# Usage example\nfrom fastapi import FastAPI, Depends\nfrom sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column\n\napp = FastAPI()\n\nclass Base(DeclarativeBase):\n    pass\n\nclass Product(Base):\n    __tablename__ = \"products\"\n    \n    id: Mapped[int] = mapped_column(primary_key=True)\n    name: Mapped[str]\n    description: Mapped[str]\n    price: Mapped[float]\n    created_at: Mapped[datetime]\n\nclass ProductResponse(BaseModel):\n    id: int\n    name: str\n    description: str\n    price: float\n    created_at: datetime\n    \n    class Config:\n        from_attributes = True\n\n@app.get(\"/products/offset\", response_model=PaginatedResponse[ProductResponse])\nasync def list_products_offset(\n    db: AsyncSession = Depends(get_db),\n    pagination: PaginationParams = Depends(),\n    sorting: SortParams = Depends(),\n    filtering: FilterParams = Depends()\n):\n    \"\"\"List products with offset-based pagination\"\"\"\n    # Build base query\n    query = select(Product)\n    \n    # Apply search\n    if filtering.search:\n        query = PaginationHelper.apply_search(\n            query,\n            filtering.search,\n            ['name', 'description'],\n            Product\n        )\n    \n    # Apply sorting\n    query = PaginationHelper.apply_sorting(query, sorting, Product)\n    \n    # Execute pagination\n    items, total = await PaginationHelper.paginate_offset(db, query, pagination)\n    \n    # Build response\n    return PaginationHelper.build_paginated_response(items, total, pagination)\n\n@app.get(\"/products/cursor\", response_model=CursorPaginatedResponse[ProductResponse])\nasync def list_products_cursor(\n    db: AsyncSession = Depends(get_db),\n    cursor_params: CursorParams = Depends(),\n    filtering: FilterParams = Depends()\n):\n    \"\"\"List products with cursor-based pagination\"\"\"\n    # Build base query\n    query = select(Product).order_by(Product.id)\n    \n    # Apply search\n    if filtering.search:\n        query = PaginationHelper.apply_search(\n            query,\n            filtering.search,\n            ['name', 'description'],\n            Product\n        )\n    \n    # Execute cursor pagination\n    items, next_cursor = await PaginationHelper.paginate_cursor(\n        db,\n        query,\n        cursor_params,\n        cursor_field=\"id\"\n    )\n    \n    # Build response\n    return PaginationHelper.build_cursor_response(items, next_cursor, cursor_params)",
+  "variables": {
+    "DEFAULT_PAGE_SIZE": 10,
+    "MAX_PAGE_SIZE": 100
+  },
+  "dependencies": [
+    "fastapi==0.109.0",
+    "sqlalchemy[asyncio]==2.0.25",
+    "pydantic==2.5.3"
+  ],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Implementing pagination in FastAPI APIs",
+      "Cursor-based pagination for infinite scroll",
+      "Advanced filtering and sorting",
+      "Reusable pagination utilities"
+    ],
+    "team_composition": [
+      "backend_developer",
+      "frontend_developer"
+    ],
+    "estimated_time_minutes": 40,
+    "prerequisites": [
+      "FastAPI and SQLAlchemy setup",
+      "Understanding of pagination patterns",
+      "Database with indexed cursor fields"
+    ],
+    "related_templates": [
+      "fastapi-async-crud-complete",
+      "database-indexing-strategies",
+      "api-performance-optimization"
+    ]
+  }
+}

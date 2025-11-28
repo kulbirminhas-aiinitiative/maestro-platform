@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "id": "nestjs-error-handling-v1",
+    "name": "NestJS Global Error Handling & Exception Filters",
+    "category": "error-handling",
+    "language": "typescript",
+    "framework": "nestjs",
+    "description": "Production-ready global exception filters, custom exceptions, error logging, and structured error responses with monitoring integration",
+    "tags": [
+      "error-handling",
+      "exception-filters",
+      "logging",
+      "monitoring",
+      "best-practices"
+    ],
+    "quality_score": 87.0,
+    "security_score": 85.0,
+    "performance_score": 88.0,
+    "maintainability_score": 90.0,
+    "test_coverage": 82.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-04T20:00:00.000000",
+    "updated_at": "2025-10-04T20:00:00.000000",
+    "created_by": "template_enhancement_phase1",
+    "persona": "backend_developer"
+  },
+  "content": "// src/common/filters/http-exception.filter.ts\nimport {\n  ExceptionFilter,\n  Catch,\n  ArgumentsHost,\n  HttpException,\n  HttpStatus,\n  Logger,\n} from '@nestjs/common';\nimport { Request, Response } from 'express';\nimport { QueryFailedError, EntityNotFoundError } from 'typeorm';\n\ninterface ErrorResponse {\n  statusCode: number;\n  timestamp: string;\n  path: string;\n  method: string;\n  message: string | string[];\n  error?: string;\n  errorCode?: string;\n  stack?: string;\n  requestId?: string;\n}\n\n@Catch()\nexport class GlobalExceptionFilter implements ExceptionFilter {\n  private readonly logger = new Logger(GlobalExceptionFilter.name);\n\n  catch(exception: unknown, host: ArgumentsHost) {\n    const ctx = host.switchToHttp();\n    const response = response<Response>();\n    const request = ctx.getRequest<Request>();\n\n    const errorResponse = this.buildErrorResponse(exception, request);\n\n    // Log error with context\n    this.logError(exception, request, errorResponse);\n\n    // Send structured error response\n    response.status(errorResponse.statusCode).json(errorResponse);\n  }\n\n  private buildErrorResponse(exception: unknown, request: Request): ErrorResponse {\n    const timestamp = new Date().toISOString();\n    const path = request.url;\n    const method = request.method;\n    const requestId = request.headers['x-request-id'] as string;\n\n    // Handle different exception types\n    if (exception instanceof HttpException) {\n      return this.handleHttpException(exception, path, method, timestamp, requestId);\n    }\n\n    if (exception instanceof QueryFailedError) {\n      return this.handleDatabaseError(exception, path, method, timestamp, requestId);\n    }\n\n    if (exception instanceof EntityNotFoundError) {\n      return this.handleEntityNotFound(exception, path, method, timestamp, requestId);\n    }\n\n    // Handle unknown errors\n    return this.handleUnknownError(exception, path, method, timestamp, requestId);\n  }\n\n  private handleHttpException(\n    exception: HttpException,\n    path: string,\n    method: string,\n    timestamp: string,\n    requestId?: string,\n  ): ErrorResponse {\n    const status = exception.getStatus();\n    const exceptionResponse = exception.getResponse();\n\n    const message =\n      typeof exceptionResponse === 'string'\n        ? exceptionResponse\n        : (exceptionResponse as any).message || 'An error occurred';\n\n    const error = typeof exceptionResponse === 'object' ? (exceptionResponse as any).error : undefined;\n\n    return {\n      statusCode: status,\n      timestamp,\n      path,\n      method,\n      message,\n      error: error || exception.name,\n      errorCode: this.getErrorCode(status),\n      requestId,\n      ...(process.env.NODE_ENV === 'development' && { stack: exception.stack }),\n    };\n  }\n\n  private handleDatabaseError(\n    exception: QueryFailedError,\n    path: string,\n    method: string,\n    timestamp: string,\n    requestId?: string,\n  ): ErrorResponse {\n    const message = 'Database operation failed';\n    const isDuplicateError = (exception as any).code === '23505';\n    const isForeignKeyError = (exception as any).code === '23503';\n\n    let specificMessage = message;\n    if (isDuplicateError) {\n      specificMessage = 'Resource already exists';\n    } else if (isForeignKeyError) {\n      specificMessage = 'Related resource not found';\n    }\n\n    return {\n      statusCode: HttpStatus.BAD_REQUEST,\n      timestamp,\n      path,\n      method,\n      message: specificMessage,\n      error: 'DatabaseError',\n      errorCode: 'DB_ERROR',\n      requestId,\n      ...(process.env.NODE_ENV === 'development' && { stack: exception.stack }),\n    };\n  }\n\n  private handleEntityNotFound(\n    exception: EntityNotFoundError,\n    path: string,\n    method: string,\n    timestamp: string,\n    requestId?: string,\n  ): ErrorResponse {\n    return {\n      statusCode: HttpStatus.NOT_FOUND,\n      timestamp,\n      path,\n      method,\n      message: 'Resource not found',\n      error: 'EntityNotFound',\n      errorCode: 'ENTITY_NOT_FOUND',\n      requestId,\n    };\n  }\n\n  private handleUnknownError(\n    exception: unknown,\n    path: string,\n    method: string,\n    timestamp: string,\n    requestId?: string,\n  ): ErrorResponse {\n    const message = exception instanceof Error ? exception.message : 'Internal server error';\n\n    return {\n      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,\n      timestamp,\n      path,\n      method,\n      message: 'An unexpected error occurred',\n      error: 'InternalServerError',\n      errorCode: 'INTERNAL_ERROR',\n      requestId,\n      ...(process.env.NODE_ENV === 'development' && {\n        stack: exception instanceof Error ? exception.stack : undefined,\n      }),\n    };\n  }\n\n  private getErrorCode(status: number): string {\n    const errorCodes: Record<number, string> = {\n      400: 'BAD_REQUEST',\n      401: 'UNAUTHORIZED',\n      403: 'FORBIDDEN',\n      404: 'NOT_FOUND',\n      409: 'CONFLICT',\n      422: 'UNPROCESSABLE_ENTITY',\n      429: 'TOO_MANY_REQUESTS',\n      500: 'INTERNAL_SERVER_ERROR',\n      502: 'BAD_GATEWAY',\n      503: 'SERVICE_UNAVAILABLE',\n    };\n\n    return errorCodes[status] || 'UNKNOWN_ERROR';\n  }\n\n  private logError(exception: unknown, request: Request, errorResponse: ErrorResponse) {\n    const { statusCode, message, path, method, requestId } = errorResponse;\n\n    const logContext = {\n      statusCode,\n      path,\n      method,\n      requestId,\n      userId: (request as any).user?.id,\n      ip: request.ip,\n      userAgent: request.headers['user-agent'],\n    };\n\n    if (statusCode >= 500) {\n      this.logger.error(\n        `${method} ${path} - ${message}`,\n        exception instanceof Error ? exception.stack : 'No stack trace',\n        JSON.stringify(logContext),\n      );\n    } else if (statusCode >= 400) {\n      this.logger.warn(`${method} ${path} - ${message}`, JSON.stringify(logContext));\n    }\n  }\n}\n\n// src/common/exceptions/business.exception.ts\nimport { HttpException, HttpStatus } from '@nestjs/common';\n\nexport class BusinessException extends HttpException {\n  constructor(message: string, errorCode: string, statusCode: HttpStatus = HttpStatus.BAD_REQUEST) {\n    super(\n      {\n        message,\n        error: 'BusinessError',\n        errorCode,\n      },\n      statusCode,\n    );\n  }\n}\n\nexport class ResourceNotFoundException extends BusinessException {\n  constructor(resource: string, id: string | number) {\n    super(`${resource} with id=${id} not found`, 'RESOURCE_NOT_FOUND', HttpStatus.NOT_FOUND);\n  }\n}\n\nexport class ResourceAlreadyExistsException extends BusinessException {\n  constructor(resource: string, field: string, value: string) {\n    super(\n      `${resource} with ${field}=${value} already exists`,\n      'RESOURCE_ALREADY_EXISTS',\n      HttpStatus.CONFLICT,\n    );\n  }\n}\n\nexport class ValidationException extends BusinessException {\n  constructor(message: string) {\n    super(message, 'VALIDATION_ERROR', HttpStatus.UNPROCESSABLE_ENTITY);\n  }\n}\n\n// src/common/interceptors/logging.interceptor.ts\nimport {\n  Injectable,\n  NestInterceptor,\n  ExecutionContext,\n  CallHandler,\n  Logger,\n} from '@nestjs/common';\nimport { Observable } from 'rxjs';\nimport { tap } from 'rxjs/operators';\nimport { Request } from 'express';\n\n@Injectable()\nexport class LoggingInterceptor implements NestInterceptor {\n  private readonly logger = new Logger('HTTP');\n\n  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {\n    const request = context.switchToHttp().getRequest<Request>();\n    const { method, url, body } = request;\n    const requestId = request.headers['x-request-id'];\n    const now = Date.now();\n\n    this.logger.log(`→ ${method} ${url} - Request ID: ${requestId}`);\n\n    return next.handle().pipe(\n      tap({\n        next: () => {\n          const responseTime = Date.now() - now;\n          this.logger.log(`← ${method} ${url} - ${responseTime}ms - Request ID: ${requestId}`);\n        },\n        error: (error) => {\n          const responseTime = Date.now() - now;\n          this.logger.error(\n            `← ${method} ${url} - ${responseTime}ms - Error: ${error.message} - Request ID: ${requestId}`,\n          );\n        },\n      }),\n    );\n  }\n}\n\n// src/main.ts - Usage example\nimport { NestFactory } from '@nestjs/core';\nimport { AppModule } from './app.module';\nimport { GlobalExceptionFilter } from './common/filters/http-exception.filter';\nimport { ValidationPipe } from '@nestjs/common';\nimport { LoggingInterceptor } from './common/interceptors/logging.interceptor';\nimport { v4 as uuidv4 } from 'uuid';\n\nasync function bootstrap() {\n  const app = await NestFactory.create(AppModule);\n\n  // Add request ID middleware\n  app.use((req: any, res: any, next: any) => {\n    req.headers['x-request-id'] = req.headers['x-request-id'] || uuidv4();\n    res.setHeader('X-Request-Id', req.headers['x-request-id']);\n    next();\n  });\n\n  // Global exception filter\n  app.useGlobalFilters(new GlobalExceptionFilter());\n\n  // Global validation pipe\n  app.useGlobalPipes(\n    new ValidationPipe({\n      whitelist: true,\n      forbidNonWhitelisted: true,\n      transform: true,\n      transformOptions: {\n        enableImplicitConversion: true,\n      },\n    }),\n  );\n\n  // Global logging interceptor\n  app.useGlobalInterceptors(new LoggingInterceptor());\n\n  await app.listen(3000);\n}\nbootstrap();",
+  "variables": {
+    "LOG_LEVEL": "info",
+    "ENABLE_DETAILED_ERRORS": "false"
+  },
+  "dependencies": [
+    "@nestjs/common@^10.0.0",
+    "@nestjs/core@^10.0.0",
+    "typeorm@^0.3.17",
+    "uuid@^9.0.0",
+    "rxjs@^7.8.1"
+  ],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Global error handling in NestJS",
+      "Structured error responses",
+      "Error logging and monitoring",
+      "Custom business exceptions"
+    ],
+    "team_composition": [
+      "backend_developer",
+      "devops_engineer"
+    ],
+    "estimated_time_minutes": 50,
+    "prerequisites": [
+      "NestJS project setup",
+      "Understanding of exception filters",
+      "Basic knowledge of HTTP status codes"
+    ],
+    "related_templates": [
+      "nestjs-logging-winston",
+      "nestjs-monitoring-prometheus",
+      "error-monitoring-sentry"
+    ]
+  }
+}

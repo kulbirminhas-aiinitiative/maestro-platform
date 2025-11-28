@@ -1,0 +1,83 @@
+{
+  "metadata": {
+    "id": "api-gateway-bff-pattern-v1",
+    "name": "API Gateway with Backend-for-Frontend (BFF) Pattern",
+    "category": "api",
+    "language": "typescript",
+    "framework": "express",
+    "description": "Production API Gateway implementing BFF pattern, rate limiting, circuit breaker integration, request routing, authentication, and API composition for microservices",
+    "tags": [
+      "api-gateway",
+      "bff",
+      "microservices",
+      "rate-limiting",
+      "authentication",
+      "routing",
+      "api-composition"
+    ],
+    "quality_score": 90.0,
+    "security_score": 92.0,
+    "performance_score": 89.0,
+    "maintainability_score": 88.0,
+    "test_coverage": 87.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T11:00:00.000000",
+    "updated_at": "2025-10-10T11:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "solution_architect"
+  },
+  "content": "import express, { Request, Response, NextFunction, Router } from 'express';\nimport rateLimit from 'express-rate-limit';\nimport axios, { AxiosInstance } from 'axios';\nimport jwt from 'jsonwebtoken';\nimport CircuitBreaker from 'opossum';\nimport Redis from 'ioredis';\n\n/**\n * API Gateway + BFF Pattern\n * \n * Components:\n * 1. API Gateway: Single entry point for all client requests\n * 2. BFF (Backend-for-Frontend): Optimized backends for specific clients\n * 3. Rate Limiting: Protect against abuse\n * 4. Circuit Breaker: Prevent cascading failures\n * 5. Request Routing: Route to appropriate microservices\n * 6. API Composition: Aggregate multiple service calls\n * 7. Authentication & Authorization: Centralized security\n * \n * Benefits:\n * - Single entry point simplifies client logic\n * - Client-specific optimization (mobile vs web)\n * - Reduced chattiness (API composition)\n * - Centralized cross-cutting concerns\n * - Service discovery abstraction\n */\n\nconst app = express();\nconst redis = new Redis({{REDIS_URL}});\n\napp.use(express.json());\n\n// =============================================================================\n// Rate Limiting (Protection against abuse)\n// =============================================================================\n\nconst apiLimiter = rateLimit({\n  windowMs: {{RATE_LIMIT_WINDOW_MS}}, // 15 minutes\n  max: {{RATE_LIMIT_MAX_REQUESTS}}, // limit each IP to 100 requests per windowMs\n  message: 'Too many requests from this IP, please try again later',\n  standardHeaders: true,\n  legacyHeaders: false,\n  // Use Redis for distributed rate limiting\n  store: new (require('rate-limit-redis'))({\n    client: redis,\n    prefix: 'rate-limit:'\n  })\n});\n\napp.use('/api/', apiLimiter);\n\n// =============================================================================\n// Authentication Middleware\n// =============================================================================\n\ninterface AuthenticatedRequest extends Request {\n  user?: {\n    userId: string;\n    email: string;\n    roles: string[];\n  };\n}\n\nconst authenticate = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {\n  try {\n    const authHeader = req.headers.authorization;\n    \n    if (!authHeader || !authHeader.startsWith('Bearer ')) {\n      return res.status(401).json({ error: 'No token provided' });\n    }\n    \n    const token = authHeader.substring(7);\n    const decoded = jwt.verify(token, {{JWT_SECRET}}) as any;\n    \n    req.user = {\n      userId: decoded.sub,\n      email: decoded.email,\n      roles: decoded.roles || []\n    };\n    \n    next();\n  } catch (error) {\n    return res.status(401).json({ error: 'Invalid token' });\n  }\n};\n\n// =============================================================================\n// Service Clients with Circuit Breaker\n// =============================================================================\n\nclass ServiceClient {\n  private axiosInstance: AxiosInstance;\n  private circuitBreaker: CircuitBreaker;\n  \n  constructor(private serviceName: string, private baseURL: string) {\n    this.axiosInstance = axios.create({\n      baseURL,\n      timeout: {{SERVICE_TIMEOUT_MS}},\n      headers: {\n        'Content-Type': 'application/json'\n      }\n    });\n    \n    // Circuit breaker configuration\n    this.circuitBreaker = new CircuitBreaker(this.makeRequest.bind(this), {\n      timeout: {{CIRCUIT_BREAKER_TIMEOUT}},\n      errorThresholdPercentage: {{ERROR_THRESHOLD_PERCENTAGE}},\n      resetTimeout: {{RESET_TIMEOUT_MS}}\n    });\n    \n    this.circuitBreaker.on('open', () => {\n      console.error(`Circuit breaker opened for ${serviceName}`);\n    });\n    \n    this.circuitBreaker.on('halfOpen', () => {\n      console.warn(`Circuit breaker half-open for ${serviceName}`);\n    });\n  }\n  \n  private async makeRequest(config: any): Promise<any> {\n    const response = await this.axiosInstance.request(config);\n    return response.data;\n  }\n  \n  async get(path: string, config?: any): Promise<any> {\n    return this.circuitBreaker.fire({ method: 'GET', url: path, ...config });\n  }\n  \n  async post(path: string, data: any, config?: any): Promise<any> {\n    return this.circuitBreaker.fire({ method: 'POST', url: path, data, ...config });\n  }\n  \n  async put(path: string, data: any, config?: any): Promise<any> {\n    return this.circuitBreaker.fire({ method: 'PUT', url: path, data, ...config });\n  }\n  \n  async delete(path: string, config?: any): Promise<any> {\n    return this.circuitBreaker.fire({ method: 'DELETE', url: path, ...config });\n  }\n}\n\n// Service registry\nconst services = {\n  users: new ServiceClient('users', '{{USER_SERVICE_URL}}'),\n  orders: new ServiceClient('orders', '{{ORDER_SERVICE_URL}}'),\n  products: new ServiceClient('products', '{{PRODUCT_SERVICE_URL}}'),\n  payments: new ServiceClient('payments', '{{PAYMENT_SERVICE_URL}}')\n};\n\n// =============================================================================\n// BFF: Mobile App Backend\n// =============================================================================\n\nconst mobileBFF = Router();\n\n/**\n * Mobile-optimized endpoint: Dashboard\n * Aggregates data from multiple services in single call\n */\nmobileBFF.get('/dashboard', authenticate, async (req: AuthenticatedRequest, res: Response) => {\n  try {\n    const userId = req.user!.userId;\n    \n    // Parallel requests to multiple services\n    const [userProfile, recentOrders, recommendations] = await Promise.all([\n      services.users.get(`/users/${userId}`),\n      services.orders.get(`/orders?userId=${userId}&limit=5`),\n      services.products.get(`/recommendations/${userId}`)\n    ]);\n    \n    // Mobile-optimized response (smaller payload)\n    res.json({\n      user: {\n        name: userProfile.name,\n        avatar: userProfile.avatar\n      },\n      orders: recentOrders.slice(0, 3).map((order: any) => ({\n        id: order.id,\n        status: order.status,\n        total: order.total\n      })),\n      recommendations: recommendations.slice(0, 5)\n    });\n  } catch (error) {\n    console.error('Dashboard error:', error);\n    res.status(500).json({ error: 'Failed to load dashboard' });\n  }\n});\n\n/**\n * Mobile-optimized endpoint: Simplified checkout\n */\nmobileBFF.post('/checkout', authenticate, async (req: AuthenticatedRequest, res: Response) => {\n  try {\n    const { items, paymentMethod } = req.body;\n    const userId = req.user!.userId;\n    \n    // Orchestrate checkout flow\n    const order = await services.orders.post('/orders', {\n      userId,\n      items,\n      status: 'PENDING'\n    });\n    \n    const payment = await services.payments.post('/payments', {\n      orderId: order.id,\n      amount: order.total,\n      method: paymentMethod\n    });\n    \n    if (payment.status === 'SUCCESS') {\n      await services.orders.put(`/orders/${order.id}`, {\n        status: 'CONFIRMED',\n        paymentId: payment.id\n      });\n    }\n    \n    res.json({\n      orderId: order.id,\n      status: payment.status === 'SUCCESS' ? 'CONFIRMED' : 'FAILED',\n      trackingUrl: `/orders/${order.id}/track`\n    });\n  } catch (error) {\n    console.error('Checkout error:', error);\n    res.status(500).json({ error: 'Checkout failed' });\n  }\n});\n\napp.use('/api/mobile', mobileBFF);\n\n// =============================================================================\n// BFF: Web App Backend\n// =============================================================================\n\nconst webBFF = Router();\n\n/**\n * Web-optimized endpoint: Detailed dashboard\n * Richer data for desktop browsers\n */\nwebBFF.get('/dashboard', authenticate, async (req: AuthenticatedRequest, res: Response) => {\n  try {\n    const userId = req.user!.userId;\n    \n    const [userProfile, orders, products, analytics] = await Promise.all([\n      services.users.get(`/users/${userId}`),\n      services.orders.get(`/orders?userId=${userId}&limit=20`),\n      services.products.get(`/recommendations/${userId}?limit=20`),\n      services.orders.get(`/analytics/${userId}`)\n    ]);\n    \n    // Full response for web (richer data)\n    res.json({\n      user: userProfile,\n      orders: orders,\n      recommendations: products,\n      analytics: analytics,\n      metadata: {\n        lastUpdated: new Date()\n      }\n    });\n  } catch (error) {\n    console.error('Dashboard error:', error);\n    res.status(500).json({ error: 'Failed to load dashboard' });\n  }\n});\n\napp.use('/api/web', webBFF);\n\n// =============================================================================\n// Direct Service Proxies (Simple Pass-Through)\n// =============================================================================\n\napp.use('/api/users', authenticate, async (req: Request, res: Response) => {\n  try {\n    const result = await services.users[req.method.toLowerCase() as 'get'](req.path, {\n      params: req.query,\n      data: req.body\n    });\n    res.json(result);\n  } catch (error) {\n    res.status(500).json({ error: 'Service unavailable' });\n  }\n});\n\napp.use('/api/products', async (req: Request, res: Response) => {\n  try {\n    const result = await services.products[req.method.toLowerCase() as 'get'](req.path, {\n      params: req.query\n    });\n    res.json(result);\n  } catch (error) {\n    res.status(500).json({ error: 'Service unavailable' });\n  }\n});\n\n// =============================================================================\n// Health Check & Monitoring\n// =============================================================================\n\napp.get('/health', async (req: Request, res: Response) => {\n  const health: any = {\n    status: 'UP',\n    timestamp: new Date(),\n    services: {}\n  };\n  \n  // Check backend services\n  for (const [name, client] of Object.entries(services)) {\n    try {\n      await client.get('/health');\n      health.services[name] = 'UP';\n    } catch (error) {\n      health.services[name] = 'DOWN';\n      health.status = 'DEGRADED';\n    }\n  }\n  \n  res.status(health.status === 'UP' ? 200 : 503).json(health);\n});\n\n// =============================================================================\n// Error Handling\n// =============================================================================\n\napp.use((err: Error, req: Request, res: Response, next: NextFunction) => {\n  console.error('Gateway error:', err);\n  \n  res.status(500).json({\n    error: 'Internal server error',\n    message: process.env.NODE_ENV === 'development' ? err.message : undefined\n  });\n});\n\n// =============================================================================\n// Start Server\n// =============================================================================\n\nconst PORT = {{PORT}} || 3000;\n\napp.listen(PORT, () => {\n  console.log(`API Gateway listening on port ${PORT}`);\n});\n\nexport default app;\n",
+  "variables": {
+    "REDIS_URL": "redis://localhost:6379",
+    "RATE_LIMIT_WINDOW_MS": "900000",
+    "RATE_LIMIT_MAX_REQUESTS": "100",
+    "JWT_SECRET": "your-secret-key",
+    "SERVICE_TIMEOUT_MS": "5000",
+    "CIRCUIT_BREAKER_TIMEOUT": "10000",
+    "ERROR_THRESHOLD_PERCENTAGE": "50",
+    "RESET_TIMEOUT_MS": "30000",
+    "USER_SERVICE_URL": "http://users-service:3001",
+    "ORDER_SERVICE_URL": "http://orders-service:3002",
+    "PRODUCT_SERVICE_URL": "http://products-service:3003",
+    "PAYMENT_SERVICE_URL": "http://payments-service:3004",
+    "PORT": "3000"
+  },
+  "dependencies": [
+    "express@^4.18.2",
+    "express-rate-limit@^7.1.5",
+    "rate-limit-redis@^4.2.0",
+    "axios@^1.6.2",
+    "jsonwebtoken@^9.0.2",
+    "opossum@^8.1.2",
+    "ioredis@^5.3.2"
+  ],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Microservices API gateway",
+      "Mobile and web BFF implementation",
+      "API composition and orchestration",
+      "Centralized authentication and rate limiting",
+      "E-commerce checkout flows"
+    ],
+    "team_composition": [
+      "solution_architect",
+      "backend_developer",
+      "frontend_developer",
+      "devops_engineer"
+    ],
+    "estimated_time_minutes": 150,
+    "prerequisites": [
+      "Microservices deployed and accessible",
+      "Redis for distributed rate limiting",
+      "JWT authentication configured",
+      "Service discovery mechanism"
+    ],
+    "related_templates": [
+      "circuit-breaker-pattern",
+      "event-driven-architecture",
+      "multi-tenant-architecture-pattern"
+    ]
+  }
+}

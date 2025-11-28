@@ -1,0 +1,182 @@
+# DDE Execution Manifest - Sample User Profile API Feature
+# This manifest demonstrates interface-first execution with capability routing
+
+iteration_id: Iter-20251012-1430-001
+timestamp: "2025-10-12T14:30:00Z"
+project: DogMarketplace
+
+constraints:
+  security_standard: OWASP-L2
+  library_policy: InternalOnly
+  runtime: Python3.11
+  max_duration_minutes: 240
+
+policies:
+  - id: coverage >= 70%
+    severity: BLOCKING
+    scope: [impl, integration]
+
+  - id: no_secrets
+    severity: BLOCKING
+    scope: [impl, integration, test]
+
+  - id: openapi_valid
+    severity: BLOCKING
+    scope: [interface]
+
+  - id: contract_tests_pass
+    severity: BLOCKING
+    scope: [impl]
+
+nodes:
+  # INTERFACE NODES (Execute First)
+  - id: IF.UserProfileAPI
+    type: interface
+    capability: Architecture:APIDesign
+    depends_on: []
+    outputs:
+      - openapi.yaml
+      - api_contract.json
+    gates:
+      - openapi-lint
+      - semver-check
+      - breaking-change-check
+    estimated_effort: 60
+    contract_version: v1.0
+    metadata:
+      description: "Define REST API contract for user profile management"
+      endpoints:
+        - "GET /api/users/{id}/profile"
+        - "PUT /api/users/{id}/profile"
+        - "PATCH /api/users/{id}/profile"
+
+  - id: IF.UserProfileSchema
+    type: interface
+    capability: Data:DatabaseDesign
+    depends_on: []
+    outputs:
+      - schema.sql
+      - migration_v1.sql
+    gates:
+      - schema-lint
+      - migration-check
+    estimated_effort: 45
+    contract_version: v1.0
+    metadata:
+      description: "Define database schema for user profiles"
+      tables:
+        - user_profiles
+        - profile_attributes
+
+  # IMPLEMENTATION NODES (Depend on Interfaces)
+  - id: BE.ProfileService
+    type: impl
+    capability: Backend:Python:FastAPI
+    depends_on:
+      - IF.UserProfileAPI
+      - IF.UserProfileSchema
+    outputs:
+      - profile_service.py
+      - profile_repository.py
+    gates:
+      - unit-tests
+      - coverage
+      - lint
+      - type-check
+    estimated_effort: 120
+    metadata:
+      description: "Implement user profile service with CRUD operations"
+
+  - id: BE.ProfileValidation
+    type: impl
+    capability: Backend:Python:Pydantic
+    depends_on:
+      - IF.UserProfileAPI
+      - IF.UserProfileSchema
+    outputs:
+      - validation_models.py
+      - validators.py
+    gates:
+      - unit-tests
+      - coverage
+    estimated_effort: 60
+    metadata:
+      description: "Implement profile data validation logic"
+
+  - id: FE.ProfilePage
+    type: impl
+    capability: Web:React:Hooks
+    depends_on:
+      - IF.UserProfileAPI
+    outputs:
+      - ProfilePage.tsx
+      - ProfileForm.tsx
+      - profileApi.ts
+    gates:
+      - unit-tests
+      - coverage
+      - lint
+      - type-check
+    estimated_effort: 150
+    metadata:
+      description: "Implement user profile management UI"
+
+  - id: DB.ProfileMigration
+    type: impl
+    capability: Data:SQL:PostgreSQL
+    depends_on:
+      - IF.UserProfileSchema
+    outputs:
+      - alembic_migration_001.py
+      - seed_data.sql
+    gates:
+      - migration-test
+      - rollback-test
+    estimated_effort: 45
+    metadata:
+      description: "Create and test database migration"
+
+  # INTEGRATION NODES
+  - id: INT.ProfileIntegration
+    type: integration
+    capability: Testing:Integration
+    depends_on:
+      - BE.ProfileService
+      - BE.ProfileValidation
+      - DB.ProfileMigration
+    outputs:
+      - integration_tests.py
+      - test_fixtures.py
+    gates:
+      - integration-tests
+      - contract-tests
+    estimated_effort: 90
+    metadata:
+      description: "Integration tests for profile service"
+
+  # TEST NODES
+  - id: QA.E2ETests
+    type: test
+    capability: Testing:E2E:Playwright
+    depends_on:
+      - FE.ProfilePage
+      - INT.ProfileIntegration
+    outputs:
+      - e2e_profile.spec.ts
+      - test_scenarios.yaml
+    gates:
+      - e2e-tests
+    estimated_effort: 120
+    metadata:
+      description: "End-to-end tests for profile management"
+
+metadata:
+  author: "DDE System"
+  description: "Add user profile update endpoint to Dog Marketplace"
+  tags:
+    - user-profile
+    - api-feature
+    - mvp
+  epic: "USER-123"
+  sprint: "Sprint 24"
+  expected_completion: "2025-10-15"

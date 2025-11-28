@@ -1,0 +1,258 @@
+# MAESTRO Templates - Central Registry Service
+# Poetry configuration for dependency management
+
+[tool.poetry]
+name = "maestro-templates-central-registry"
+version = "2.0.0"
+description = "Central Template Registry for MAESTRO Ecosystem with Git-based storage and quality validation"
+authors = ["MAESTRO Team <maestro@example.com>"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/maestro/templates"
+repository = "https://github.com/maestro/templates"
+keywords = ["templates", "registry", "maestro", "code-generation", "quality"]
+
+packages = [
+    {include = "*.py", from = "."}
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+# FastAPI and Web Framework
+fastapi = "^0.118.0"
+uvicorn = {extras = ["standard"], version = "^0.37.0"}
+pydantic = "^2.11.9"
+pydantic-settings = "^2.1.0"
+
+# Database
+asyncpg = "^0.29.0"
+psycopg2-binary = "^2.9.9"
+alembic = "^1.13.0"
+
+# Cache
+redis = {extras = ["hiredis"], version = "^5.0.1"}
+
+# Structured Logging
+structlog = "^24.1.0"
+
+# Metrics & Monitoring
+prometheus-client = "^0.19.0"
+
+# Utilities
+aiofiles = "^23.2.1"
+pyyaml = "^6.0.1"
+python-dotenv = "^1.0.0"
+
+# HTTP Client
+httpx = "^0.26.0"
+
+# Git Operations
+gitpython = "^3.1.40"
+
+# Authentication & Security
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+bcrypt = "^4.0.0"
+python-multipart = "^0.0.6"
+email-validator = "^2.0.0"
+boto3 = "^1.40.53"
+
+[tool.poetry.group.dev.dependencies]
+# Testing
+pytest = "^7.4.3"
+pytest-asyncio = "^0.21.1"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.11.0"
+pytest-xdist = "^3.3.0"
+
+# Code Quality
+black = "^23.9.0"
+ruff = "^0.1.0"
+isort = "^5.12.0"
+mypy = "^1.5.0"
+
+# Development Tools
+ipython = "^8.12.0"
+pre-commit = "^3.3.0"
+
+[tool.poetry.group.test.dependencies]
+coverage = "^7.3.0"
+faker = "^20.0.0"
+hypothesis = "^6.88.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+# === Black Configuration ===
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+# === isort Configuration ===
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+# === Ruff Configuration ===
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "C",   # flake8-comprehensions
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+
+# === MyPy Configuration ===
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+follow_imports = "normal"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+# === Pytest Configuration ===
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=.",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+asyncio_mode = "auto"
+
+# === Coverage Configuration ===
+[tool.coverage.run]
+branch = true
+source = ["."]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/virtualenv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if typing.TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# === maestro-templates Configuration ===
+[tool.maestro-templates]
+service_name = "central-registry"
+service_version = "2.0.0"
+project_id = 1
+
+# Port Configuration (Project ID 1)
+[tool.maestro-templates.ports]
+api = 9600          # Central Registry API (strategic exception)
+metrics = 9601      # Prometheus metrics
+
+# Environment Configuration
+[tool.maestro-templates.environments]
+development = "local"
+production = "docker"
+
+# Database Configuration
+[tool.maestro-templates.database]
+pool_size = 20
+max_overflow = 10
+pool_timeout = 30
+pool_recycle = 3600
+
+# Cache Configuration
+[tool.maestro-templates.cache]
+default_ttl = 3600
+max_connections = 50
+
+# API Configuration
+[tool.maestro-templates.api]
+rate_limit = 60        # requests per minute
+max_body_size = 10485760  # 10MB
+timeout = 30
+
+# Quality Thresholds
+[tool.maestro-templates.quality]
+min_score = 80.0
+min_test_coverage = 70.0
+min_test_success = 90.0
+
+# Integration Endpoints
+[tool.maestro-templates.integration]
+maestro_v2_api = "http://localhost:9000"
+quality_fabric_api = "http://localhost:8004"

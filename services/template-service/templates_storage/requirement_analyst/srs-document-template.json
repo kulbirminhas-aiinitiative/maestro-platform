@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "id": "srs-document-template-v1",
+    "name": "Software Requirements Specification (SRS) Document",
+    "category": "documentation",
+    "language": "markdown",
+    "framework": "requirements",
+    "description": "IEEE 830-compliant Software Requirements Specification template with comprehensive sections for functional, non-functional, and system requirements documentation",
+    "tags": [
+      "requirements",
+      "documentation",
+      "srs",
+      "ieee-830",
+      "specifications",
+      "stakeholders",
+      "sdlc",
+      "analysis"
+    ],
+    "quality_score": 92.0,
+    "security_score": 75.0,
+    "performance_score": 70.0,
+    "maintainability_score": 95.0,
+    "test_coverage": 85.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T10:00:00.000000",
+    "updated_at": "2025-10-10T10:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "requirement_analyst"
+  },
+  "content": "# Software Requirements Specification (SRS)\n\n## Document Information\n\n**Project Name:** {{PROJECT_NAME}}\n**Version:** {{VERSION}}\n**Date:** {{DATE}}\n**Prepared By:** {{AUTHOR}}\n**Status:** {{STATUS}}\n**Reviewers:** {{REVIEWERS}}\n\n---\n\n## 1. Introduction\n\n### 1.1 Purpose\nThis Software Requirements Specification (SRS) document provides a complete description of the {{PROJECT_NAME}} system. It describes the functional and non-functional requirements, system constraints, and design constraints that will guide the development team.\n\n**Intended Audience:**\n- Development Team\n- Project Managers\n- QA Engineers\n- Stakeholders\n- System Architects\n\n### 1.2 Scope\n**System Name:** {{SYSTEM_NAME}}\n\n**System Description:**\n{{SYSTEM_DESCRIPTION}}\n\n**Key Features:**\n- {{FEATURE_1}}\n- {{FEATURE_2}}\n- {{FEATURE_3}}\n\n**Benefits:**\n- {{BENEFIT_1}}\n- {{BENEFIT_2}}\n- {{BENEFIT_3}}\n\n**Success Criteria:**\n- {{SUCCESS_CRITERION_1}}\n- {{SUCCESS_CRITERION_2}}\n- {{SUCCESS_CRITERION_3}}\n\n### 1.3 Definitions, Acronyms, and Abbreviations\n\n| Term | Definition |\n|------|------------|\n| API | Application Programming Interface |\n| {{TERM_1}} | {{DEFINITION_1}} |\n| {{TERM_2}} | {{DEFINITION_2}} |\n\n### 1.4 References\n- IEEE Std 830-1998: IEEE Recommended Practice for Software Requirements Specifications\n- {{REFERENCE_1}}\n- {{REFERENCE_2}}\n\n### 1.5 Overview\nThe remainder of this document is organized into the following sections:\n- Section 2: Overall system description and context\n- Section 3: Detailed functional requirements\n- Section 4: Non-functional requirements\n- Section 5: System constraints and assumptions\n- Appendices: Supporting documentation\n\n---\n\n## 2. Overall Description\n\n### 2.1 Product Perspective\n**System Context:**\n{{SYSTEM_CONTEXT}}\n\n**System Interfaces:**\n- **User Interfaces:** {{UI_DESCRIPTION}}\n- **Hardware Interfaces:** {{HARDWARE_INTERFACES}}\n- **Software Interfaces:** {{SOFTWARE_INTERFACES}}\n- **Communication Interfaces:** {{COMM_INTERFACES}}\n\n### 2.2 Product Functions\nHigh-level summary of major system functions:\n\n1. **{{FUNCTION_1_NAME}}**\n   - Description: {{FUNCTION_1_DESC}}\n   - User Benefit: {{FUNCTION_1_BENEFIT}}\n\n2. **{{FUNCTION_2_NAME}}**\n   - Description: {{FUNCTION_2_DESC}}\n   - User Benefit: {{FUNCTION_2_BENEFIT}}\n\n3. **{{FUNCTION_3_NAME}}**\n   - Description: {{FUNCTION_3_DESC}}\n   - User Benefit: {{FUNCTION_3_BENEFIT}}\n\n### 2.3 User Characteristics\n\n**Primary Users:**\n- **{{USER_TYPE_1}}**\n  - Technical Expertise: {{EXPERTISE_LEVEL_1}}\n  - Frequency of Use: {{FREQUENCY_1}}\n  - Key Tasks: {{TASKS_1}}\n\n- **{{USER_TYPE_2}}**\n  - Technical Expertise: {{EXPERTISE_LEVEL_2}}\n  - Frequency of Use: {{FREQUENCY_2}}\n  - Key Tasks: {{TASKS_2}}\n\n### 2.4 Constraints\n- **Regulatory Constraints:** {{REGULATORY}}\n- **Hardware Limitations:** {{HARDWARE_LIMITS}}\n- **Technology Constraints:** {{TECH_CONSTRAINTS}}\n- **Budget Constraints:** {{BUDGET}}\n- **Timeline Constraints:** {{TIMELINE}}\n\n### 2.5 Assumptions and Dependencies\n**Assumptions:**\n- {{ASSUMPTION_1}}\n- {{ASSUMPTION_2}}\n- {{ASSUMPTION_3}}\n\n**Dependencies:**\n- {{DEPENDENCY_1}}\n- {{DEPENDENCY_2}}\n- {{DEPENDENCY_3}}\n\n---\n\n## 3. Functional Requirements\n\n### 3.1 {{MODULE_1_NAME}}\n\n**FR-001: {{REQUIREMENT_1_NAME}}**\n- **Priority:** High/Medium/Low\n- **Description:** {{REQUIREMENT_1_DESC}}\n- **Inputs:** {{INPUTS_1}}\n- **Processing:** {{PROCESSING_1}}\n- **Outputs:** {{OUTPUTS_1}}\n- **Error Handling:** {{ERROR_HANDLING_1}}\n- **Acceptance Criteria:**\n  - AC-001-1: {{ACCEPTANCE_1_1}}\n  - AC-001-2: {{ACCEPTANCE_1_2}}\n  - AC-001-3: {{ACCEPTANCE_1_3}}\n\n**FR-002: {{REQUIREMENT_2_NAME}}**\n- **Priority:** High/Medium/Low\n- **Description:** {{REQUIREMENT_2_DESC}}\n- **Inputs:** {{INPUTS_2}}\n- **Processing:** {{PROCESSING_2}}\n- **Outputs:** {{OUTPUTS_2}}\n- **Error Handling:** {{ERROR_HANDLING_2}}\n- **Acceptance Criteria:**\n  - AC-002-1: {{ACCEPTANCE_2_1}}\n  - AC-002-2: {{ACCEPTANCE_2_2}}\n\n### 3.2 {{MODULE_2_NAME}}\n\n**FR-003: {{REQUIREMENT_3_NAME}}**\n[Follow same structure as above]\n\n---\n\n## 4. Non-Functional Requirements\n\n### 4.1 Performance Requirements\n\n**NFR-P-001: Response Time**\n- API responses must complete within {{RESPONSE_TIME_MS}}ms for 95th percentile\n- Page load time must not exceed {{PAGE_LOAD_TIME}}s\n- Database queries must complete within {{DB_QUERY_TIME}}ms\n\n**NFR-P-002: Throughput**\n- System must handle {{REQUESTS_PER_SECOND}} requests per second\n- Support {{CONCURRENT_USERS}} concurrent users\n\n**NFR-P-003: Resource Utilization**\n- CPU utilization should not exceed {{CPU_THRESHOLD}}% under normal load\n- Memory usage should not exceed {{MEMORY_THRESHOLD}}GB\n\n### 4.2 Security Requirements\n\n**NFR-S-001: Authentication**\n- All users must authenticate using {{AUTH_METHOD}}\n- Support multi-factor authentication (MFA)\n- Session timeout after {{SESSION_TIMEOUT}} minutes of inactivity\n\n**NFR-S-002: Authorization**\n- Implement role-based access control (RBAC)\n- Enforce principle of least privilege\n- Audit all access to sensitive data\n\n**NFR-S-003: Data Protection**\n- Encrypt data in transit using TLS 1.3\n- Encrypt sensitive data at rest using {{ENCRYPTION_ALGORITHM}}\n- Implement data masking for {{SENSITIVE_FIELDS}}\n\n**NFR-S-004: Compliance**\n- Comply with {{COMPLIANCE_STANDARD}} (e.g., GDPR, HIPAA, SOC2)\n- Support data retention policies\n- Provide audit trail for all data modifications\n\n### 4.3 Reliability Requirements\n\n**NFR-R-001: Availability**\n- System uptime must be {{UPTIME_PERCENTAGE}}% (e.g., 99.9%)\n- Maximum planned downtime: {{PLANNED_DOWNTIME}} per month\n- Maximum unplanned downtime: {{UNPLANNED_DOWNTIME}} per month\n\n**NFR-R-002: Fault Tolerance**\n- System must gracefully handle {{FAILURE_SCENARIOS}}\n- Implement circuit breaker pattern for external service calls\n- Support automatic failover for critical components\n\n**NFR-R-003: Data Integrity**\n- Zero data loss for committed transactions\n- Support point-in-time recovery up to {{RECOVERY_POINT}}  \n- Implement database ACID guarantees\n\n### 4.4 Scalability Requirements\n\n**NFR-SC-001: Horizontal Scaling**\n- Support horizontal scaling to {{MAX_INSTANCES}} instances\n- Stateless application design for load balancing\n- Auto-scaling based on {{SCALING_METRICS}}\n\n**NFR-SC-002: Data Scalability**\n- Support {{DATA_VOLUME}} of data storage\n- Handle growth rate of {{GROWTH_RATE}} per year\n\n### 4.5 Usability Requirements\n\n**NFR-U-001: User Interface**\n- Interface must be intuitive for {{USER_EXPERTISE_LEVEL}} users\n- Support {{ACCESSIBILITY_STANDARD}} (e.g., WCAG 2.1 Level AA)\n- Responsive design for desktop, tablet, and mobile devices\n\n**NFR-U-002: Learnability**\n- New users should complete {{KEY_TASK}} within {{LEARNING_TIME}} minutes\n- Provide in-app help and tooltips\n- Support {{LANGUAGES}} languages\n\n### 4.6 Maintainability Requirements\n\n**NFR-M-001: Code Quality**\n- Maintain code coverage above {{COVERAGE_THRESHOLD}}%\n- Follow {{CODING_STANDARD}} coding standards\n- Document all public APIs\n\n**NFR-M-002: Monitoring**\n- Implement comprehensive logging with log levels\n- Provide real-time monitoring dashboards\n- Alert on {{ALERT_CONDITIONS}}\n\n### 4.7 Compatibility Requirements\n\n**NFR-C-001: Browser Support**\n- Support latest 2 versions of Chrome, Firefox, Safari, Edge\n- Graceful degradation for older browsers\n\n**NFR-C-002: API Compatibility**\n- Maintain backward compatibility for {{API_VERSION_SUPPORT}} versions\n- Provide API versioning strategy\n\n---\n\n## 5. System Constraints\n\n### 5.1 Design Constraints\n- Must use {{REQUIRED_TECHNOLOGY}}\n- Must integrate with {{EXISTING_SYSTEM}}\n- Must follow {{ARCHITECTURE_PATTERN}} architecture\n\n### 5.2 Implementation Constraints\n- Development language: {{PROGRAMMING_LANGUAGE}}\n- Framework: {{FRAMEWORK}}\n- Database: {{DATABASE}}\n- Cloud platform: {{CLOUD_PROVIDER}}\n\n### 5.3 Business Rules\n- {{BUSINESS_RULE_1}}\n- {{BUSINESS_RULE_2}}\n- {{BUSINESS_RULE_3}}\n\n---\n\n## 6. Appendices\n\n### Appendix A: Data Dictionary\n| Entity | Attribute | Type | Description | Constraints |\n|--------|-----------|------|-------------|-------------|\n| {{ENTITY_1}} | {{ATTR_1}} | {{TYPE_1}} | {{DESC_1}} | {{CONSTRAINT_1}} |\n\n### Appendix B: Use Case Diagrams\n[Include use case diagrams]\n\n### Appendix C: Mockups/Wireframes\n[Include UI mockups]\n\n### Appendix D: Requirements Traceability Matrix\n| Req ID | Description | Design Ref | Test Case | Status |\n|--------|-------------|------------|-----------|--------|\n| FR-001 | {{DESC}} | {{DESIGN}} | {{TEST}} | {{STATUS}} |\n\n---\n\n## Document Approval\n\n| Role | Name | Signature | Date |\n|------|------|-----------|------|\n| Product Owner | | | |\n| Technical Lead | | | |\n| QA Lead | | | |\n| Stakeholder | | | |\n\n---\n\n## Revision History\n\n| Version | Date | Author | Description of Changes |\n|---------|------|--------|------------------------|\n| 1.0 | {{DATE}} | {{AUTHOR}} | Initial draft |\n",
+  "variables": {
+    "PROJECT_NAME": "Your Project Name",
+    "VERSION": "1.0",
+    "DATE": "YYYY-MM-DD",
+    "AUTHOR": "Requirement Analyst Name",
+    "STATUS": "Draft/Review/Approved",
+    "REVIEWERS": "Reviewer Names",
+    "SYSTEM_NAME": "System Name",
+    "SYSTEM_DESCRIPTION": "Comprehensive description of what the system does",
+    "FEATURE_1": "Key Feature 1",
+    "RESPONSE_TIME_MS": "200",
+    "CONCURRENT_USERS": "10000",
+    "UPTIME_PERCENTAGE": "99.9",
+    "COMPLIANCE_STANDARD": "GDPR/HIPAA/SOC2"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Documenting requirements for new software projects",
+      "Defining functional and non-functional requirements",
+      "Communicating requirements to development teams",
+      "Establishing acceptance criteria for testing",
+      "Creating baseline for scope management"
+    ],
+    "team_composition": [
+      "requirement_analyst",
+      "solution_architect",
+      "backend_developer",
+      "frontend_developer",
+      "qa_engineer"
+    ],
+    "estimated_time_minutes": 240,
+    "prerequisites": [
+      "Stakeholder interviews completed",
+      "Business objectives defined",
+      "Project scope approved",
+      "Understanding of system context"
+    ],
+    "related_templates": [
+      "user-story-template",
+      "stakeholder-analysis-matrix",
+      "requirements-validation-checklist",
+      "use-case-specification"
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "metadata": {
+    "id": "prisma-schema-patterns-v1",
+    "name": "Prisma Schema Design Patterns",
+    "category": "database",
+    "language": "prisma",
+    "framework": "prisma",
+    "description": "Production-ready Prisma schema patterns including multi-tenancy, soft deletes, audit logs, polymorphic relations, and indexing strategies",
+    "tags": ["prisma", "database-schema", "multi-tenancy", "soft-deletes", "audit-logs", "indexing"],
+    "quality_score": 89.0,
+    "security_score": 88.0,
+    "performance_score": 90.0,
+    "maintainability_score": 91.0,
+    "test_coverage": 82.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-04T20:00:00.000000",
+    "updated_at": "2025-10-04T20:00:00.000000",
+    "created_by": "template_enhancement_phase1",
+    "persona": "database_specialist"
+  },
+  "content": "// schema.prisma - Complete patterns\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  previewFeatures = [\"fullTextSearch\", \"fullTextIndex\", \"views\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\n// Pattern 1: Multi-tenancy with Row-Level Security\nmodel Tenant {\n  id        String   @id @default(cuid())\n  name      String\n  slug      String   @unique\n  domain    String?  @unique\n  settings  Json     @default(\"{}\")\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  users     User[]\n  posts     Post[]\n  \n  @@index([slug])\n  @@index([domain])\n}\n\n// Pattern 2: Soft Deletes with Audit Trail\nmodel User {\n  id          String    @id @default(cuid())\n  email       String    @unique\n  name        String\n  role        Role      @default(USER)\n  tenantId    String\n  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)\n  \n  // Soft delete fields\n  deletedAt   DateTime?\n  deletedBy   String?\n  \n  // Audit fields\n  createdAt   DateTime  @default(now())\n  createdBy   String?\n  updatedAt   DateTime  @updatedAt\n  updatedBy   String?\n  version     Int       @default(1)  // Optimistic locking\n  \n  posts       Post[]\n  comments    Comment[]\n  activities  AuditLog[]\n  \n  @@index([email])\n  @@index([tenantId, deletedAt])  // Composite index for tenant queries\n  @@index([deletedAt])  // For filtering deleted records\n}\n\nenum Role {\n  USER\n  ADMIN\n  MODERATOR\n}\n\n// Pattern 3: Polymorphic Relations (Commentable)\nmodel Post {\n  id          String    @id @default(cuid())\n  title       String\n  content     String    @db.Text\n  published   Boolean   @default(false)\n  slug        String    @unique\n  \n  authorId    String\n  author      User      @relation(fields: [authorId], references: [id])\n  \n  tenantId    String\n  tenant      Tenant    @relation(fields: [tenantId], references: [id])\n  \n  // Polymorphic comments\n  comments    Comment[]\n  \n  // Tags (Many-to-Many)\n  tags        PostTag[]\n  \n  // Full-text search\n  searchVector String?  @db.TsVector\n  \n  deletedAt   DateTime?\n  createdAt   DateTime  @default(now())\n  updatedAt   DateTime  @updatedAt\n  \n  @@index([authorId])\n  @@index([tenantId, deletedAt])\n  @@index([slug])\n  @@index([published, deletedAt])\n  @@fulltext([title, content])  // Full-text search index\n}\n\nmodel Comment {\n  id          String    @id @default(cuid())\n  content     String    @db.Text\n  \n  // Polymorphic relation\n  commentableId   String\n  commentableType CommentableType\n  \n  authorId    String\n  author      User      @relation(fields: [authorId], references: [id])\n  \n  // Self-referential (nested comments)\n  parentId    String?\n  parent      Comment?  @relation(\"CommentReplies\", fields: [parentId], references: [id])\n  replies     Comment[] @relation(\"CommentReplies\")\n  \n  deletedAt   DateTime?\n  createdAt   DateTime  @default(now())\n  updatedAt   DateTime  @updatedAt\n  \n  @@index([commentableId, commentableType])\n  @@index([authorId])\n  @@index([parentId])\n}\n\nenum CommentableType {\n  POST\n  PRODUCT\n  VIDEO\n}\n\n// Pattern 4: Many-to-Many with Metadata\nmodel Tag {\n  id    String    @id @default(cuid())\n  name  String    @unique\n  slug  String    @unique\n  posts PostTag[]\n  \n  @@index([slug])\n}\n\nmodel PostTag {\n  postId    String\n  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)\n  tagId     String\n  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)\n  \n  // Additional metadata on junction table\n  addedBy   String\n  addedAt   DateTime @default(now())\n  \n  @@id([postId, tagId])\n  @@index([postId])\n  @@index([tagId])\n}\n\n// Pattern 5: Audit Log (Event Sourcing)\nmodel AuditLog {\n  id          String   @id @default(cuid())\n  action      String   // CREATE, UPDATE, DELETE\n  entityType  String   // User, Post, etc.\n  entityId    String\n  changes     Json     // Store old/new values\n  \n  userId      String\n  user        User     @relation(fields: [userId], references: [id])\n  \n  ipAddress   String?\n  userAgent   String?\n  timestamp   DateTime @default(now())\n  \n  @@index([entityType, entityId])\n  @@index([userId])\n  @@index([timestamp])\n}\n\n// Pattern 6: Materialized View (Read Model)\nview UserStats {\n  userId        String   @unique\n  postCount     Int\n  commentCount  Int\n  lastActiveAt  DateTime\n}\n\n// Pattern 7: Hierarchical Data (Nested Sets or Closure Table)\nmodel Category {\n  id          String     @id @default(cuid())\n  name        String\n  slug        String     @unique\n  \n  // Nested Set Model\n  lft         Int        @unique\n  rgt         Int        @unique\n  depth       Int        @default(0)\n  \n  // Alternative: Closure Table (better for deep trees)\n  parentId    String?\n  parent      Category?  @relation(\"CategoryTree\", fields: [parentId], references: [id])\n  children    Category[] @relation(\"CategoryTree\")\n  \n  @@index([lft, rgt])  // For nested set queries\n  @@index([parentId])\n}\n\n// Pattern 8: Time-Series Data\nmodel Metric {\n  id          String   @id @default(cuid())\n  name        String\n  value       Float\n  unit        String\n  tags        Json     @default(\"{}\")\n  \n  // Time-series indexing\n  timestamp   DateTime @default(now())\n  \n  @@index([name, timestamp(sort: Desc)])  // Time-series query optimization\n  @@index([timestamp])\n}\n\n// Pattern 9: Versioned Content\nmodel Article {\n  id          String          @id @default(cuid())\n  currentVersionId String?    @unique\n  \n  versions    ArticleVersion[]\n  currentVersion ArticleVersion? @relation(\"CurrentVersion\", fields: [currentVersionId], references: [id])\n  \n  createdAt   DateTime        @default(now())\n  updatedAt   DateTime        @updatedAt\n}\n\nmodel ArticleVersion {\n  id          String   @id @default(cuid())\n  articleId   String\n  article     Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)\n  \n  title       String\n  content     String   @db.Text\n  version     Int\n  \n  isCurrent   Article? @relation(\"CurrentVersion\")\n  \n  createdBy   String\n  createdAt   DateTime @default(now())\n  \n  @@unique([articleId, version])\n  @@index([articleId, version(sort: Desc)])\n}\n\n// Migration helpers in package.json scripts:\n// \"db:seed\": \"ts-node prisma/seed.ts\"\n// \"db:migrate\": \"prisma migrate dev\"\n// \"db:push\": \"prisma db push\"\n// \"db:studio\": \"prisma studio\"\n\n// prisma/seed.ts\n/*\nimport { PrismaClient } from '@prisma/client';\nconst prisma = new PrismaClient();\n\nasync function main() {\n  const tenant = await prisma.tenant.create({\n    data: {\n      name: 'Default Tenant',\n      slug: 'default',\n    },\n  });\n\n  const user = await prisma.user.create({\n    data: {\n      email: 'admin@example.com',\n      name: 'Admin User',\n      role: 'ADMIN',\n      tenantId: tenant.id,\n    },\n  });\n}\n\nmain()\n  .catch((e) => console.error(e))\n  .finally(() => prisma.$disconnect());\n*/",
+  "variables": {
+    "DATABASE_URL": "postgresql://user:password@localhost:5432/dbname"
+  },
+  "dependencies": [
+    "@prisma/client@^5.8.0",
+    "prisma@^5.8.0"
+  ],
+  "workflow_context": {
+    "typical_use_cases": [
+      "SaaS multi-tenant applications",
+      "Audit logging and compliance",
+      "Soft delete patterns",
+      "Polymorphic relationships",
+      "Time-series data storage"
+    ],
+    "team_composition": ["database_specialist", "backend_developer"],
+    "estimated_time_minutes": 60,
+    "prerequisites": [
+      "PostgreSQL database",
+      "Prisma CLI installed",
+      "Understanding of database normalization",
+      "Schema design principles"
+    ],
+    "related_templates": [
+      "prisma-migrations",
+      "database-indexing",
+      "multi-tenancy-patterns"
+    ]
+  }
+}

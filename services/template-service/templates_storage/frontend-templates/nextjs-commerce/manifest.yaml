@@ -1,0 +1,142 @@
+manifest_version: '1.0'
+name: nextjs-commerce
+description: High-performance headless e-commerce storefront built with Next.js. Features product discovery, cart management, checkout flow, and optimized for conversions.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: nextjs
+  tags:
+    - ecommerce
+    - nextjs
+    - commerce
+    - headless
+    - shopify
+    - tailwindcss
+    - typescript
+    - pwa
+  design_system: custom
+  ui_complexity: advanced
+  use_cases:
+    - online-store
+    - headless-commerce
+    - product-catalog
+    - shopping-cart
+    - checkout
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-commerce-store
+  - variable: STORE_NAME
+    description: Store name displayed to customers
+    type: string
+    required: true
+    default: Your Store
+  - variable: COMMERCE_PROVIDER
+    description: Commerce backend provider
+    type: string
+    required: true
+    default: shopify
+    choices:
+      - shopify
+      - bigcommerce
+      - commercetools
+      - saleor
+      - custom
+  - variable: ENABLE_WISHLIST
+    description: Enable wishlist functionality
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_PRODUCT_REVIEWS
+    description: Enable product reviews
+    type: boolean
+    required: false
+    default: true
+  - variable: PAYMENT_PROVIDER
+    description: Payment provider integration
+    type: string
+    required: false
+    default: stripe
+    choices:
+      - stripe
+      - paypal
+      - square
+      - custom
+  - variable: CURRENCY
+    description: Default currency code
+    type: string
+    required: false
+    default: USD
+
+dependencies:
+  runtime:
+    - react@18.2.0
+    - react-dom@18.2.0
+    - next@14.0.0
+    - tailwindcss@3.4.0
+    - '@headlessui/react@1.7.0'
+    - '@heroicons/react@2.0.0'
+    - swr@2.2.0
+    - zustand@4.4.0
+  build:
+    - typescript@5.0.0
+    - postcss@8.4.0
+    - autoprefixer@10.4.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - npm run build
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - .next/**
+    - out/**
+    - .DS_Store
+
+features:
+  - "Product listing pages (PLP) with filtering and sorting"
+  - "Product detail pages (PDP) with image gallery"
+  - "Shopping cart with real-time updates"
+  - "Checkout flow with validation"
+  - "User authentication and accounts"
+  - "Order history and tracking"
+  - "Product search with autocomplete"
+  - "Wishlist functionality"
+  - "Product recommendations"
+  - "Mobile-first Progressive Web App (PWA)"
+  - "Image optimization with next/image"
+  - "SEO optimized for product discovery"
+  - "Analytics integration"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/COMMERCE_INTEGRATION.md
+  examples:
+    - examples/product-catalog
+    - examples/checkout-flow
+    - examples/custom-payment

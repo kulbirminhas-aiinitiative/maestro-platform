@@ -1,0 +1,115 @@
+manifest_version: '1.0'
+name: astro-portfolio
+description: Fast and modern portfolio website built with Astro. Features minimal JavaScript, excellent performance, and beautiful design for showcasing creative work.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: astro
+  tags:
+    - portfolio
+    - astro
+    - personal-website
+    - blog
+    - static-site
+    - typescript
+    - performance
+  design_system: custom
+  ui_complexity: simple
+  use_cases:
+    - portfolio
+    - personal-website
+    - creative-showcase
+    - photography
+    - designer-portfolio
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-portfolio
+  - variable: AUTHOR_NAME
+    description: Your name
+    type: string
+    required: true
+    default: Your Name
+  - variable: SITE_DESCRIPTION
+    description: Site description
+    type: string
+    required: false
+    default: My creative portfolio
+  - variable: ENABLE_BLOG
+    description: Include blog section
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_PROJECTS
+    description: Include projects showcase
+    type: boolean
+    required: false
+    default: true
+  - variable: SOCIAL_LINKS
+    description: Include social media links
+    type: boolean
+    required: false
+    default: true
+
+dependencies:
+  runtime:
+    - astro@4.0.0
+    - '@astrojs/tailwind@5.0.0'
+    - tailwindcss@3.4.0
+  build:
+    - typescript@5.0.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - npm run build
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - dist/**
+    - .DS_Store
+
+features:
+  - "Ultra-fast static site generation"
+  - "Minimal JavaScript footprint"
+  - "Project showcase with images"
+  - "About page with bio"
+  - "Contact form"
+  - "Blog with markdown support"
+  - "RSS feed"
+  - "SEO optimized"
+  - "Image optimization"
+  - "Responsive design"
+  - "Social media integration"
+  - "100 Lighthouse performance score"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  examples:
+    - examples/project-page
+    - examples/blog-post
+    - examples/custom-component

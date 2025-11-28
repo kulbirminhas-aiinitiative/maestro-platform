@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "id": "api-rate-limiting-v1",
+    "name": "API Rate Limiting with Redis (FastAPI/NestJS)",
+    "category": "security",
+    "language": "typescript",
+    "framework": "nestjs",
+    "description": "Production-ready rate limiting with Redis, multiple strategies (fixed window, sliding window, token bucket), IP and user-based limits",
+    "tags": [
+      "rate-limiting",
+      "redis",
+      "security",
+      "throttling",
+      "ddos-protection"
+    ],
+    "quality_score": 88.0,
+    "security_score": 92.0,
+    "performance_score": 87.0,
+    "maintainability_score": 86.0,
+    "test_coverage": 81.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-04T20:00:00.000000",
+    "updated_at": "2025-10-04T20:00:00.000000",
+    "created_by": "template_enhancement_phase1",
+    "persona": "backend_developer"
+  },
+  "content": "// src/common/guards/rate-limit.guard.ts\nimport {\n  Injectable,\n  CanActivate,\n  ExecutionContext,\n  HttpException,\n  HttpStatus,\n  SetMetadata,\n} from '@nestjs/common';\nimport { Reflector } from '@nestjs/core';\nimport { Request } from 'express';\nimport { Redis } from 'ioredis';\nimport { Injectable as InjectableDecorator } from '@nestjs/common';\n\nexport const RATE_LIMIT_KEY = 'rate_limit';\n\nexport interface RateLimitOptions {\n  points: number; // Number of requests\n  duration: number; // Time window in seconds\n  keyPrefix?: string;\n  blockDuration?: number; // Block duration after exceeding limit\n  strategy?: 'fixed-window' | 'sliding-window' | 'token-bucket';\n}\n\nexport const RateLimit = (options: RateLimitOptions) => SetMetadata(RATE_LIMIT_KEY, options);\n\n@Injectable()\nexport class RateLimitGuard implements CanActivate {\n  private readonly redis: Redis;\n\n  constructor(private reflector: Reflector) {\n    this.redis = new Redis({\n      host: process.env.REDIS_HOST || 'localhost',\n      port: parseInt(process.env.REDIS_PORT || '6379'),\n      password: process.env.REDIS_PASSWORD,\n      db: 1, // Use separate DB for rate limiting\n    });\n  }\n\n  async canActivate(context: ExecutionContext): Promise<boolean> {\n    const rateLimitOptions = this.reflector.get<RateLimitOptions>(\n      RATE_LIMIT_KEY,\n      context.getHandler(),\n    );\n\n    if (!rateLimitOptions) {\n      return true; // No rate limit defined\n    }\n\n    const request = context.switchToHttp().getRequest<Request>();\n    const key = this.getKey(request, rateLimitOptions.keyPrefix || 'global');\n\n    const isAllowed = await this.checkRateLimit(key, rateLimitOptions);\n\n    if (!isAllowed) {\n      const ttl = await this.redis.ttl(key);\n      throw new HttpException(\n        {\n          statusCode: HttpStatus.TOO_MANY_REQUESTS,\n          message: 'Too many requests. Please try again later.',\n          retryAfter: ttl,\n        },\n        HttpStatus.TOO_MANY_REQUESTS,\n      );\n    }\n\n    // Add rate limit headers\n    const response = context.switchToHttp().getResponse();\n    await this.addRateLimitHeaders(response, key, rateLimitOptions);\n\n    return true;\n  }\n\n  private getKey(request: Request, prefix: string): string {\n    // Use user ID if authenticated, otherwise use IP\n    const userId = (request as any).user?.id;\n    const identifier = userId || this.getClientIp(request);\n    const route = request.route?.path || request.path;\n    \n    return `rate_limit:${prefix}:${route}:${identifier}`;\n  }\n\n  private getClientIp(request: Request): string {\n    return (\n      (request.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||\n      (request.headers['x-real-ip'] as string) ||\n      request.socket.remoteAddress ||\n      'unknown'\n    );\n  }\n\n  private async checkRateLimit(\n    key: string,\n    options: RateLimitOptions,\n  ): Promise<boolean> {\n    const strategy = options.strategy || 'fixed-window';\n\n    switch (strategy) {\n      case 'fixed-window':\n        return this.fixedWindowRateLimit(key, options);\n      case 'sliding-window':\n        return this.slidingWindowRateLimit(key, options);\n      case 'token-bucket':\n        return this.tokenBucketRateLimit(key, options);\n      default:\n        return this.fixedWindowRateLimit(key, options);\n    }\n  }\n\n  private async fixedWindowRateLimit(\n    key: string,\n    options: RateLimitOptions,\n  ): Promise<boolean> {\n    const current = await this.redis.incr(key);\n\n    if (current === 1) {\n      // First request in window, set expiration\n      await this.redis.expire(key, options.duration);\n    }\n\n    return current <= options.points;\n  }\n\n  private async slidingWindowRateLimit(\n    key: string,\n    options: RateLimitOptions,\n  ): Promise<boolean> {\n    const now = Date.now();\n    const windowStart = now - options.duration * 1000;\n\n    // Remove old entries\n    await this.redis.zremrangebyscore(key, 0, windowStart);\n\n    // Count requests in current window\n    const count = await this.redis.zcard(key);\n\n    if (count >= options.points) {\n      return false;\n    }\n\n    // Add current request\n    await this.redis.zadd(key, now, `${now}-${Math.random()}`);\n    await this.redis.expire(key, options.duration);\n\n    return true;\n  }\n\n  private async tokenBucketRateLimit(\n    key: string,\n    options: RateLimitOptions,\n  ): Promise<boolean> {\n    const bucketKey = `${key}:bucket`;\n    const lastRefillKey = `${key}:last_refill`;\n    \n    const now = Date.now();\n    const lastRefill = parseInt((await this.redis.get(lastRefillKey)) || now.toString());\n    const tokens = parseFloat((await this.redis.get(bucketKey)) || options.points.toString());\n    \n    // Calculate tokens to add based on time passed\n    const timePassed = (now - lastRefill) / 1000;\n    const tokensToAdd = timePassed * (options.points / options.duration);\n    const newTokens = Math.min(options.points, tokens + tokensToAdd);\n    \n    if (newTokens < 1) {\n      return false;\n    }\n    \n    // Consume one token\n    await this.redis.set(bucketKey, (newTokens - 1).toString());\n    await this.redis.set(lastRefillKey, now.toString());\n    await this.redis.expire(bucketKey, options.duration * 2);\n    await this.redis.expire(lastRefillKey, options.duration * 2);\n    \n    return true;\n  }\n\n  private async addRateLimitHeaders(\n    response: any,\n    key: string,\n    options: RateLimitOptions,\n  ): Promise<void> {\n    const current = parseInt((await this.redis.get(key)) || '0');\n    const remaining = Math.max(0, options.points - current);\n    const ttl = await this.redis.ttl(key);\n    const resetTime = ttl > 0 ? Math.floor(Date.now() / 1000) + ttl : 0;\n\n    response.setHeader('X-RateLimit-Limit', options.points);\n    response.setHeader('X-RateLimit-Remaining', remaining);\n    response.setHeader('X-RateLimit-Reset', resetTime);\n  }\n}\n\n// src/common/decorators/rate-limit.decorator.ts\nimport { applyDecorators, UseGuards } from '@nestjs/common';\nimport { RateLimit as RateLimitMetadata, RateLimitGuard, RateLimitOptions } from '../guards/rate-limit.guard';\n\nexport function RateLimit(options: RateLimitOptions) {\n  return applyDecorators(\n    RateLimitMetadata(options),\n    UseGuards(RateLimitGuard),\n  );\n}\n\n// Usage example in controller\nimport { Controller, Get, Post, Body } from '@nestjs/common';\nimport { RateLimit } from './common/decorators/rate-limit.decorator';\n\n@Controller('api')\nexport class ApiController {\n  // Fixed window: 100 requests per minute\n  @Get('public')\n  @RateLimit({\n    points: 100,\n    duration: 60,\n    keyPrefix: 'public',\n    strategy: 'fixed-window',\n  })\n  getPublicData() {\n    return { message: 'Public data' };\n  }\n\n  // Sliding window: 10 requests per 10 seconds\n  @Post('login')\n  @RateLimit({\n    points: 10,\n    duration: 10,\n    keyPrefix: 'login',\n    strategy: 'sliding-window',\n    blockDuration: 300, // Block for 5 minutes after exceeding\n  })\n  login(@Body() loginDto: any) {\n    return { message: 'Login successful' };\n  }\n\n  // Token bucket: 50 requests per minute with burst support\n  @Get('search')\n  @RateLimit({\n    points: 50,\n    duration: 60,\n    keyPrefix: 'search',\n    strategy: 'token-bucket',\n  })\n  search() {\n    return { message: 'Search results' };\n  }\n\n  // Authenticated users: Higher limits\n  @Get('protected')\n  @RateLimit({\n    points: 1000,\n    duration: 60,\n    keyPrefix: 'authenticated',\n  })\n  getProtectedData() {\n    return { message: 'Protected data' };\n  }\n}\n\n// src/app.module.ts\nimport { Module } from '@nestjs/common';\nimport { APP_GUARD } from '@nestjs/core';\nimport { RateLimitGuard } from './common/guards/rate-limit.guard';\n\n@Module({\n  providers: [\n    {\n      provide: APP_GUARD,\n      useClass: RateLimitGuard,\n    },\n  ],\n})\nexport class AppModule {}\n\n// FastAPI version (Python)\n/*\nfrom fastapi import FastAPI, Request, HTTPException, status\nfrom fastapi.responses import JSONResponse\nimport redis.asyncio as redis\nimport time\nfrom typing import Optional\n\napp = FastAPI()\nredis_client = redis.Redis(host='localhost', port=6379, db=1, decode_responses=True)\n\nclass RateLimiter:\n    def __init__(self, points: int, duration: int, strategy: str = 'fixed-window'):\n        self.points = points\n        self.duration = duration\n        self.strategy = strategy\n    \n    async def check_rate_limit(self, key: str) -> bool:\n        if self.strategy == 'fixed-window':\n            return await self._fixed_window(key)\n        elif self.strategy == 'sliding-window':\n            return await self._sliding_window(key)\n        return await self._fixed_window(key)\n    \n    async def _fixed_window(self, key: str) -> bool:\n        current = await redis_client.incr(key)\n        if current == 1:\n            await redis_client.expire(key, self.duration)\n        return current <= self.points\n    \n    async def _sliding_window(self, key: str) -> bool:\n        now = time.time() * 1000\n        window_start = now - (self.duration * 1000)\n        \n        # Remove old entries\n        await redis_client.zremrangebyscore(key, 0, window_start)\n        \n        # Count requests\n        count = await redis_client.zcard(key)\n        if count >= self.points:\n            return False\n        \n        # Add current request\n        await redis_client.zadd(key, {f\"{now}-{hash(now)}\": now})\n        await redis_client.expire(key, self.duration)\n        return True\n\ndef get_client_ip(request: Request) -> str:\n    forwarded = request.headers.get(\"X-Forwarded-For\")\n    if forwarded:\n        return forwarded.split(\",\")[0].strip()\n    return request.client.host or \"unknown\"\n\n@app.middleware(\"http\")\nasync def rate_limit_middleware(request: Request, call_next):\n    # Apply to specific routes or globally\n    if request.url.path.startswith(\"/api/\"):\n        limiter = RateLimiter(points=100, duration=60)\n        key = f\"rate_limit:{request.url.path}:{get_client_ip(request)}\"\n        \n        is_allowed = await limiter.check_rate_limit(key)\n        if not is_allowed:\n            return JSONResponse(\n                status_code=status.HTTP_429_TOO_MANY_REQUESTS,\n                content={\"detail\": \"Too many requests\"},\n                headers={\"Retry-After\": str(60)}\n            )\n    \n    response = await call_next(request)\n    return response\n*/",
+  "variables": {
+    "REDIS_HOST": "localhost",
+    "REDIS_PORT": "6379",
+    "DEFAULT_RATE_LIMIT": "100",
+    "DEFAULT_WINDOW": "60"
+  },
+  "dependencies": [
+    "@nestjs/common@^10.0.0",
+    "@nestjs/core@^10.0.0",
+    "ioredis@^5.3.2",
+    "express@^4.18.2"
+  ],
+  "workflow_context": {
+    "typical_use_cases": [
+      "API rate limiting and throttling",
+      "DDoS protection",
+      "Login attempt limiting",
+      "Public API quota management",
+      "Preventing abuse"
+    ],
+    "team_composition": [
+      "backend_developer",
+      "security_specialist",
+      "devops_engineer"
+    ],
+    "estimated_time_minutes": 60,
+    "prerequisites": [
+      "Redis server running",
+      "Understanding of rate limiting strategies",
+      "Load balancer configuration for distributed systems"
+    ],
+    "related_templates": [
+      "redis-patterns",
+      "api-security-best-practices",
+      "ddos-protection-strategies"
+    ]
+  }
+}

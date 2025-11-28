@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-pipeline-redis
+  labels:
+    app: ml-pipeline
+    component: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-pipeline
+      component: redis
+  template:
+    metadata:
+      labels:
+        app: ml-pipeline
+        component: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+          name: redis
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: ml-pipeline-redis-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-pipeline-redis
+  labels:
+    app: ml-pipeline
+    component: redis
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+    name: redis
+  selector:
+    app: ml-pipeline
+    component: redis
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ml-pipeline-redis-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

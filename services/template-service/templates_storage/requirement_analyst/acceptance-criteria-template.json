@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "id": "acceptance-criteria-template-v1",
+    "name": "Acceptance Criteria Template (Gherkin BDD Format)",
+    "category": "documentation",
+    "language": "gherkin",
+    "framework": "bdd",
+    "description": "Comprehensive acceptance criteria template using Gherkin/BDD format (Given-When-Then) for clear, testable user story criteria with examples and edge cases",
+    "tags": [
+      "acceptance-criteria",
+      "bdd",
+      "gherkin",
+      "testing",
+      "user-stories",
+      "given-when-then",
+      "scenarios"
+    ],
+    "quality_score": 91.0,
+    "security_score": 73.0,
+    "performance_score": 70.0,
+    "maintainability_score": 92.0,
+    "test_coverage": 95.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T10:00:00.000000",
+    "updated_at": "2025-10-10T10:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "requirement_analyst"
+  },
+  "content": "# Acceptance Criteria\n\n## Story Information\n\n**User Story ID:** {{STORY_ID}}  \n**Story Title:** {{STORY_TITLE}}  \n**As a** {{USER_ROLE}}  \n**I want** {{GOAL}}  \n**So that** {{BENEFIT}}  \n\n**Created:** {{DATE_CREATED}}  \n**Author:** {{AUTHOR}}  \n**Status:** {{STATUS}}  \n\n---\n\n## Feature: {{FEATURE_NAME}}\n\n```gherkin\nFeature: {{FEATURE_NAME}}\n  As a {{USER_ROLE}}\n  I want to {{GOAL}}\n  So that {{BENEFIT}}\n\n  Background:\n    Given {{BACKGROUND_CONDITION_1}}\n    And {{BACKGROUND_CONDITION_2}}\n    And {{BACKGROUND_CONDITION_3}}\n```\n\n---\n\n## Scenario 1: Happy Path (Main Success Scenario)\n\n```gherkin\n  Scenario: {{SCENARIO_1_NAME}}\n    Given {{GIVEN_1}}\n    And {{GIVEN_1A}}\n    And {{GIVEN_1B}}\n    When {{WHEN_1}}\n    And {{WHEN_1A}}\n    Then {{THEN_1}}\n    And {{THEN_1A}}\n    And {{THEN_1B}}\n    And {{THEN_1C}}\n```\n\n**Expected Outcome:**\n- {{OUTCOME_1}}\n- {{OUTCOME_2}}\n- {{OUTCOME_3}}\n\n**Validation Points:**\n- [ ] {{VALIDATION_1}}\n- [ ] {{VALIDATION_2}}\n- [ ] {{VALIDATION_3}}\n\n---\n\n## Scenario 2: {{SCENARIO_2_NAME}}\n\n```gherkin\n  Scenario: {{SCENARIO_2_NAME}}\n    Given {{GIVEN_2}}\n    And {{GIVEN_2A}}\n    When {{WHEN_2}}\n    And {{WHEN_2A}}\n    Then {{THEN_2}}\n    And {{THEN_2A}}\n    And {{THEN_2B}}\n```\n\n**Expected Outcome:**\n- {{OUTCOME_2_1}}\n- {{OUTCOME_2_2}}\n\n**Validation Points:**\n- [ ] {{VALIDATION_2_1}}\n- [ ] {{VALIDATION_2_2}}\n\n---\n\n## Scenario 3: Edge Case - {{EDGE_CASE_NAME}}\n\n```gherkin\n  Scenario: {{EDGE_CASE_NAME}}\n    Given {{GIVEN_EDGE}}\n    And {{GIVEN_EDGE_A}}\n    When {{WHEN_EDGE}}\n    Then {{THEN_EDGE}}\n    And {{THEN_EDGE_A}}\n```\n\n**Expected Behavior:**\n{{EDGE_BEHAVIOR}}\n\n**Validation Points:**\n- [ ] {{VALIDATION_EDGE_1}}\n- [ ] {{VALIDATION_EDGE_2}}\n\n---\n\n## Scenario 4: Error Handling - {{ERROR_SCENARIO_NAME}}\n\n```gherkin\n  Scenario: {{ERROR_SCENARIO_NAME}}\n    Given {{GIVEN_ERROR}}\n    When {{WHEN_ERROR}}\n    Then {{THEN_ERROR}}\n    And the system should display error message \"{{ERROR_MESSAGE}}\"\n    And the error code should be {{ERROR_CODE}}\n    And {{THEN_ERROR_RECOVERY}}\n```\n\n**Error Recovery:**\n{{ERROR_RECOVERY}}\n\n**Validation Points:**\n- [ ] Error message is user-friendly\n- [ ] Error is logged with proper context\n- [ ] System state remains consistent\n- [ ] {{CUSTOM_ERROR_VALIDATION}}\n\n---\n\n## Scenario 5: Boundary Conditions\n\n```gherkin\n  Scenario Outline: {{BOUNDARY_NAME}}\n    Given {{GIVEN_BOUNDARY}}\n    When I {{WHEN_BOUNDARY}} with <input_value>\n    Then {{THEN_BOUNDARY}} <expected_result>\n\n    Examples:\n      | input_value | expected_result | notes |\n      | {{VALUE_1}} | {{RESULT_1}} | {{NOTES_1}} |\n      | {{VALUE_2}} | {{RESULT_2}} | {{NOTES_2}} |\n      | {{VALUE_3}} | {{RESULT_3}} | {{NOTES_3}} |\n      | {{VALUE_4}} | {{RESULT_4}} | {{NOTES_4}} |\n```\n\n**Test Cases:**\n- Minimum valid value\n- Maximum valid value\n- Just below minimum (invalid)\n- Just above maximum (invalid)\n- Empty/null value\n- Special characters\n\n---\n\n## Scenario 6: Performance Requirements\n\n```gherkin\n  Scenario: {{PERF_SCENARIO_NAME}}\n    Given {{GIVEN_PERF}}\n    When {{WHEN_PERF}}\n    Then the response time should be less than {{RESPONSE_TIME}}ms\n    And the operation should complete within {{TIMEOUT}}seconds\n    And system resources should remain under {{RESOURCE_LIMIT}}\n```\n\n**Performance Criteria:**\n- Response time: < {{RESPONSE_TIME}}ms (95th percentile)\n- Throughput: {{THROUGHPUT}} requests/second\n- Concurrent users: {{CONCURRENT_USERS}}\n- Resource usage: < {{CPU_LIMIT}}% CPU, < {{MEMORY_LIMIT}}GB RAM\n\n---\n\n## Scenario 7: Security Requirements\n\n```gherkin\n  Scenario: {{SECURITY_SCENARIO_NAME}}\n    Given {{GIVEN_SECURITY}}\n    And the user has {{PERMISSION}} permission\n    When {{WHEN_SECURITY}}\n    Then {{THEN_SECURITY}}\n    And the action should be logged to audit trail\n    And sensitive data should be {{SECURITY_ACTION}}\n```\n\n**Security Checklist:**\n- [ ] Authentication verified\n- [ ] Authorization checked\n- [ ] Input validation performed\n- [ ] Output sanitization applied\n- [ ] Audit logging enabled\n- [ ] Sensitive data protected\n- [ ] {{CUSTOM_SECURITY_CHECK}}\n\n---\n\n## Scenario 8: Integration Points\n\n```gherkin\n  Scenario: {{INTEGRATION_SCENARIO}}\n    Given {{GIVEN_INTEGRATION}}\n    And the external system {{EXTERNAL_SYSTEM}} is available\n    When {{WHEN_INTEGRATION}}\n    Then the system should send request to {{EXTERNAL_SYSTEM}}\n    And the system should receive response within {{INTEGRATION_TIMEOUT}}ms\n    And {{THEN_INTEGRATION}}\n```\n\n**Integration Requirements:**\n- External system: {{EXTERNAL_SYSTEM}}\n- Protocol: {{PROTOCOL}}\n- Timeout: {{INTEGRATION_TIMEOUT}}ms\n- Retry logic: {{RETRY_LOGIC}}\n- Fallback behavior: {{FALLBACK}}\n\n---\n\n## Scenario 9: Data Validation\n\n```gherkin\n  Scenario Outline: Data Validation for {{FIELD_NAME}}\n    Given a user is on the {{PAGE_NAME}} page\n    When they enter <input> in the {{FIELD_NAME}} field\n    Then the validation should <result>\n    And the error message should be <message>\n\n    Examples:\n      | input | result | message |\n      | {{VALID_INPUT}} | accept | null |\n      | {{INVALID_INPUT_1}} | reject | \"{{ERROR_MSG_1}}\" |\n      | {{INVALID_INPUT_2}} | reject | \"{{ERROR_MSG_2}}\" |\n      | {{INVALID_INPUT_3}} | reject | \"{{ERROR_MSG_3}}\" |\n```\n\n**Validation Rules:**\n- Format: {{FORMAT_RULE}}\n- Length: {{LENGTH_RULE}}\n- Pattern: {{PATTERN_RULE}}\n- Allowed values: {{ALLOWED_VALUES}}\n- Forbidden values: {{FORBIDDEN_VALUES}}\n\n---\n\n## Scenario 10: Accessibility Requirements\n\n```gherkin\n  Scenario: {{ACCESSIBILITY_SCENARIO}}\n    Given a user with {{ACCESSIBILITY_NEED}}\n    When they {{WHEN_ACCESSIBILITY}}\n    Then {{THEN_ACCESSIBILITY}}\n    And the feature should be {{ACCESSIBILITY_STANDARD}} compliant\n    And screen readers should announce \"{{SCREEN_READER_TEXT}}\"\n```\n\n**Accessibility Checklist:**\n- [ ] WCAG {{WCAG_LEVEL}} compliant\n- [ ] Keyboard navigation supported\n- [ ] Screen reader compatible\n- [ ] Sufficient color contrast ({{CONTRAST_RATIO}}:1)\n- [ ] Focus indicators visible\n- [ ] ARIA labels present\n- [ ] {{CUSTOM_ACCESSIBILITY}}\n\n---\n\n## Negative Test Scenarios\n\n### Scenario 11: Unauthorized Access\n```gherkin\n  Scenario: Unauthorized user attempts to {{ACTION}}\n    Given a user without {{REQUIRED_PERMISSION}} permission\n    When they attempt to {{ACTION}}\n    Then the system should deny access\n    And display \"Access Denied\" message\n    And redirect to {{REDIRECT_PAGE}}\n    And log the unauthorized attempt\n```\n\n### Scenario 12: Invalid State\n```gherkin\n  Scenario: Action attempted in invalid state\n    Given the system is in {{INVALID_STATE}} state\n    When the user attempts to {{ACTION}}\n    Then the system should prevent the action\n    And display message \"{{STATE_ERROR_MESSAGE}}\"\n    And {{STATE_RECOVERY_ACTION}}\n```\n\n---\n\n## Non-Functional Acceptance Criteria\n\n### Usability\n- [ ] UI is intuitive for {{TARGET_USER}} users\n- [ ] {{KEY_ACTION}} can be completed in < {{MAX_STEPS}} steps\n- [ ] Help text/tooltips available for complex fields\n- [ ] {{CUSTOM_USABILITY}}\n\n### Compatibility\n- [ ] Works on Chrome {{CHROME_VERSION}}+\n- [ ] Works on Firefox {{FIREFOX_VERSION}}+\n- [ ] Works on Safari {{SAFARI_VERSION}}+\n- [ ] Works on Edge {{EDGE_VERSION}}+\n- [ ] Mobile responsive (iOS {{IOS_VERSION}}+, Android {{ANDROID_VERSION}}+)\n\n### Maintainability\n- [ ] Code follows {{CODING_STANDARD}} standards\n- [ ] Unit test coverage > {{COVERAGE_THRESHOLD}}%\n- [ ] API documentation generated\n- [ ] Logging implemented with appropriate levels\n\n---\n\n## Definition of Done\n\n- [ ] All scenarios pass\n- [ ] Code reviewed and approved\n- [ ] Unit tests written and passing ({{COVERAGE_THRESHOLD}}% coverage)\n- [ ] Integration tests passing\n- [ ] Documentation updated\n- [ ] Security scan completed (no high/critical issues)\n- [ ] Performance tests meet criteria\n- [ ] Accessibility audit passed\n- [ ] Product Owner approval obtained\n- [ ] Deployed to {{ENVIRONMENT}} environment\n- [ ] {{CUSTOM_DOD_1}}\n- [ ] {{CUSTOM_DOD_2}}\n\n---\n\n## Test Data Requirements\n\n| Data Type | Sample Value | Purpose |\n|-----------|--------------|----------|\n| {{DATA_TYPE_1}} | {{SAMPLE_1}} | {{PURPOSE_1}} |\n| {{DATA_TYPE_2}} | {{SAMPLE_2}} | {{PURPOSE_2}} |\n| {{DATA_TYPE_3}} | {{SAMPLE_3}} | {{PURPOSE_3}} |\n\n---\n\n## Dependencies\n\n### Technical Dependencies\n- {{TECH_DEP_1}}\n- {{TECH_DEP_2}}\n\n### Story Dependencies\n- {{STORY_DEP_1}} (must be completed first)\n- {{STORY_DEP_2}} (must be completed first)\n\n---\n\n## Notes\n\n{{ADDITIONAL_NOTES}}\n\n---\n\n## Approval\n\n| Role | Name | Approved | Date |\n|------|------|----------|------|\n| Product Owner | {{PO_NAME}} | Yes/No | {{PO_DATE}} |\n| Tech Lead | {{TL_NAME}} | Yes/No | {{TL_DATE}} |\n| QA Lead | {{QA_NAME}} | Yes/No | {{QA_DATE}} |\n",
+  "variables": {
+    "STORY_ID": "US-001",
+    "STORY_TITLE": "Story Title",
+    "USER_ROLE": "user/admin/customer",
+    "GOAL": "achieve something",
+    "BENEFIT": "realize this value",
+    "STATUS": "Draft/Review/Approved",
+    "FEATURE_NAME": "Feature Name",
+    "RESPONSE_TIME": "200",
+    "TIMEOUT": "5",
+    "CONCURRENT_USERS": "1000",
+    "COVERAGE_THRESHOLD": "80",
+    "WCAG_LEVEL": "2.1 AA",
+    "CONTRAST_RATIO": "4.5"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Defining testable acceptance criteria for user stories",
+      "Creating BDD test scenarios",
+      "Validating story completeness",
+      "Communicating requirements to QA team",
+      "Generating automated test scripts"
+    ],
+    "team_composition": [
+      "requirement_analyst",
+      "qa_engineer",
+      "backend_developer",
+      "frontend_developer"
+    ],
+    "estimated_time_minutes": 45,
+    "prerequisites": [
+      "User story defined",
+      "User workflows understood",
+      "Edge cases identified",
+      "Performance requirements known"
+    ],
+    "related_templates": [
+      "user-story-template",
+      "use-case-specification",
+      "requirements-validation-checklist"
+    ]
+  }
+}

@@ -1,0 +1,58 @@
+manifest_version: '1.0'
+name: ultimate_20250930_120228
+description: A production-ready distributed system for real-time analytics using Apache
+  Kafka for stream processing.
+version: 1.0.0
+engine: jinja2
+metadata:
+  category: backend
+  language: markdown
+  framework: docker
+  tags:
+  - api
+  - backend
+  - docker
+  - flask
+  - markdown
+  - postgresql
+  - pytest
+  - python
+  - rest
+  - rest api
+  architecture: rest-api
+  file_count: 36
+  total_lines: 3919
+  auto_classified: true
+  classification_confidence: 0.52
+  generated_at: '2025-10-01T11:59:55.343783Z'
+  detected_languages:
+    markdown: 1727
+    yaml: 830
+    python: 1077
+    shell: 59
+  detected_frameworks:
+  - docker
+  - flask
+  - pytest
+  features:
+  - 'Stream Ingestion**: Kafka brokers with Zookeeper coordination'
+  - 'Stream Processing**: Kafka Streams applications for real-time analytics'
+  - 'Data Storage**: PostgreSQL for aggregated data, Redis for caching'
+  - 'API Layer**: REST API for query and dashboard access'
+  - 'Monitoring**: Prometheus + Grafana for system observability'
+  license: MIT
+placeholders: []
+hooks:
+  pre_generation: []
+  post_generation: []
+files:
+  include:
+  - '**/*'
+  exclude:
+  - .git/**
+  - __pycache__/**
+  - node_modules/**
+  - .pytest_cache/**
+  - '*.pyc'
+  - .DS_Store
+author: MAESTRO Orchestrator

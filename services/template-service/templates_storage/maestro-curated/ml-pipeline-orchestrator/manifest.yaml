@@ -1,0 +1,59 @@
+manifest_version: '1.0'
+name: ultimate_20250930_014123
+description: Production-ready machine learning pipeline orchestration system with
+  directed acyclic graph (DAG) execution engine for workflow management.
+version: 1.0.0
+engine: jinja2
+metadata:
+  category: backend
+  language: python
+  framework: fastapi
+  tags:
+  - api
+  - backend
+  - fastapi
+  - kubernetes
+  - markdown
+  - pytest
+  - python
+  - rest
+  - rest api db
+  - yaml
+  architecture: rest-api-db
+  file_count: 26
+  total_lines: 2756
+  auto_classified: true
+  classification_confidence: 0.36
+  generated_at: '2025-10-01T11:59:52.681237Z'
+  detected_languages:
+    yaml: 325
+    markdown: 246
+    python: 2018
+  detected_frameworks:
+  - fastapi
+  - pytest
+  features:
+  - 'DAG Execution Engine**: Automatic dependency resolution and topologically sorted
+    execution'
+  - 'Parallel Task Execution**: Configurable concurrent task processing with resource
+    management'
+  - 'ML Pipeline Stages**: Pre-built stages for data ingestion, preprocessing, feature
+    engineering, training, evaluation, and deployment'
+  - 'Workflow Orchestration**: Complete workflow management with monitoring and visualization'
+  - 'REST API**: FastAPI-based API for programmatic workflow control'
+  license: MIT
+placeholders: []
+hooks:
+  pre_generation: []
+  post_generation: []
+files:
+  include:
+  - '**/*'
+  exclude:
+  - .git/**
+  - __pycache__/**
+  - node_modules/**
+  - .pytest_cache/**
+  - '*.pyc'
+  - .DS_Store
+author: MAESTRO Orchestrator

@@ -1,0 +1,141 @@
+manifest_version: '1.0'
+name: nextjs-marketing-site
+description: High-performance marketing website built with Next.js. Features SSG/SSR for optimal SEO, blog integration, and conversion-focused design patterns.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: nextjs
+  tags:
+    - marketing
+    - nextjs
+    - seo
+    - blog
+    - corporate
+    - tailwindcss
+    - typescript
+    - ssr
+    - ssg
+  design_system: custom
+  ui_complexity: intermediate
+  use_cases:
+    - corporate-website
+    - marketing-site
+    - product-marketing
+    - content-marketing
+    - seo-optimized
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-marketing-site
+  - variable: COMPANY_NAME
+    description: Company name
+    type: string
+    required: true
+    default: Your Company
+  - variable: SITE_URL
+    description: Production site URL
+    type: string
+    required: true
+    default: https://example.com
+  - variable: ENABLE_BLOG
+    description: Include blog functionality
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_NEWSLETTER
+    description: Include newsletter signup
+    type: boolean
+    required: false
+    default: true
+  - variable: CMS_PROVIDER
+    description: Content management system
+    type: string
+    required: false
+    default: contentful
+    choices:
+      - contentful
+      - sanity
+      - strapi
+      - markdown
+  - variable: ANALYTICS_PROVIDER
+    description: Analytics provider
+    type: string
+    required: false
+    default: google-analytics
+    choices:
+      - google-analytics
+      - plausible
+      - mixpanel
+      - none
+
+dependencies:
+  runtime:
+    - react@18.2.0
+    - react-dom@18.2.0
+    - next@14.0.0
+    - tailwindcss@3.4.0
+    - '@headlessui/react@1.7.0'
+    - '@heroicons/react@2.0.0'
+    - gray-matter@4.0.3
+    - remark@15.0.0
+    - remark-html@16.0.0
+  build:
+    - typescript@5.0.0
+    - postcss@8.4.0
+    - autoprefixer@10.4.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - npm run build
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - .next/**
+    - out/**
+    - .DS_Store
+
+features:
+  - "Static Site Generation (SSG) for maximum performance"
+  - "Server-Side Rendering (SSR) for dynamic pages"
+  - "Integrated blog with MDX support"
+  - "SEO optimized with meta tags and structured data"
+  - "Image optimization with next/image"
+  - "Newsletter subscription integration"
+  - "Contact form with validation"
+  - "Multi-page navigation"
+  - "Case studies and portfolio sections"
+  - "Analytics integration"
+  - "Sitemap and robots.txt generation"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/CMS_INTEGRATION.md
+  examples:
+    - examples/blog-post
+    - examples/landing-page
+    - examples/case-study

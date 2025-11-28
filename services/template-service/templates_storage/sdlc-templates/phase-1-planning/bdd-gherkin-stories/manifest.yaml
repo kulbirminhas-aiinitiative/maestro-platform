@@ -1,0 +1,103 @@
+manifest_version: '1.0'
+name: bdd-gherkin-user-stories
+description: Behavior-Driven Development (BDD) user stories template using Gherkin syntax. Features Given/When/Then scenarios with acceptance criteria for executable specifications.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: requirements
+  sdlc_phase: planning
+  language: gherkin
+  framework: bdd
+  tags:
+    - bdd
+    - gherkin
+    - user-stories
+    - acceptance-criteria
+    - cucumber
+    - specflow
+    - testing
+  methodology: behavior-driven-development
+  complexity: simple
+  use_cases:
+    - requirements-specification
+    - acceptance-testing
+    - living-documentation
+    - team-collaboration
+  license: MIT
+
+placeholders:
+  - variable: FEATURE_NAME
+    description: Name of the feature
+    type: string
+    required: true
+  - variable: USER_ROLE
+    description: User role (As a...)
+    type: string
+    required: true
+    default: user
+  - variable: BUSINESS_VALUE
+    description: Business value (So that...)
+    type: string
+    required: true
+  - variable: FEATURE_DESCRIPTION
+    description: Feature description
+    type: string
+    required: true
+
+dependencies:
+  runtime: []
+  build: []
+  tools:
+    - cucumber
+    - specflow
+    - behave
+    - pytest-bdd
+    - jest-cucumber
+
+hooks:
+  pre_generation: []
+  post_generation: []
+
+files:
+  include:
+    - features/**/*.feature
+    - step_definitions/**
+  exclude:
+    - .git/**
+
+features:
+  - "Gherkin Given/When/Then syntax"
+  - "User story format (As a/I want/So that)"
+  - "Scenario outlines for data-driven tests"
+  - "Background for common preconditions"
+  - "Tags for organization and filtering"
+  - "Scenario descriptions and context"
+  - "Examples tables for parameterization"
+  - "Acceptance criteria checklist"
+  - "Edge cases and error scenarios"
+  - "Living documentation generation"
+  - "Executable specifications"
+  - "Step definition templates"
+
+configuration:
+  gherkin_version: 6.0
+  syntax:
+    keywords: [Feature, Scenario, Given, When, Then, And, But]
+    tags_enabled: true
+    examples_enabled: true
+  frameworks:
+    javascript: [cucumber-js, jest-cucumber]
+    python: [behave, pytest-bdd]
+    java: [cucumber-jvm]
+    dotnet: [specflow]
+    ruby: [cucumber]
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  examples:
+    - examples/user-authentication.feature
+    - examples/shopping-cart.feature
+    - examples/payment-processing.feature

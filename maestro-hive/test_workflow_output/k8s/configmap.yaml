@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-api-config
+  namespace: production
+  labels:
+    app: user-api
+data:
+  # Database configuration (non-sensitive)
+  db-name: "user_management"
+
+  # Redis configuration (non-sensitive)
+  redis-host: "redis-master.production.svc.cluster.local"
+
+  # Application configuration
+  log-level: "info"
+  rate-limit-window: "900000"
+  rate-limit-max: "100"
+
+  # CORS configuration
+  cors-origin: "*"
+
+  # Feature flags
+  feature-rate-limiting: "true"
+  feature-audit-logging: "true"
+  feature-email-verification: "true"

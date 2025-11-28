@@ -1,0 +1,117 @@
+manifest_version: '1.0'
+name: helm-chart-template
+description: Production-ready Helm chart template for Kubernetes deployments with ConfigMaps, Secrets, services, ingress, HPA, and best practices for cloud-native applications.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: deployment
+  sdlc_phase: deployment
+  language: yaml
+  framework: helm
+  tags:
+    - helm
+    - kubernetes
+    - k8s
+    - deployment
+    - charts
+    - devops
+  complexity: advanced
+  use_cases:
+    - kubernetes-deployment
+    - cloud-native-apps
+    - microservices-deployment
+    - multi-environment
+  license: MIT
+
+placeholders:
+  - variable: CHART_NAME
+    description: Name of the Helm chart
+    type: string
+    required: true
+  - variable: APP_VERSION
+    description: Application version
+    type: string
+    required: true
+    default: 1.0.0
+  - variable: REPLICAS
+    description: Number of replicas
+    type: integer
+    required: false
+    default: 3
+  - variable: ENABLE_INGRESS
+    description: Enable ingress
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_HPA
+    description: Enable Horizontal Pod Autoscaler
+    type: boolean
+    required: false
+    default: true
+
+dependencies:
+  runtime: []
+  build: []
+  tools:
+    - helm@3.13.0
+    - kubectl@1.28.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - helm lint .
+    - helm template . --debug
+
+files:
+  include:
+    - Chart.yaml
+    - values.yaml
+    - templates/**
+  exclude:
+    - .git/**
+
+features:
+  - "Helm 3 chart structure"
+  - "Deployment with configurable replicas"
+  - "Service (ClusterIP, NodePort, LoadBalancer)"
+  - "Ingress with TLS support"
+  - "ConfigMaps for application config"
+  - "Secrets management"
+  - "Horizontal Pod Autoscaler (HPA)"
+  - "Resource limits and requests"
+  - "Liveness and readiness probes"
+  - "Pod disruption budget (PDB)"
+  - "Service account and RBAC"
+  - "Network policies"
+  - "Values override for environments"
+  - "Dependency management"
+  - "Pre/post install hooks"
+
+configuration:
+  helm_version: 3.13.0
+  kubernetes_version: 1.28+
+  chart_structure:
+    - Chart.yaml
+    - values.yaml
+    - values-dev.yaml
+    - values-staging.yaml
+    - values-production.yaml
+    - templates/
+    - charts/
+  best_practices:
+    - use_named_templates
+    - validate_values
+    - document_values_yaml
+    - version_control
+    - test_charts
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  values: docs/VALUES.md
+  examples:
+    - examples/microservice-chart
+    - examples/stateful-app-chart
+    - examples/frontend-chart

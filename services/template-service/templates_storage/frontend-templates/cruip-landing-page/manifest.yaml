@@ -1,0 +1,125 @@
+manifest_version: '1.0'
+name: cruip-landing-page
+description: Conversion-optimized landing page template for SaaS and startups. Features modern design, compelling hero section, feature showcase, testimonials, and pricing tables.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: react
+  tags:
+    - landing-page
+    - marketing
+    - saas
+    - startup
+    - tailwindcss
+    - react
+    - conversion
+    - nextjs
+  design_system: cruip
+  ui_complexity: simple
+  use_cases:
+    - saas-landing
+    - product-launch
+    - startup-website
+    - lead-generation
+    - conversion-optimization
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-saas-landing
+  - variable: PRODUCT_NAME
+    description: Product name displayed on the page
+    type: string
+    required: true
+    default: Your SaaS Product
+  - variable: TAGLINE
+    description: Main tagline/value proposition
+    type: string
+    required: true
+    default: Build faster, scale smarter
+  - variable: CTA_TEXT
+    description: Call-to-action button text
+    type: string
+    required: false
+    default: Get Started Free
+  - variable: ENABLE_PRICING
+    description: Include pricing section
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_TESTIMONIALS
+    description: Include testimonials section
+    type: boolean
+    required: false
+    default: true
+  - variable: ANALYTICS_ID
+    description: Google Analytics tracking ID
+    type: string
+    required: false
+    default: ''
+
+dependencies:
+  runtime:
+    - react@18.2.0
+    - react-dom@18.2.0
+    - next@14.0.0
+    - tailwindcss@3.4.0
+    - framer-motion@10.16.0
+    - react-hook-form@7.48.0
+  build:
+    - typescript@5.0.0
+    - postcss@8.4.0
+    - autoprefixer@10.4.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - npm run build
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - .next/**
+    - out/**
+    - .DS_Store
+
+features:
+  - "Eye-catching hero section with animations"
+  - "Feature showcase with icons and descriptions"
+  - "Social proof and testimonials"
+  - "Pricing tables with feature comparison"
+  - "FAQ section"
+  - "Email capture forms"
+  - "Mobile-first responsive design"
+  - "SEO optimized with Next.js"
+  - "Performance optimized (90+ Lighthouse score)"
+  - "Smooth scroll animations"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  examples:
+    - examples/saas-product
+    - examples/mobile-app
+    - examples/b2b-service

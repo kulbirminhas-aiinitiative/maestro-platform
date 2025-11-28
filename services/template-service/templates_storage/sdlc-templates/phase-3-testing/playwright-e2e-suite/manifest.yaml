@@ -1,0 +1,121 @@
+manifest_version: '1.0'
+name: playwright-e2e-test-suite
+description: Production-ready Playwright end-to-end testing framework with page objects, fixtures, parallel execution, visual regression, and CI/CD integration.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: testing
+  sdlc_phase: testing
+  language: typescript
+  framework: playwright
+  tags:
+    - playwright
+    - e2e-testing
+    - automation
+    - typescript
+    - testing
+    - ci-cd
+  test_type: end-to-end
+  complexity: intermediate
+  use_cases:
+    - e2e-testing
+    - ui-testing
+    - regression-testing
+    - cross-browser-testing
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the test project
+    type: string
+    required: true
+    default: e2e-tests
+  - variable: BASE_URL
+    description: Application base URL
+    type: string
+    required: true
+    default: http://localhost:3000
+  - variable: BROWSERS
+    description: Browsers to test
+    type: list
+    required: false
+    default: [chromium, firefox, webkit]
+  - variable: PARALLEL_WORKERS
+    description: Number of parallel workers
+    type: integer
+    required: false
+    default: 4
+  - variable: ENABLE_TRACE
+    description: Enable trace on failure
+    type: boolean
+    required: false
+    default: true
+
+dependencies:
+  runtime:
+    - '@playwright/test@1.40.0'
+    - dotenv@16.0.0
+  build:
+    - typescript@5.0.0
+    - '@types/node@20.0.0'
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - npx playwright install
+    - npm test
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - test-results/**
+    - playwright-report/**
+    - .DS_Store
+
+features:
+  - "Page Object Model (POM) pattern"
+  - "Reusable fixtures for test setup"
+  - "Authentication state management"
+  - "Parallel test execution"
+  - "Auto-waiting and retry-ability"
+  - "Cross-browser testing (Chromium, Firefox, WebKit)"
+  - "Mobile emulation and responsive testing"
+  - "Visual regression testing"
+  - "Network mocking and interception"
+  - "Video and screenshot capture"
+  - "Trace viewer for debugging"
+  - "HTML reporter with screenshots"
+  - "CI/CD integration (GitHub Actions)"
+  - "Test isolation with browser contexts"
+  - "Custom matchers and assertions"
+
+configuration:
+  playwright_version: 1.40.0
+  browsers: [chromium, firefox, webkit]
+  execution:
+    parallel: true
+    workers: 4
+    retry: 2
+  reporting:
+    html_report: true
+    junit_report: true
+    trace_on_failure: true
+  ci_integration:
+    - github-actions
+    - gitlab-ci
+    - jenkins
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  best_practices: docs/BEST_PRACTICES.md
+  examples:
+    - examples/login-flow
+    - examples/checkout-flow
+    - examples/api-testing

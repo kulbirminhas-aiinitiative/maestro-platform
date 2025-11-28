@@ -1,0 +1,112 @@
+manifest_version: '1.0'
+name: prometheus-monitoring-config
+description: Production-ready Prometheus configuration with service discovery, alerting rules, recording rules, and best practices for metrics collection and monitoring.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: monitoring
+  sdlc_phase: operations
+  language: yaml
+  framework: prometheus
+  tags:
+    - prometheus
+    - monitoring
+    - metrics
+    - observability
+    - alerting
+    - scraping
+  complexity: intermediate
+  use_cases:
+    - infrastructure-monitoring
+    - application-metrics
+    - alerting
+    - observability
+  license: MIT
+
+placeholders:
+  - variable: SCRAPE_INTERVAL
+    description: Default scrape interval
+    type: string
+    required: false
+    default: 15s
+  - variable: EVALUATION_INTERVAL
+    description: Alert rule evaluation interval
+    type: string
+    required: false
+    default: 15s
+  - variable: RETENTION_TIME
+    description: Metrics retention time
+    type: string
+    required: false
+    default: 15d
+  - variable: ENABLE_SERVICE_DISCOVERY
+    description: Enable Kubernetes service discovery
+    type: boolean
+    required: false
+    default: true
+
+dependencies:
+  runtime: []
+  build: []
+  tools:
+    - prometheus@2.48.0
+    - alertmanager@0.26.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - promtool check config prometheus.yml
+    - promtool check rules alerts/*.yml
+
+files:
+  include:
+    - prometheus.yml
+    - alerts/**
+    - rules/**
+  exclude:
+    - .git/**
+    - data/**
+
+features:
+  - "Global scrape configuration"
+  - "Service discovery (Kubernetes, Consul, EC2)"
+  - "Static targets configuration"
+  - "Relabeling rules"
+  - "Recording rules for aggregations"
+  - "Alert rules with severity levels"
+  - "Alertmanager integration"
+  - "Multi-target scraping"
+  - "TLS and authentication"
+  - "Remote write/read configuration"
+  - "Metric relabeling"
+  - "Scrape timeout configuration"
+  - "Target health monitoring"
+  - "Federation setup"
+
+configuration:
+  prometheus_version: 2.48.0
+  global:
+    scrape_interval: 15s
+    evaluation_interval: 15s
+    external_labels:
+      cluster: production
+  scrape_configs:
+    - job: node-exporter
+    - job: kubernetes-apiservers
+    - job: kubernetes-nodes
+    - job: kubernetes-pods
+  alerting:
+    alertmanagers:
+      - static_configs:
+          - targets: [alertmanager:9093]
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  alerting: docs/ALERTING.md
+  examples:
+    - examples/kubernetes-monitoring
+    - examples/application-monitoring
+    - examples/infrastructure-monitoring

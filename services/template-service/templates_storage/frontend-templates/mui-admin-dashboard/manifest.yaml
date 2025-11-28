@@ -1,0 +1,123 @@
+manifest_version: '1.0'
+name: mui-admin-dashboard
+description: Enterprise-grade admin dashboard built with Material-UI (MUI) and React. Implements Google's Material Design system with comprehensive component library for data-intensive applications.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: react
+  tags:
+    - admin
+    - dashboard
+    - material-ui
+    - mui
+    - react
+    - typescript
+    - enterprise
+    - material-design
+  design_system: material-design
+  ui_complexity: advanced
+  use_cases:
+    - enterprise-applications
+    - admin-panels
+    - crm-systems
+    - erp-systems
+    - data-management
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-mui-dashboard
+  - variable: APP_TITLE
+    description: Application title displayed in UI
+    type: string
+    required: true
+    default: Enterprise Dashboard
+  - variable: THEME_PRIMARY_COLOR
+    description: Primary theme color (hex)
+    type: string
+    required: false
+    default: '#1976d2'
+  - variable: THEME_SECONDARY_COLOR
+    description: Secondary theme color (hex)
+    type: string
+    required: false
+    default: '#dc004e'
+  - variable: ENABLE_RTL
+    description: Enable right-to-left language support
+    type: boolean
+    required: false
+    default: false
+  - variable: API_BASE_URL
+    description: Backend API base URL
+    type: string
+    required: false
+    default: http://localhost:8000/api
+
+dependencies:
+  runtime:
+    - react@18.2.0
+    - react-dom@18.2.0
+    - '@mui/material@5.14.0'
+    - '@mui/icons-material@5.14.0'
+    - '@mui/x-data-grid@6.18.0'
+    - '@mui/x-date-pickers@6.18.0'
+    - '@emotion/react@11.11.0'
+    - '@emotion/styled@11.11.0'
+    - react-router-dom@6.20.0
+    - recharts@2.10.0
+  build:
+    - typescript@5.0.0
+    - vite@5.0.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - npm run build
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - dist/**
+    - build/**
+    - .DS_Store
+
+features:
+  - "Material Design 3 components"
+  - "Advanced data grid with inline editing"
+  - "Responsive drawer navigation"
+  - "Customizable theme system"
+  - "Form validation with Material-UI"
+  - "Date pickers and advanced inputs"
+  - "Charts and analytics components"
+  - "Accessibility (WCAG 2.1 AA compliant)"
+  - "Internationalization (i18n) ready"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/API.md
+  examples:
+    - examples/data-grid-advanced
+    - examples/custom-theme
+    - examples/form-validation

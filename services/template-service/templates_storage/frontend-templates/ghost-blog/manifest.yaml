@@ -1,0 +1,104 @@
+manifest_version: '1.0'
+name: ghost-blog
+description: Professional publishing platform theme for Ghost CMS. Features beautiful typography, membership support, newsletter integration, and SEO optimization.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: javascript
+  framework: ghost
+  tags:
+    - blog
+    - ghost
+    - publishing
+    - content
+    - newsletter
+    - membership
+    - handlebars
+  design_system: custom
+  ui_complexity: intermediate
+  use_cases:
+    - blog
+    - publishing
+    - content-site
+    - newsletter
+    - membership-site
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-ghost-blog
+  - variable: BLOG_NAME
+    description: Blog name
+    type: string
+    required: true
+    default: Your Blog
+  - variable: ENABLE_MEMBERSHIP
+    description: Enable membership features
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_NEWSLETTER
+    description: Enable newsletter signup
+    type: boolean
+    required: false
+    default: true
+  - variable: PRIMARY_COLOR
+    description: Primary theme color (hex)
+    type: string
+    required: false
+    default: '#3b82f6'
+
+dependencies:
+  runtime:
+    - ghost@5.0.0
+  build: []
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - ghost start
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - .DS_Store
+
+features:
+  - "Beautiful typography and readability"
+  - "Membership tiers and paid subscriptions"
+  - "Newsletter signup and email collection"
+  - "Article tags and categories"
+  - "Author profiles and bios"
+  - "Social sharing integration"
+  - "Comments support"
+  - "Search functionality"
+  - "RSS feed generation"
+  - "SEO optimized"
+  - "Mobile responsive design"
+  - "Dark mode support"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  examples:
+    - examples/custom-theme
+    - examples/membership-setup

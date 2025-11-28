@@ -1,0 +1,19 @@
+{
+  "project_path": "/home/ec2-user/projects/maestro-v2/enhanced_lean_output/ultimate_20250930_120228",
+  "project_name": "ultimate_20250930_120228",
+  "total_score": 87.0,
+  "tier": "\ud83e\udd49 Silver",
+  "category_scores": {
+    "code_organization": 13.0,
+    "service_discovery": 14.0,
+    "port_allocation": 10.0,
+    "resilience_patterns": 18.0,
+    "quality_testing": 18.0,
+    "infrastructure": 10.0,
+    "documentation": 4.0
+  },
+  "violations": [],
+  "recommendations": [
+    "Add OpenAPI/Swagger documentation"
+  ]
+}

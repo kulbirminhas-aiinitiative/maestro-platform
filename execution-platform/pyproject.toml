@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "execution-platform"
+version = "0.1.0"
+description = "Provider-agnostic execution platform with persona-level routing and SPI."
+authors = ["Maestro Team <noreply@example.com>"]
+readme = "START_HERE.md"
+packages = [{ include = "execution_platform", from = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+PyYAML = "^6.0"
+openai = "^1.43.0"
+google-generativeai = "^0.7.2"
+# anthropic optional for future direct SDK integration (not required for tests)
+anthropic = {version = "^0.37.1", optional = true}
+
+[tool.poetry.extras]
+anthropic = ["anthropic"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+pytest-asyncio = "^1.2.0"
+httpx = "^0.28.1"
+
+[build-system]
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"

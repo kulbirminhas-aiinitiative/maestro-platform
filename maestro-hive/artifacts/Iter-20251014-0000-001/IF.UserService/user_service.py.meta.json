@@ -1,0 +1,13 @@
+{
+  "iteration_id": "Iter-20251014-0000-001",
+  "node_id": "IF.UserService",
+  "artifact_name": "user_service.py",
+  "capability": "interface_definition",
+  "contract_version": null,
+  "original_path": "/tmp/tmp1qx1xby6/sample_project/src/business/user_service.py",
+  "stamped_path": "artifacts/Iter-20251014-0000-001/IF.UserService/user_service.py",
+  "sha256": "27856bfd6dd4d60dfd6783d397c798232dcf649bbe2bdc9a4e166268372bd8be",
+  "size_bytes": 215,
+  "timestamp": "2025-10-14T00:00:43.897823Z",
+  "labels": {}
+}

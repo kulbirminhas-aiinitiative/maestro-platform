@@ -1,0 +1,278 @@
+# DDE Capability Taxonomy v1.0
+# Defines the hierarchical skill taxonomy for capability-based routing
+
+version: "1.0.0"
+updated: "2025-10-12"
+
+taxonomy:
+  # Web Development Capabilities
+  Web:
+    React:
+      - Hooks
+      - StateManagement
+      - Performance
+      - Testing
+      - SSR
+    Vue:
+      - Composition
+      - Reactivity
+      - Vuex
+      - Pinia
+    Angular:
+      - Components
+      - Services
+      - RxJS
+      - NgRx
+    General:
+      - HTML5
+      - CSS3
+      - JavaScript
+      - TypeScript
+      - Responsive
+      - Accessibility
+
+  # Backend Development Capabilities
+  Backend:
+    Python:
+      - FastAPI
+      - Django
+      - Flask
+      - AsyncIO
+      - SQLAlchemy
+      - Pydantic
+    Node:
+      - Express
+      - NestJS
+      - Fastify
+      - GraphQL
+      - SocketIO
+    Go:
+      - GinGonic
+      - GRPC
+      - Goroutines
+      - Channels
+    Java:
+      - SpringBoot
+      - Hibernate
+      - JPA
+      - Maven
+    Ruby:
+      - Rails
+      - Sinatra
+      - ActiveRecord
+
+  # Architecture & Design Capabilities
+  Architecture:
+    - APIDesign
+    - DatabaseDesign
+    - Microservices
+    - EventDriven
+    - DomainDrivenDesign
+    - CQRS
+    - Hexagonal
+    - Layered
+    - CleanArchitecture
+
+  # Data & Database Capabilities
+  Data:
+    SQL:
+      - PostgreSQL
+      - MySQL
+      - SQLServer
+      - Oracle
+    NoSQL:
+      - MongoDB
+      - Redis
+      - Cassandra
+      - DynamoDB
+    DataEngineering:
+      - ETL
+      - DataPipelines
+      - Spark
+      - Airflow
+      - Kafka
+    Analytics:
+      - DataModeling
+      - BusinessIntelligence
+      - Visualization
+
+  # Security Capabilities
+  Security:
+    - OWASP
+    - OAuth2
+    - JWT
+    - Encryption
+    - PKI
+    - SAST
+    - DAST
+    - SCA
+    - PenetrationTesting
+    - ThreatModeling
+    - SecurityAuditing
+    - ComplianceSOC2
+    - CompliancePCIDSS
+    - ComplianceHIPAA
+
+  # DevOps & Infrastructure Capabilities
+  DevOps:
+    Containerization:
+      - Docker
+      - Podman
+      - BuildKit
+    Orchestration:
+      - Kubernetes
+      - Helm
+      - EKS
+      - GKE
+      - AKS
+    CICD:
+      - GitHubActions
+      - GitLabCI
+      - Jenkins
+      - CircleCI
+      - TravisCI
+    IaC:
+      - Terraform
+      - Ansible
+      - CloudFormation
+      - Pulumi
+    Monitoring:
+      - Prometheus
+      - Grafana
+      - ELK
+      - Datadog
+      - NewRelic
+    Cloud:
+      - AWS
+      - Azure
+      - GCP
+      - CloudFlare
+
+  # Testing & QA Capabilities
+  Testing:
+    Unit:
+      - Jest
+      - Pytest
+      - JUnit
+      - Mocha
+    Integration:
+      - TestContainers
+      - WireMock
+      - Postman
+    E2E:
+      - Playwright
+      - Cypress
+      - Selenium
+    Performance:
+      - JMeter
+      - Gatling
+      - K6
+      - Locust
+    Contract:
+      - Pact
+      - OpenAPIValidator
+    BDD:
+      - Cucumber
+      - Behave
+      - SpecFlow
+
+  # Mobile Development Capabilities
+  Mobile:
+    iOS:
+      - Swift
+      - UIKit
+      - SwiftUI
+      - CoreData
+    Android:
+      - Kotlin
+      - Jetpack
+      - Compose
+      - Room
+    CrossPlatform:
+      - ReactNative
+      - Flutter
+      - Ionic
+
+  # Machine Learning & AI Capabilities
+  ML:
+    - Python
+    - TensorFlow
+    - PyTorch
+    - ScikitLearn
+    - NLP
+    - ComputerVision
+    - ReinforcementLearning
+    - MLOps
+    - FeatureEngineering
+    - ModelDeployment
+
+  # Project Management & SDLC Capabilities
+  PM:
+    - Agile
+    - Scrum
+    - Kanban
+    - RequirementsGathering
+    - StakeholderManagement
+    - RiskManagement
+    - ProjectPlanning
+
+  # Documentation & Communication Capabilities
+  Documentation:
+    - TechnicalWriting
+    - APIDocumentation
+    - UserGuides
+    - ArchitectureDecisionRecords
+    - Markdown
+    - Confluence
+    - Notion
+
+# Capability Aliases (for backward compatibility)
+aliases:
+  "Web:Frontend": "Web"
+  "Backend:API": "Backend"
+  "Security:AppSec": "Security"
+  "QA": "Testing"
+
+# Capability Groups (common combinations)
+groups:
+  FullStackWeb:
+    - Web:React
+    - Backend:Node
+    - Data:SQL:PostgreSQL
+    - DevOps:Docker
+
+  BackendAPI:
+    - Backend:Python:FastAPI
+    - Data:SQL
+    - Architecture:APIDesign
+    - Testing:Integration
+
+  FrontendExpert:
+    - Web:React
+    - Web:General:TypeScript
+    - Testing:E2E
+    - Testing:Unit
+
+  DevOpsEngineer:
+    - DevOps:Kubernetes
+    - DevOps:CICD
+    - DevOps:IaC:Terraform
+    - DevOps:Monitoring
+
+  SecuritySpecialist:
+    - Security:OWASP
+    - Security:SAST
+    - Security:PenetrationTesting
+    - Architecture:APIDesign
+
+  DataEngineer:
+    - Data:DataEngineering
+    - Backend:Python
+    - Data:SQL
+    - Data:NoSQL
+
+  QAEngineer:
+    - Testing:Unit
+    - Testing:Integration
+    - Testing:E2E
+    - Testing:Performance

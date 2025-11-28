@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-runner
+  namespace: ${NAMESPACE}
+spec:
+  template:
+    metadata:
+      labels:
+        app: test-runner
+        execution-id: ${EXECUTION_ID}
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: test-runner
+        image: ${TEST_IMAGE}
+        command: ${TEST_COMMAND}
+        env: ${ENV_VARS}
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        volumeMounts:
+        - name: test-results
+          mountPath: /test-results
+      volumes:
+      - name: test-results
+        emptyDir: {}
+  backoffLimit: ${MAX_RETRIES}
+  ttlSecondsAfterFinished: ${TTL_SECONDS}

@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  websocket_real_time_server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: websocket-real-time-server-v1
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - WEBSOCKET_PORT=${WEBSOCKET_PORT}
+      - REDIS_URL=${REDIS_URL}
+      - MAX_CONNECTIONS_PER_ROOM=${MAX_CONNECTIONS_PER_ROOM}
+      - HEARTBEAT_INTERVAL_SECONDS=${HEARTBEAT_INTERVAL_SECONDS}
+      - MESSAGE_RATE_LIMIT=${MESSAGE_RATE_LIMIT}
+      - ENABLE_AUTHENTICATION=${ENABLE_AUTHENTICATION}
+      - JWT_SECRET=${JWT_SECRET}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - app-data:/app/data
+      - app-logs:/app/logs
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+volumes:
+  app-data:
+  app-logs:
+
+networks:
+  app-network:
+    driver: bridge

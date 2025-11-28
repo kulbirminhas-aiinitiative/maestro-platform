@@ -1,0 +1,126 @@
+manifest_version: '1.0'
+name: vue-storefront
+description: Powerful headless PWA frontend for e-commerce built with Vue.js and Nuxt. Optimized for mobile-first shopping experiences with offline support.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: vue
+  tags:
+    - ecommerce
+    - vue
+    - nuxt
+    - commerce
+    - headless
+    - pwa
+    - typescript
+    - mobile-first
+  design_system: custom
+  ui_complexity: advanced
+  use_cases:
+    - online-store
+    - headless-commerce
+    - mobile-commerce
+    - pwa-store
+    - omnichannel
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-vue-store
+  - variable: STORE_NAME
+    description: Store name displayed to customers
+    type: string
+    required: true
+    default: Your Store
+  - variable: COMMERCE_BACKEND
+    description: Commerce backend platform
+    type: string
+    required: true
+    default: magento
+    choices:
+      - magento
+      - shopify
+      - commercetools
+      - shopware
+      - custom
+  - variable: ENABLE_PWA
+    description: Enable Progressive Web App features
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_OFFLINE_MODE
+    description: Enable offline browsing
+    type: boolean
+    required: false
+    default: true
+  - variable: DEFAULT_LOCALE
+    description: Default language locale
+    type: string
+    required: false
+    default: en
+
+dependencies:
+  runtime:
+    - vue@3.3.0
+    - nuxt@3.8.0
+    - '@nuxtjs/tailwindcss@6.10.0'
+    - pinia@2.1.0
+    - '@vueuse/core@10.7.0'
+  build:
+    - typescript@5.0.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - npm run build
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - .nuxt/**
+    - dist/**
+    - .DS_Store
+
+features:
+  - "Progressive Web App with offline support"
+  - "Mobile-first responsive design"
+  - "Product catalog with lazy loading"
+  - "Advanced filtering and faceted search"
+  - "Shopping cart with persistent state"
+  - "One-page checkout optimization"
+  - "Multi-language and multi-currency"
+  - "User account management"
+  - "Wishlist and product comparison"
+  - "Real-time inventory updates"
+  - "Server-Side Rendering for SEO"
+  - "Performance optimized (90+ Lighthouse)"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/INTEGRATION.md
+  examples:
+    - examples/magento-setup
+    - examples/custom-backend
+    - examples/pwa-config

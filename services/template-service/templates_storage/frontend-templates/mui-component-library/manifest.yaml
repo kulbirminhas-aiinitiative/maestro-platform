@@ -1,0 +1,115 @@
+manifest_version: '1.0'
+name: mui-component-library
+description: Comprehensive React component library built with Material-UI. Implements Google's Material Design with customizable theme system for enterprise applications.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: react
+  tags:
+    - ui-library
+    - material-ui
+    - mui
+    - react
+    - typescript
+    - design-system
+    - components
+    - enterprise
+  design_system: material-design
+  ui_complexity: simple
+  use_cases:
+    - component-library
+    - design-system
+    - ui-kit
+    - enterprise-apps
+    - rapid-development
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-mui-app
+  - variable: THEME_NAME
+    description: Custom theme name
+    type: string
+    required: false
+    default: default
+  - variable: PRIMARY_COLOR
+    description: Primary theme color (hex)
+    type: string
+    required: false
+    default: '#1976d2'
+  - variable: SECONDARY_COLOR
+    description: Secondary theme color (hex)
+    type: string
+    required: false
+    default: '#dc004e'
+  - variable: ENABLE_DARK_MODE
+    description: Enable dark mode theme
+    type: boolean
+    required: false
+    default: true
+
+dependencies:
+  runtime:
+    - react@18.2.0
+    - react-dom@18.2.0
+    - '@mui/material@5.14.0'
+    - '@mui/icons-material@5.14.0'
+    - '@emotion/react@11.11.0'
+    - '@emotion/styled@11.11.0'
+  build:
+    - typescript@5.0.0
+    - vite@5.0.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - dist/**
+    - .DS_Store
+
+features:
+  - "Complete Material Design component library"
+  - "Customizable theme system"
+  - "Typography system"
+  - "Grid and layout components"
+  - "Form components with validation"
+  - "Data display components"
+  - "Navigation components"
+  - "Feedback components (snackbars, dialogs)"
+  - "Dark mode support"
+  - "Accessibility (WCAG 2.1 AA)"
+  - "TypeScript definitions"
+  - "Tree-shaking for optimal bundle size"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/COMPONENTS.md
+  examples:
+    - examples/custom-theme
+    - examples/component-showcase
+    - examples/form-examples

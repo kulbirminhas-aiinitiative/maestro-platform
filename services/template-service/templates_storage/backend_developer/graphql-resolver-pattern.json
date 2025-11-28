@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "id": "graphql-resolvers-v1",
+    "name": "GraphQL Resolvers with DataLoader (NestJS & Python)",
+    "category": "api",
+    "language": "typescript",
+    "framework": "nestjs",
+    "description": "Production-ready GraphQL resolvers with DataLoader for N+1 problem prevention, field resolvers, mutations, subscriptions, and error handling",
+    "tags": [
+      "graphql",
+      "resolvers",
+      "dataloader",
+      "n+1-problem",
+      "subscriptions",
+      "apollo"
+    ],
+    "quality_score": 89.0,
+    "security_score": 84.0,
+    "performance_score": 92.0,
+    "maintainability_score": 88.0,
+    "test_coverage": 84.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-04T20:00:00.000000",
+    "updated_at": "2025-10-04T20:00:00.000000",
+    "created_by": "template_enhancement_phase1",
+    "persona": "backend_developer"
+  },
+  "content": "// src/graphql/types/user.type.ts\nimport { ObjectType, Field, ID, Int } from '@nestjs/graphql';\nimport { Post } from './post.type';\n\n@ObjectType()\nexport class User {\n  @Field(() => ID)\n  id: string;\n\n  @Field()\n  email: string;\n\n  @Field()\n  name: string;\n\n  @Field({ nullable: true })\n  bio?: string;\n\n  @Field(() => [Post], { nullable: 'itemsAndList' })\n  posts?: Post[];\n\n  @Field(() => Int)\n  postsCount?: number;\n\n  @Field()\n  createdAt: Date;\n}\n\n@ObjectType()\nexport class Post {\n  @Field(() => ID)\n  id: string;\n\n  @Field()\n  title: string;\n\n  @Field()\n  content: string;\n\n  @Field(() => User)\n  author?: User;\n\n  @Field()\n  authorId: string;\n\n  @Field()\n  createdAt: Date;\n}\n\n// src/graphql/inputs/user.input.ts\nimport { InputType, Field } from '@nestjs/graphql';\nimport { IsEmail, IsNotEmpty, MinLength, MaxLength } from 'class-validator';\n\n@InputType()\nexport class CreateUserInput {\n  @Field()\n  @IsEmail()\n  email: string;\n\n  @Field()\n  @IsNotEmpty()\n  @MinLength(2)\n  @MaxLength(100)\n  name: string;\n\n  @Field({ nullable: true })\n  @MaxLength(500)\n  bio?: string;\n}\n\n@InputType()\nexport class UpdateUserInput {\n  @Field({ nullable: true })\n  @MinLength(2)\n  @MaxLength(100)\n  name?: string;\n\n  @Field({ nullable: true })\n  @MaxLength(500)\n  bio?: string;\n}\n\n@InputType()\nexport class CreatePostInput {\n  @Field()\n  @IsNotEmpty()\n  @MinLength(1)\n  @MaxLength(200)\n  title: string;\n\n  @Field()\n  @IsNotEmpty()\n  content: string;\n\n  @Field()\n  authorId: string;\n}\n\n// src/graphql/dataloaders/user.dataloader.ts\nimport DataLoader from 'dataloader';\nimport { Injectable, Scope } from '@nestjs/common';\nimport { InjectRepository } from '@nestjs/typeorm';\nimport { Repository, In } from 'typeorm';\nimport { User as UserEntity } from '../entities/user.entity';\nimport { User } from '../types/user.type';\n\n@Injectable({ scope: Scope.REQUEST })\nexport class UserDataLoader {\n  constructor(\n    @InjectRepository(UserEntity)\n    private readonly userRepository: Repository<UserEntity>,\n  ) {}\n\n  // DataLoader to batch user queries\n  readonly batchUsers = new DataLoader<string, User>(\n    async (userIds: readonly string[]) => {\n      const users = await this.userRepository.find({\n        where: { id: In([...userIds]) },\n      });\n\n      // Map users to match the order of requested IDs\n      const userMap = new Map(users.map((user) => [user.id, user]));\n      return userIds.map((id) => userMap.get(id) || null);\n    },\n    {\n      cache: true,\n      batchScheduleFn: (callback) => setTimeout(callback, 10), // Wait 10ms before batching\n    },\n  );\n\n  // DataLoader for posts by user ID\n  readonly batchPostsByUserId = new DataLoader<string, Post[]>(\n    async (userIds: readonly string[]) => {\n      const posts = await this.postRepository.find({\n        where: { authorId: In([...userIds]) },\n      });\n\n      // Group posts by user ID\n      const postsByUserId = new Map<string, Post[]>();\n      posts.forEach((post) => {\n        if (!postsByUserId.has(post.authorId)) {\n          postsByUserId.set(post.authorId, []);\n        }\n        postsByUserId.get(post.authorId).push(post);\n      });\n\n      return userIds.map((id) => postsByUserId.get(id) || []);\n    },\n  );\n}\n\n// src/graphql/resolvers/user.resolver.ts\nimport {\n  Resolver,\n  Query,\n  Mutation,\n  Args,\n  ResolveField,\n  Parent,\n  Context,\n  Int,\n  ID,\n  Subscription,\n} from '@nestjs/graphql';\nimport { Injectable, NotFoundException } from '@nestjs/common';\nimport { PubSub } from 'graphql-subscriptions';\nimport { User } from '../types/user.type';\nimport { Post } from '../types/post.type';\nimport { CreateUserInput, UpdateUserInput } from '../inputs/user.input';\nimport { UsersService } from '../../users/users.service';\nimport { PostsService } from '../../posts/posts.service';\nimport { UserDataLoader } from '../dataloaders/user.dataloader';\nimport { UseGuards } from '@nestjs/common';\nimport { GqlAuthGuard } from '../guards/gql-auth.guard';\n\nconst pubSub = new PubSub();\n\n@Resolver(() => User)\n@Injectable()\nexport class UserResolver {\n  constructor(\n    private readonly usersService: UsersService,\n    private readonly postsService: PostsService,\n  ) {}\n\n  // Query: Get all users\n  @Query(() => [User], { name: 'users' })\n  async getUsers(\n    @Args('limit', { type: () => Int, nullable: true, defaultValue: 10 }) limit: number,\n    @Args('offset', { type: () => Int, nullable: true, defaultValue: 0 }) offset: number,\n  ): Promise<User[]> {\n    return this.usersService.findAll({ limit, offset });\n  }\n\n  // Query: Get user by ID\n  @Query(() => User, { name: 'user', nullable: true })\n  async getUserById(\n    @Args('id', { type: () => ID }) id: string,\n    @Context() context: any,\n  ): Promise<User> {\n    // Use DataLoader to batch requests\n    const user = await context.loaders.user.batchUsers.load(id);\n    \n    if (!user) {\n      throw new NotFoundException(`User with id ${id} not found`);\n    }\n    \n    return user;\n  }\n\n  // Mutation: Create user\n  @Mutation(() => User)\n  async createUser(\n    @Args('input') input: CreateUserInput,\n  ): Promise<User> {\n    const user = await this.usersService.create(input);\n    \n    // Publish event for subscriptions\n    await pubSub.publish('userCreated', { userCreated: user });\n    \n    return user;\n  }\n\n  // Mutation: Update user\n  @Mutation(() => User)\n  @UseGuards(GqlAuthGuard)\n  async updateUser(\n    @Args('id', { type: () => ID }) id: string,\n    @Args('input') input: UpdateUserInput,\n    @Context() context: any,\n  ): Promise<User> {\n    // Check authorization\n    if (context.req.user.id !== id) {\n      throw new Error('Unauthorized');\n    }\n    \n    return this.usersService.update(id, input);\n  }\n\n  // Mutation: Delete user\n  @Mutation(() => Boolean)\n  @UseGuards(GqlAuthGuard)\n  async deleteUser(\n    @Args('id', { type: () => ID }) id: string,\n    @Context() context: any,\n  ): Promise<boolean> {\n    if (context.req.user.id !== id && !context.req.user.isAdmin) {\n      throw new Error('Unauthorized');\n    }\n    \n    await this.usersService.delete(id);\n    return true;\n  }\n\n  // Field Resolver: Resolve user's posts with DataLoader\n  @ResolveField('posts', () => [Post])\n  async getPosts(\n    @Parent() user: User,\n    @Context() context: any,\n  ): Promise<Post[]> {\n    // Use DataLoader to prevent N+1 problem\n    return context.loaders.user.batchPostsByUserId.load(user.id);\n  }\n\n  // Field Resolver: Resolve posts count\n  @ResolveField('postsCount', () => Int)\n  async getPostsCount(\n    @Parent() user: User,\n    @Context() context: any,\n  ): Promise<number> {\n    const posts = await context.loaders.user.batchPostsByUserId.load(user.id);\n    return posts.length;\n  }\n\n  // Subscription: New user created\n  @Subscription(() => User, {\n    name: 'userCreated',\n  })\n  subscribeToUserCreated() {\n    return pubSub.asyncIterator('userCreated');\n  }\n}\n\n// src/graphql/resolvers/post.resolver.ts\n@Resolver(() => Post)\n@Injectable()\nexport class PostResolver {\n  constructor(\n    private readonly postsService: PostsService,\n  ) {}\n\n  @Query(() => [Post], { name: 'posts' })\n  async getPosts(): Promise<Post[]> {\n    return this.postsService.findAll();\n  }\n\n  @Mutation(() => Post)\n  async createPost(@Args('input') input: CreatePostInput): Promise<Post> {\n    return this.postsService.create(input);\n  }\n\n  // Field Resolver: Resolve post author with DataLoader\n  @ResolveField('author', () => User)\n  async getAuthor(\n    @Parent() post: Post,\n    @Context() context: any,\n  ): Promise<User> {\n    // Use DataLoader - batches multiple author requests\n    return context.loaders.user.batchUsers.load(post.authorId);\n  }\n}\n\n// src/graphql/graphql.module.ts\nimport { Module } from '@nestjs/common';\nimport { GraphQLModule } from '@nestjs/graphql';\nimport { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';\nimport { UserResolver } from './resolvers/user.resolver';\nimport { PostResolver } from './resolvers/post.resolver';\nimport { UserDataLoader } from './dataloaders/user.dataloader';\nimport { UsersModule } from '../users/users.module';\nimport { PostsModule } from '../posts/posts.module';\n\n@Module({\n  imports: [\n    GraphQLModule.forRoot<ApolloDriverConfig>({\n      driver: ApolloDriver,\n      autoSchemaFile: true,\n      playground: true,\n      sortSchema: true,\n      context: ({ req, connection }) => {\n        if (connection) {\n          // WebSocket connection for subscriptions\n          return { req: connection.context };\n        }\n        \n        // HTTP request - create DataLoader instances per request\n        return {\n          req,\n          loaders: {\n            user: new UserDataLoader(),\n          },\n        };\n      },\n      subscriptions: {\n        'graphql-ws': true,\n      },\n    }),\n    UsersModule,\n    PostsModule,\n  ],\n  providers: [UserResolver, PostResolver, UserDataLoader],\n})\nexport class GraphqlModule {}\n\n// Example GraphQL queries\n/*\n# Query with nested data (DataLoader prevents N+1)\nquery {\n  users(limit: 10) {\n    id\n    name\n    email\n    posts {\n      id\n      title\n      author {\n        name\n      }\n    }\n    postsCount\n  }\n}\n\n# Mutation\nmutation {\n  createUser(input: {\n    email: \"user@example.com\"\n    name: \"John Doe\"\n    bio: \"Software developer\"\n  }) {\n    id\n    name\n    email\n  }\n}\n\n# Subscription\nsubscription {\n  userCreated {\n    id\n    name\n    email\n  }\n}\n*/",
+  "variables": {
+    "GRAPHQL_PLAYGROUND": "true",
+    "GRAPHQL_INTROSPECTION": "true"
+  },
+  "dependencies": [
+    "@nestjs/graphql@^12.0.0",
+    "@nestjs/apollo@^12.0.0",
+    "apollo-server-express@^3.12.0",
+    "graphql@^16.8.1",
+    "dataloader@^2.2.2",
+    "graphql-subscriptions@^2.0.0"
+  ],
+  "workflow_context": {
+    "typical_use_cases": [
+      "GraphQL API with complex queries",
+      "Preventing N+1 query problems",
+      "Real-time subscriptions",
+      "Efficient data fetching",
+      "Nested resolver patterns"
+    ],
+    "team_composition": [
+      "backend_developer",
+      "frontend_developer"
+    ],
+    "estimated_time_minutes": 80,
+    "prerequisites": [
+      "NestJS with GraphQL setup",
+      "Understanding of GraphQL schema",
+      "Knowledge of N+1 problem",
+      "Database with relations"
+    ],
+    "related_templates": [
+      "nestjs-repository-pattern",
+      "graphql-schema-design",
+      "apollo-client-integration"
+    ]
+  }
+}

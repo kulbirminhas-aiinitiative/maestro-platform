@@ -1,0 +1,12 @@
+{
+  "config_name": "A_ExecPlatform_FullClaude",
+  "duration_ms": 0.019,
+  "phases_completed": [],
+  "phase_durations": {},
+  "providers_used": {},
+  "total_tokens": 0,
+  "errors": [
+    "requirements: No provider satisfies requirements for persona=architect"
+  ],
+  "success": false
+}

@@ -1,0 +1,514 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ORGANIZATIONS & WORKSPACES
+// ============================================================================
+
+model Organization {
+  id                  String   @id @default(cuid())
+  name                String
+  slug                String   @unique
+  domain              String?
+  settings            Json     @default("{}")
+  subscriptionPlan    String   @default("free") @map("subscription_plan")
+  subscriptionStatus  String   @default("active") @map("subscription_status")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
+
+  // Relations
+  workspaces          Workspace[]
+  members             OrganizationMember[]
+  boardTemplates      BoardTemplate[]
+  files               File[]
+  automationRules     AutomationRule[]
+
+  @@map("organizations")
+}
+
+model Workspace {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  name           String
+  description    String?
+  color          String   @default("#6B7280")
+  settings       Json     @default("{}")
+  isPrivate      Boolean  @default(false) @map("is_private")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  boards         Board[]
+  members        WorkspaceMember[]
+  folders        Folder[]
+  automationRules AutomationRule[]
+
+  @@unique([organizationId, name], name: "workspace_org_name_unique", map: "workspace_org_name_unique")
+  @@map("workspaces")
+}
+
+// ============================================================================
+// USERS & MEMBERSHIP
+// ============================================================================
+
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  emailVerified     Boolean  @default(false) @map("email_verified")
+  passwordHash      String?  @map("password_hash")
+  firstName         String?  @map("first_name")
+  lastName          String?  @map("last_name")
+  avatarUrl         String?  @map("avatar_url")
+  timezone          String   @default("UTC")
+  locale            String   @default("en")
+  settings          Json     @default("{}")
+  lastLoginAt       DateTime? @map("last_login_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  // Relations
+  organizationMemberships OrganizationMember[]
+  workspaceMemberships    WorkspaceMember[]
+  boardMemberships        BoardMember[]
+  createdBoards           Board[]
+  createdItems            Item[]
+  itemAssignments         ItemAssignment[]
+  comments                Comment[]
+  timeEntries             TimeEntry[]
+  uploadedFiles           File[]
+  attachedFiles           FileAttachment[]
+  activityLogs            ActivityLog[]
+  invitedMembers          OrganizationMember[] @relation("InvitedBy")
+  automationRules         AutomationRule[]
+  automationExecutions    AutomationExecution[]
+
+  @@map("users")
+}
+
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  userId         String   @map("user_id")
+  role           String   @default("member")
+  status         String   @default("active")
+  invitedBy      String?  @map("invited_by")
+  invitedAt      DateTime? @map("invited_at")
+  joinedAt       DateTime? @map("joined_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inviter        User? @relation("InvitedBy", fields: [invitedBy], references: [id])
+
+  @@unique([organizationId, userId])
+  @@map("organization_members")
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  userId      String   @map("user_id")
+  role        String   @default("member")
+  permissions Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+// ============================================================================
+// BOARDS & TEMPLATES
+// ============================================================================
+
+model Board {
+  id           String   @id @default(cuid())
+  workspaceId  String   @map("workspace_id")
+  name         String
+  description  String?
+  templateId   String?  @map("template_id")
+  settings     Json     @default("{}")
+  viewSettings Json     @default("{}") @map("view_settings")
+  isPrivate    Boolean  @default(false) @map("is_private")
+  folderId     String?  @map("folder_id")
+  position     Int?
+  createdBy    String   @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  // Relations
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  template       BoardTemplate? @relation(fields: [templateId], references: [id])
+  folder         Folder? @relation(fields: [folderId], references: [id])
+  creator        User @relation(fields: [createdBy], references: [id])
+  columns        BoardColumn[]
+  items          Item[]
+  members        BoardMember[]
+  automationRules AutomationRule[]
+  activityLogs   ActivityLog[]
+
+  @@map("boards")
+}
+
+model BoardTemplate {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  category       String?
+  templateData   Json     @map("template_data")
+  isPublic       Boolean  @default(false) @map("is_public")
+  createdBy      String?  @map("created_by")
+  organizationId String?  @map("organization_id")
+  usageCount     Int      @default(0) @map("usage_count")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  boards         Board[]
+
+  @@map("board_templates")
+}
+
+model BoardColumn {
+  id              String   @id @default(cuid())
+  boardId         String   @map("board_id")
+  name            String
+  columnType      String   @map("column_type")
+  settings        Json     @default("{}")
+  validationRules Json     @default("{}") @map("validation_rules")
+  position        Int
+  isRequired      Boolean  @default(false) @map("is_required")
+  isVisible       Boolean  @default(true) @map("is_visible")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  board           Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, position])
+  @@map("board_columns")
+}
+
+model BoardMember {
+  id          String   @id @default(cuid())
+  boardId     String   @map("board_id")
+  userId      String   @map("user_id")
+  role        String   @default("member")
+  permissions Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  board       Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, userId])
+  @@map("board_members")
+}
+
+model Folder {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  name        String
+  color       String   @default("#6B7280")
+  position    Int?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  boards      Board[]
+
+  @@map("folders")
+}
+
+// ============================================================================
+// ITEMS & TASKS
+// ============================================================================
+
+model Item {
+  id          String   @id @default(cuid())
+  boardId     String   @map("board_id")
+  parentId    String?  @map("parent_id")
+  name        String
+  description String?
+  itemData    Json     @default("{}") @map("item_data")
+  position    Decimal  @db.Decimal(10, 5)
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  board         Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  parent        Item? @relation("ItemHierarchy", fields: [parentId], references: [id])
+  children      Item[] @relation("ItemHierarchy")
+  creator       User @relation(fields: [createdBy], references: [id])
+  assignments   ItemAssignment[]
+  dependencies  ItemDependency[] @relation("PredecessorItem")
+  dependents    ItemDependency[] @relation("SuccessorItem")
+  comments      Comment[]
+  timeEntries   TimeEntry[]
+  attachments   FileAttachment[]
+  activityLogs  ActivityLog[]
+
+  @@map("items")
+}
+
+model ItemAssignment {
+  id         String   @id @default(cuid())
+  itemId     String   @map("item_id")
+  userId     String   @map("user_id")
+  assignedBy String   @map("assigned_by")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  // Relations
+  item       Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, userId])
+  @@map("item_assignments")
+}
+
+model ItemDependency {
+  id             String   @id @default(cuid())
+  predecessorId  String   @map("predecessor_id")
+  successorId    String   @map("successor_id")
+  dependencyType String   @default("blocks") @map("dependency_type")
+  createdBy      String   @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  predecessor    Item @relation("PredecessorItem", fields: [predecessorId], references: [id], onDelete: Cascade)
+  successor      Item @relation("SuccessorItem", fields: [successorId], references: [id], onDelete: Cascade)
+
+  @@unique([predecessorId, successorId])
+  @@map("item_dependencies")
+}
+
+// ============================================================================
+// COMMENTS & COLLABORATION
+// ============================================================================
+
+model Comment {
+  id          String   @id @default(cuid())
+  itemId      String   @map("item_id")
+  parentId    String?  @map("parent_id")
+  userId      String   @map("user_id")
+  content     String
+  contentType String   @default("text") @map("content_type")
+  mentions    Json     @default("[]")
+  attachments Json     @default("[]")
+  isEdited    Boolean  @default(false) @map("is_edited")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  item        Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  parent      Comment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies     Comment[] @relation("CommentReplies")
+  user        User @relation(fields: [userId], references: [id])
+
+  @@map("comments")
+}
+
+// ============================================================================
+// TIME TRACKING
+// ============================================================================
+
+model TimeEntry {
+  id              String   @id @default(cuid())
+  itemId          String   @map("item_id")
+  userId          String   @map("user_id")
+  description     String?
+  startTime       DateTime @map("start_time")
+  endTime         DateTime? @map("end_time")
+  durationSeconds Int?     @map("duration_seconds")
+  isBillable      Boolean  @default(false) @map("is_billable")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  item            Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("time_entries")
+}
+
+// ============================================================================
+// FILES & ATTACHMENTS
+// ============================================================================
+
+model File {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  originalName   String   @map("original_name")
+  fileKey        String   @map("file_key")
+  fileSize       BigInt   @map("file_size")
+  mimeType       String?  @map("mime_type")
+  checksum       String?
+  thumbnailKey   String?  @map("thumbnail_key")
+  uploadedBy     String   @map("uploaded_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  uploader       User @relation(fields: [uploadedBy], references: [id])
+  attachments    FileAttachment[]
+
+  @@map("files")
+}
+
+model FileAttachment {
+  id         String   @id @default(cuid())
+  fileId     String   @map("file_id")
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  attachedBy String   @map("attached_by")
+  attachedAt DateTime @default(now()) @map("attached_at")
+
+  // Relations
+  file       File @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  attacher   User @relation(fields: [attachedBy], references: [id])
+
+  @@map("file_attachments")
+}
+
+// ============================================================================
+// AUTOMATION & WORKFLOWS
+// ============================================================================
+
+model AutomationRule {
+  id               String   @id @default(cuid())
+  boardId          String?  @map("board_id")
+  workspaceId      String?  @map("workspace_id")
+  organizationId   String?  @map("organization_id")
+  name             String
+  description      String?
+  triggerConfig    Json     @map("trigger_config")
+  conditionConfig  Json     @default("{}") @map("condition_config")
+  actionConfig     Json     @map("action_config")
+  isEnabled        Boolean  @default(true) @map("is_enabled")
+  executionCount   Int      @default(0) @map("execution_count")
+  lastExecutedAt   DateTime? @map("last_executed_at")
+  createdBy        String   @map("created_by")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  board            Board? @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  workspace        Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  organization     Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  creator          User @relation(fields: [createdBy], references: [id])
+  executions       AutomationExecution[]
+
+  @@map("automation_rules")
+}
+
+model AutomationExecution {
+  id              String   @id @default(cuid())
+  ruleId          String   @map("rule_id")
+  itemId          String?  @map("item_id")
+  triggerData     Json?    @map("trigger_data")
+  executionStatus String   @map("execution_status")
+  errorMessage    String?  @map("error_message")
+  executionTimeMs Int?     @map("execution_time_ms")
+  executedBy      String?  @map("executed_by")
+  executedAt      DateTime @default(now()) @map("executed_at")
+
+  // Relations
+  rule            AutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  executor        User? @relation(fields: [executedBy], references: [id])
+
+  @@map("automation_executions")
+}
+
+// ============================================================================
+// ACTIVITY & AUDIT LOGS
+// ============================================================================
+
+model ActivityLog {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  workspaceId    String?  @map("workspace_id")
+  boardId        String?  @map("board_id")
+  itemId         String?  @map("item_id")
+  userId         String   @map("user_id")
+  action         String
+  entityType     String   @map("entity_type")
+  entityId       String   @map("entity_id")
+  oldValues      Json?    @map("old_values")
+  newValues      Json?    @map("new_values")
+  metadata       Json     @default("{}")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user           User @relation(fields: [userId], references: [id])
+  board          Board? @relation(fields: [boardId], references: [id])
+  item           Item? @relation(fields: [itemId], references: [id])
+
+  @@map("activity_log")
+}
+
+// ============================================================================
+// WEBHOOKS
+// ============================================================================
+
+model Webhook {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  url            String
+  events         String[]
+  secret         String
+  isActive       Boolean  @default(true) @map("is_active")
+  filters        Json     @default("{}")
+  createdBy      String   @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  deliveries     WebhookDelivery[]
+
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id           String   @id @default(cuid())
+  webhookId    String   @map("webhook_id")
+  event        String
+  payload      Json
+  response     Json?
+  status       String   @default("pending")
+  attempt      Int      @default(1)
+  deliveredAt  DateTime? @map("delivered_at")
+  nextRetryAt  DateTime? @map("next_retry_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  webhook      Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@map("webhook_deliveries")
+}

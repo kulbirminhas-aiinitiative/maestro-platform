@@ -1,0 +1,104 @@
+manifest_version: '1.0'
+name: adr-template
+description: Architecture Decision Records (ADR) template using MADR format. Documents significant architectural decisions with context, decision, consequences, and alternatives considered.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: architecture
+  sdlc_phase: design
+  language: markdown
+  framework: adr
+  tags:
+    - adr
+    - architecture
+    - decision-records
+    - documentation
+    - governance
+    - madr
+  methodology: architecture-governance
+  format: markdown
+  use_cases:
+    - architecture-documentation
+    - decision-tracking
+    - knowledge-management
+    - team-alignment
+  license: MIT
+
+placeholders:
+  - variable: ADR_NUMBER
+    description: Sequential ADR number
+    type: integer
+    required: true
+  - variable: DECISION_TITLE
+    description: Short title of the decision
+    type: string
+    required: true
+  - variable: STATUS
+    description: Decision status
+    type: string
+    required: true
+    default: proposed
+    choices: [proposed, accepted, rejected, deprecated, superseded]
+  - variable: DECISION_MAKERS
+    description: People involved in the decision
+    type: list
+    required: true
+  - variable: DECISION_DATE
+    description: Date of decision
+    type: string
+    required: false
+
+dependencies:
+  runtime: []
+  build: []
+  tools:
+    - markdown-editor
+    - git
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - echo "ADR created. Commit to version control."
+
+files:
+  include:
+    - '**/*.md'
+  exclude:
+    - .git/**
+
+features:
+  - "MADR (Markdown Architectural Decision Records) format"
+  - "Context and problem statement section"
+  - "Decision drivers and forces"
+  - "Considered options with pros/cons"
+  - "Decision outcome with justification"
+  - "Consequences (positive, negative, neutral)"
+  - "Links to related ADRs"
+  - "Status tracking (proposed/accepted/deprecated)"
+  - "Metadata (date, decision-makers, reviewers)"
+  - "Version control integration"
+  - "Searchable decision log"
+  - "Template for lightweight decisions"
+
+configuration:
+  storage:
+    location: docs/adr/
+    naming_convention: "NNNN-decision-title.md"
+    numbering: sequential
+  workflow:
+    review_required: true
+    approval_process: pull_request
+    minimum_reviewers: 2
+  lifecycle:
+    append_only: true
+    immutable_decisions: true
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  examples:
+    - examples/001-database-selection
+    - examples/002-api-framework-choice
+    - examples/003-authentication-strategy

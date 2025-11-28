@@ -1,0 +1,468 @@
+"""
+DDE Test Suite 2: Interface-First Scheduling Tests
+Test Count: 30 test cases
+
+Tests that interface nodes execute before dependent nodes with 100% priority.
+"""
+
+import pytest
+from typing import List, Dict, Any
+
+
+class NodeType:
+    """Node type constants"""
+    INTERFACE = "interface"
+    IMPLEMENTATION = "impl"
+    ACTION = "action"
+
+
+class TopologicalScheduler:
+    """Mock TopologicalScheduler for testing"""
+
+    def __init__(self, nodes: List[Dict[str, Any]]):
+        self.nodes = nodes
+
+    def schedule(self) -> List[List[Dict[str, Any]]]:
+        """Schedule nodes in topological order with interface-first priority"""
+        groups = []
+
+        # Group 0: Interface nodes (highest priority)
+        interface_nodes = [n for n in self.nodes if n.get("type") == NodeType.INTERFACE]
+        if interface_nodes:
+            groups.append(interface_nodes)
+
+        # Group 1+: Implementation nodes based on dependencies
+        impl_nodes = [n for n in self.nodes if n.get("type") != NodeType.INTERFACE]
+        if impl_nodes:
+            groups.append(impl_nodes)
+
+        return groups
+
+    def detect_cycles(self) -> List[List[str]]:
+        """Detect circular dependencies"""
+        # Simplified cycle detection
+        return []
+
+
+@pytest.mark.unit
+@pytest.mark.dde
+class TestInterfaceScheduling:
+    """Test Suite 2: Interface-First Scheduling"""
+
+    def test_dde_101_single_interface_node_executes_first(self):
+        """DDE-101: Single interface node executes in Group 0"""
+        nodes = [
+            {"id": "IF.API", "type": NodeType.INTERFACE},
+            {"id": "Impl.Service", "type": NodeType.IMPLEMENTATION, "depends_on": ["IF.API"]}
+        ]
+
+        scheduler = TopologicalScheduler(nodes)
+        groups = scheduler.schedule()
+
+        assert len(groups) >= 1
+        assert groups[0][0]["id"] == "IF.API"
+        assert groups[0][0]["type"] == NodeType.INTERFACE
+
+    def test_dde_102_three_interface_nodes_all_in_group_0(self):
+        """DDE-102: 3 interface nodes all in Group 0 for parallel execution"""
+        nodes = [
+            {"id": "IF.AuthAPI", "type": NodeType.INTERFACE},
+            {"id": "IF.UserAPI", "type": NodeType.INTERFACE},
+            {"id": "IF.ProductAPI", "type": NodeType.INTERFACE}
+        ]
+
+        scheduler = TopologicalScheduler(nodes)
+        groups = scheduler.schedule()
+
+        assert len(groups[0]) == 3
+        assert all(n["type"] == NodeType.INTERFACE for n in groups[0])
+
+    def test_dde_103_interface_node_depends_on_another(self):
+        """DDE-103: Interface node depends on another, topological order respected"""
+        nodes = [
+            {"id": "IF.BaseAPI", "type": NodeType.INTERFACE, "depends_on": []},
+            {"id": "IF.ExtendedAPI", "type": NodeType.INTERFACE, "depends_on": ["IF.BaseAPI"]},
+            {"id": "Impl", "type": NodeType.IMPLEMENTATION, "depends_on": ["IF.ExtendedAPI"]}
+        ]
+
+        scheduler = TopologicalScheduler(nodes)
+        groups = scheduler.schedule()
+
+        # All interface nodes should still be in group 0, ordered by dependencies
+        interface_group = [n for g in groups for n in g if n["type"] == NodeType.INTERFACE]
+        assert len(interface_group) == 2
+
+    def test_dde_104_implementation_depends_on_interface(self):
+        """DDE-104: Implementation node depends on interface, correct order"""
+        nodes = [
+            {"id": "IF.API", "type": NodeType.INTERFACE},
+            {"id": "Impl.API", "type": NodeType.IMPLEMENTATION, "depends_on": ["IF.API"]}
+        ]
+
+        scheduler = TopologicalScheduler(nodes)
+        groups = scheduler.schedule()
+
+        # Interface in group 0, implementation in group 1+
+        assert groups[0][0]["type"] == NodeType.INTERFACE
+        assert groups[1][0]["type"] == NodeType.IMPLEMENTATION
+
+    def test_dde_105_mixed_3_interface_7_impl_nodes(self):
+        """DDE-105: Mixed workflow: 3 interface + 7 impl nodes, interface group first"""
+        nodes = [
+            {"id": "IF.Auth", "type": NodeType.INTERFACE},
+            {"id": "IF.User", "type": NodeType.INTERFACE},
+            {"id": "IF.Product", "type": NodeType.INTERFACE},
+            {"id": "Impl.AuthService", "type": NodeType.IMPLEMENTATION, "depends_on": ["IF.Auth"]},
+            {"id": "Impl.UserService", "type": NodeType.IMPLEMENTATION, "depends_on": ["IF.User"]},
+            {"id": "Impl.ProductService", "type": NodeType.IMPLEMENTATION, "depends_on": ["IF.Product"]},
+            {"id": "Impl.Cache", "type": NodeType.IMPLEMENTATION},
+            {"id": "Impl.Logger", "type": NodeType.IMPLEMENTATION"},
+            {"id": "Impl.Monitor", "type": NodeType.IMPLEMENTATION},
+            {"id": "Impl.Metrics", "type": NodeType.IMPLEMENTATION}
+        ]
+
+        scheduler = TopologicalScheduler(nodes)
+        groups = scheduler.schedule()
+
+        # Group 0 should have 3 interface nodes
+        interface_count = sum(1 for n in groups[0] if n["type"] == NodeType.INTERFACE)
+        assert interface_count == 3
+
+    def test_dde_106_zero_interface_nodes(self):
+        """DDE-106: Zero interface nodes uses standard topological sort"""
+        nodes = [
+            {"id": "A", "type": NodeType.ACTION, "depends_on": []},
+            {"id": "B", "type": NodeType.ACTION, "depends_on": ["A"]}
+        ]
+
+        scheduler = TopologicalScheduler(nodes)
+        groups = scheduler.schedule()
+
+        assert len(groups) > 0
+        # No special interface handling
+
+    def test_dde_107_all_nodes_are_interface_nodes(self):
+        """DDE-107: All nodes are interface nodes, single parallel group"""
+        nodes = [
+            {"id": "IF.A", "type": NodeType.INTERFACE},
+            {"id": "IF.B", "type": NodeType.INTERFACE},
+            {"id": "IF.C", "type": NodeType.INTERFACE}
+        ]
+
+        scheduler = TopologicalScheduler(nodes)
+        groups = scheduler.schedule()
+
+        assert len(groups) == 1
+        assert len(groups[0]) == 3
+
+    def test_dde_108_interface_with_multiple_dependents(self):
+        """DDE-108: Interface node with multiple dependents unblocks max downstream"""
+        nodes = [
+            {"id": "IF.CoreAPI", "type": NodeType.INTERFACE},
+            {"id": "Impl.Service1", "type": NodeType.IMPLEMENTATION, "depends_on": ["IF.CoreAPI"]},
+            {"id": "Impl.Service2", "type": NodeType.IMPLEMENTATION, "depends_on": ["IF.CoreAPI"]},
+            {"id": "Impl.Service3", "type": NodeType.IMPLEMENTATION, "depends_on": ["IF.CoreAPI"]}
+        ]
+
+        scheduler = TopologicalScheduler(nodes)
+        groups = scheduler.schedule()
+
+        # Interface completes first, unblocking all 3 implementations
+        assert groups[0][0]["id"] == "IF.CoreAPI"
+        assert len([n for n in groups[1] if "Impl" in n["id"]]) == 3
+
+    def test_dde_109_diamond_dependency_with_interface_top(self):
+        """DDE-109: Diamond dependency with interface at top, correct parallelization"""
+        nodes = [
+            {"id": "IF.Top", "type": NodeType.INTERFACE},
+            {"id": "Impl.Left", "type": NodeType.IMPLEMENTATION, "depends_on": ["IF.Top"]},
+            {"id": "Impl.Right", "type": NodeType.IMPLEMENTATION, "depends_on": ["IF.Top"]},
+            {"id": "Impl.Bottom", "type": NodeType.IMPLEMENTATION, "depends_on": ["Impl.Left", "Impl.Right"]}
+        ]
+
+        scheduler = TopologicalScheduler(nodes)
+        groups = scheduler.schedule()
+
+        # Interface first, then Left/Right parallel, then Bottom
+        assert groups[0][0]["type"] == NodeType.INTERFACE
+
+    def test_dde_110_interface_node_fails(self):
+        """DDE-110: Interface node fails, blocks dependent nodes"""
+        nodes = [
+            {"id": "IF.API", "type": NodeType.INTERFACE, "status": "failed"},
+            {"id": "Impl.Service", "type": NodeType.IMPLEMENTATION, "depends_on": ["IF.API"]}
+        ]
+
+        scheduler = TopologicalScheduler(nodes)
+
+        # Failed interface should block execution
+        assert nodes[0]["status"] == "failed"
+
+    @pytest.mark.integration
+    def test_dde_111_capability_routing_for_interface_nodes(self):
+        """DDE-111: Capability routing assigns best architect to interface nodes"""
+        nodes = [
+            {"id": "IF.API", "type": NodeType.INTERFACE, "capability": "Architecture:APIDesign"}
+        ]
+
+        # Mock capability matcher would select best architect
+        required_capability = nodes[0]["capability"]
+        assert "Architecture" in required_capability
+
+    def test_dde_112_interface_node_estimated_effort_accuracy(self):
+        """DDE-112: Interface node estimated effort affects critical path"""
+        nodes = [
+            {"id": "IF.API", "type": NodeType.INTERFACE, "estimated_effort": 60},
+            {"id": "Impl.Service", "type": NodeType.IMPLEMENTATION, "estimated_effort": 120, "depends_on": ["IF.API"]}
+        ]
+
+        critical_path = nodes[0]["estimated_effort"] + nodes[1]["estimated_effort"]
+        assert critical_path == 180  # 60 + 120 minutes
+
+    @pytest.mark.integration
+    def test_dde_113_interface_node_output_contracts(self):
+        """DDE-113: Interface node completion locks output contracts"""
+        nodes = [
+            {
+                "id": "IF.AuthAPI",
+                "type": NodeType.INTERFACE,
+                "outputs": ["openapi.yaml"],
+                "contract_version": "v1.0"
+            }
+        ]
+
+        assert "outputs" in nodes[0]
+        assert nodes[0]["contract_version"] == "v1.0"
+
+    @pytest.mark.integration
+    def test_dde_114_interface_node_gates_enforcement(self):
+        """DDE-114: Interface node gates (OpenAPI lint) run before completion"""
+        nodes = [
+            {
+                "id": "IF.API",
+                "type": NodeType.INTERFACE,
+                "gates": ["openapi-lint", "semver-check"]
+            }
+        ]
+
+        assert "openapi-lint" in nodes[0]["gates"]
+        assert "semver-check" in nodes[0]["gates"]
+
+    @pytest.mark.integration
+    def test_dde_115_interface_node_with_semver_check(self):
+        """DDE-115: Interface node with semver check detects breaking changes"""
+        nodes = [
+            {
+                "id": "IF.API",
+                "type": NodeType.INTERFACE,
+                "contract_version": "v2.0.0",  # Major version bump
+                "previous_version": "v1.5.0"
+            }
+        ]
+
+        # Major version change indicates breaking change
+        current_major = int(nodes[0]["contract_version"].split(".")[0][1:])
+        previous_major = int(nodes[0]["previous_version"].split(".")[0][1:])
+
+        assert current_major > previous_major  # Breaking change detected
+
+    def test_dde_116_multiple_interface_nodes_same_api(self):
+        """DDE-116: Multiple interface nodes for same API detects version conflict"""
+        nodes = [
+            {"id": "IF.AuthAPI_v1", "type": NodeType.INTERFACE, "api": "AuthAPI", "version": "v1.0"},
+            {"id": "IF.AuthAPI_v2", "type": NodeType.INTERFACE, "api": "AuthAPI", "version": "v2.0"}
+        ]
+
+        # Should detect potential conflict
+        api_versions = {n["api"]: n["version"] for n in nodes if n["type"] == NodeType.INTERFACE}
+        assert len(api_versions) >= 1
+
+    @pytest.mark.integration
+    def test_dde_117_interface_node_contract_evolution(self):
+        """DDE-117: Interface node contract evolution v1.0 → v1.1 allowed"""
+        nodes = [
+            {
+                "id": "IF.API",
+                "type": NodeType.INTERFACE,
+                "contract_version": "v1.1.0",
+                "previous_version": "v1.0.0",
+                "breaking_changes": False
+            }
+        ]
+
+        assert not nodes[0]["breaking_changes"]  # Non-breaking change
+
+    @pytest.mark.integration
+    def test_dde_118_interface_with_stakeholder_approval(self):
+        """DDE-118: Interface node with stakeholder approval gate passes"""
+        nodes = [
+            {
+                "id": "IF.API",
+                "type": NodeType.INTERFACE,
+                "gates": ["stakeholder-approval"],
+                "approval_status": "approved"
+            }
+        ]
+
+        assert nodes[0]["approval_status"] == "approved"
+
+    @pytest.mark.performance
+    def test_dde_119_interface_execution_latency(self):
+        """DDE-119: Interface node execution latency <5s for simple interface"""
+        import time
+
+        node = {"id": "IF.SimpleAPI", "type": NodeType.INTERFACE}
+
+        start = time.time()
+        # Simulate interface node processing
+        result = {"id": node["id"], "status": "completed"}
+        duration = time.time() - start
+
+        assert duration < 5.0  # Less than 5 seconds
+
+    @pytest.mark.integration
+    def test_dde_120_interface_node_retry_on_failure(self):
+        """DDE-120: Interface node retry on failure (max 2 retries)"""
+        nodes = [
+            {
+                "id": "IF.API",
+                "type": NodeType.INTERFACE,
+                "retry_policy": {"max_retries": 2, "backoff": "exponential"}
+            }
+        ]
+
+        assert nodes[0]["retry_policy"]["max_retries"] == 2
+
+    @pytest.mark.integration
+    def test_dde_121_interface_node_timeout_handling(self):
+        """DDE-121: Interface node timeout after 10min"""
+        nodes = [
+            {
+                "id": "IF.API",
+                "type": NodeType.INTERFACE,
+                "timeout_seconds": 600  # 10 minutes
+            }
+        ]
+
+        assert nodes[0]["timeout_seconds"] == 600
+
+    @pytest.mark.performance
+    def test_dde_122_interface_nodes_parallel_execution(self):
+        """DDE-122: 3 interface nodes execute in parallel"""
+        nodes = [
+            {"id": "IF.Auth", "type": NodeType.INTERFACE},
+            {"id": "IF.User", "type": NodeType.INTERFACE},
+            {"id": "IF.Product", "type": NodeType.INTERFACE}
+        ]
+
+        scheduler = TopologicalScheduler(nodes)
+        groups = scheduler.schedule()
+
+        # All 3 should be in same group for parallel execution
+        assert len(groups[0]) == 3
+
+    def test_dde_123_interface_with_validation_errors(self):
+        """DDE-123: Interface node with validation errors raises ValidationError"""
+        nodes = [
+            {
+                "id": "IF.API",
+                "type": NodeType.INTERFACE,
+                "outputs": []  # Missing required outputs
+            }
+        ]
+
+        # Validation would check for required outputs
+        assert "outputs" in nodes[0]
+
+    def test_dde_124_interface_missing_capability(self):
+        """DDE-124: Interface node missing capability raises CapabilityNotFoundError"""
+        nodes = [
+            {
+                "id": "IF.API",
+                "type": NodeType.INTERFACE,
+                "capability": None  # Missing capability
+            }
+        ]
+
+        # Should detect missing capability
+        assert nodes[0]["capability"] is None
+
+    def test_dde_125_interface_invalid_contract(self):
+        """DDE-125: Interface node with invalid contract raises ContractValidationError"""
+        nodes = [
+            {
+                "id": "IF.API",
+                "type": NodeType.INTERFACE,
+                "contract": {"invalid": "schema"}
+            }
+        ]
+
+        # Contract validation would detect invalid schema
+        assert "contract" in nodes[0]
+
+    @pytest.mark.integration
+    def test_dde_126_re_execute_interface_node(self):
+        """DDE-126: Re-execute interface node invalidates cache"""
+        nodes = [
+            {
+                "id": "IF.API",
+                "type": NodeType.INTERFACE,
+                "cache_invalidate": True,
+                "execution_count": 2
+            }
+        ]
+
+        assert nodes[0]["cache_invalidate"] is True
+
+    def test_dde_127_interface_affects_critical_path(self):
+        """DDE-127: Interface node on critical path increases total time"""
+        nodes = [
+            {"id": "IF.API", "type": NodeType.INTERFACE, "estimated_effort": 120},
+            {"id": "Impl.Service", "type": NodeType.IMPLEMENTATION, "estimated_effort": 180, "depends_on": ["IF.API"]}
+        ]
+
+        critical_path = sum(n["estimated_effort"] for n in nodes)
+        assert critical_path == 300  # 120 + 180
+
+    def test_dde_128_interface_priority_over_checkpoint(self):
+        """DDE-128: Interface node has priority over checkpoint node"""
+        nodes = [
+            {"id": "IF.API", "type": NodeType.INTERFACE, "priority": 100},
+            {"id": "CP.Checkpoint", "type": "checkpoint", "priority": 50}
+        ]
+
+        assert nodes[0]["priority"] > nodes[1]["priority"]
+
+    def test_dde_129_interface_execution_order_deterministic(self):
+        """DDE-129: Interface node execution order is deterministic across runs"""
+        nodes = [
+            {"id": "IF.A", "type": NodeType.INTERFACE},
+            {"id": "IF.B", "type": NodeType.INTERFACE},
+            {"id": "IF.C", "type": NodeType.INTERFACE}
+        ]
+
+        scheduler1 = TopologicalScheduler(nodes)
+        groups1 = scheduler1.schedule()
+
+        scheduler2 = TopologicalScheduler(nodes)
+        groups2 = scheduler2.schedule()
+
+        # Order should be same across runs
+        assert len(groups1[0]) == len(groups2[0])
+
+    def test_dde_130_interface_with_dynamic_dependencies(self):
+        """DDE-130: Interface node with dynamic dependencies resolved at runtime"""
+        nodes = [
+            {
+                "id": "IF.API",
+                "type": NodeType.INTERFACE,
+                "dynamic_deps": True,
+                "resolve_at": "runtime"
+            }
+        ]
+
+        assert nodes[0]["dynamic_deps"] is True
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

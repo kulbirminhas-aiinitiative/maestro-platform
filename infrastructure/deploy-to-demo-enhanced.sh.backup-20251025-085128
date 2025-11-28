@@ -1,0 +1,486 @@
+#!/bin/bash
+# Maestro Platform - Enhanced Automated Demo Server Deployment
+# Zero manual steps - Full error tracking, recovery, and rollback capability
+
+set -e
+set -o pipefail
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+MAGENTA='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# Configuration
+DEMO_SERVER="${DEMO_SERVER:-18.134.157.225}"
+DEMO_USER="${DEMO_USER:-ec2-user}"
+DEMO_PATH="${DEMO_PATH:-/opt/maestro-platform}"
+SSH_KEY="${SSH_KEY:-~/projects/genesis-dev.pem}"
+LOG_FILE="deployment-$(date +%Y%m%d-%H%M%S).log"
+ERROR_LOG="deployment-errors-$(date +%Y%m%d-%H%M%S).log"
+ERROR_COUNT=0
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEPLOYMENT_STATE="none"
+
+# Logging functions
+log() {
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "${timestamp} $@" | tee -a "$LOG_FILE"
+}
+
+log_info() { echo -e "${BLUE}[INFO]${NC} $1" | tee -a "$LOG_FILE"; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1" | tee -a "$LOG_FILE"; }
+log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1" | tee -a "$LOG_FILE"; }
+log_error() {
+    ERROR_COUNT=$((ERROR_COUNT + 1))
+    echo -e "${RED}[ERROR #${ERROR_COUNT}]${NC} $1" | tee -a "$LOG_FILE" "$ERROR_LOG"
+}
+log_step() { echo -e "${MAGENTA}[STEP]${NC} $1" | tee -a "$LOG_FILE"; }
+
+# Error handler with rollback capability
+handle_error() {
+    local line=$1
+    local command=$2
+    log_error "Command failed at line $line: $command"
+    log_error "Exit code: $?"
+    log_error "Current deployment state: $DEPLOYMENT_STATE"
+
+    echo ""
+    log_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    log_error "DEPLOYMENT FAILED"
+    log_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+
+    read -p "Do you want to rollback to clean state? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        log_info "Initiating rollback..."
+        ./rollback-deployment.sh
+    fi
+
+    exit 1
+}
+
+trap 'handle_error ${LINENO} "$BASH_COMMAND"' ERR
+
+# Banner
+cat << "EOF"
+╔═══════════════════════════════════════════════════════════╗
+║                                                           ║
+║    MAESTRO PLATFORM - ENHANCED DEMO DEPLOYMENT           ║
+║    Fully Automated • Zero Manual Steps • Rollback Ready  ║
+║                                                           ║
+╚═══════════════════════════════════════════════════════════╝
+EOF
+
+log_info "Target: $DEMO_SERVER"
+log_info "User: $DEMO_USER"
+log_info "Path: $DEMO_PATH"
+log_info "SSH Key: $SSH_KEY"
+log_info "Log: $LOG_FILE"
+echo ""
+
+# ============================================================================
+# PHASE 1: Prerequisites Check
+# ============================================================================
+log_step "PHASE 1/7: Prerequisites Check"
+DEPLOYMENT_STATE="prerequisites"
+
+log_info "Checking local prerequisites..."
+for cmd in rsync ssh docker; do
+    if ! command -v $cmd &> /dev/null; then
+        log_error "$cmd not found locally"
+        exit 1
+    fi
+    log_success "✓ $cmd found"
+done
+
+log_info "Checking SSH key..."
+if [ ! -f "$SSH_KEY" ]; then
+    log_error "SSH key not found: $SSH_KEY"
+    exit 1
+fi
+log_success "✓ SSH key found"
+
+log_info "Checking demo server connectivity..."
+if ! ssh -i "$SSH_KEY" -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${DEMO_USER}@${DEMO_SERVER} "echo 'Connected'" &> /dev/null; then
+    log_error "Cannot connect to demo server: ${DEMO_USER}@${DEMO_SERVER}"
+    log_info "Please ensure:"
+    log_info "  1. SSH access is configured"
+    log_info "  2. Server is running"
+    log_info "  3. DEMO_SERVER variable is correct"
+    exit 1
+fi
+log_success "✓ Demo server accessible"
+
+log_info "Checking remote prerequisites..."
+ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} bash << 'REMOTE_CHECK'
+set -e
+echo "Checking Docker..."
+if ! command -v docker &> /dev/null; then
+    echo "ERROR: Docker not installed"
+    exit 1
+fi
+echo "  Docker version: $(docker --version)"
+
+echo "Checking Docker Compose..."
+if ! command -v docker-compose &> /dev/null; then
+    echo "ERROR: Docker Compose not installed"
+    exit 1
+fi
+echo "  Docker Compose version: $(docker-compose --version)"
+
+echo "Checking disk space..."
+AVAILABLE=$(df -BG / | tail -1 | awk '{print $4}' | sed 's/G//')
+if [ "$AVAILABLE" -lt 20 ]; then
+    echo "  WARNING: Low disk space: ${AVAILABLE}GB available"
+else
+    echo "  Disk space: ${AVAILABLE}GB available"
+fi
+
+echo "Checking required ports..."
+for port in 8000 23000 25432 27379 29090; do
+    if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
+        echo "  WARNING: Port $port is in use"
+    else
+        echo "  Port $port: available"
+    fi
+done
+REMOTE_CHECK
+
+if [ $? -ne 0 ]; then
+    log_error "Remote prerequisites check failed"
+    exit 1
+fi
+log_success "✓ Remote prerequisites OK"
+echo ""
+
+# ============================================================================
+# PHASE 2: Create Remote Directory Structure
+# ============================================================================
+log_step "PHASE 2/7: Creating Remote Directory Structure"
+DEPLOYMENT_STATE="directory_setup"
+
+ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} "sudo mkdir -p $DEMO_PATH && sudo chown ${DEMO_USER}:${DEMO_USER} $DEMO_PATH"
+ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} "mkdir -p $DEMO_PATH/{infrastructure,quality-fabric,shared/packages}"
+log_success "✓ Directory structure created"
+echo ""
+
+# ============================================================================
+# PHASE 3: File Transfer
+# ============================================================================
+log_step "PHASE 3/7: Transferring Files"
+DEPLOYMENT_STATE="file_transfer"
+
+log_info "Transferring infrastructure code..."
+rsync -avz --progress \
+    -e "ssh -i $SSH_KEY" \
+    --exclude '.git' \
+    --exclude 'node_modules' \
+    --exclude '__pycache__' \
+    --exclude '*.pyc' \
+    --exclude '.terraform' \
+    --exclude 'terraform.tfstate*' \
+    --exclude '*.log' \
+    "${SCRIPT_DIR}/" \
+    ${DEMO_USER}@${DEMO_SERVER}:${DEMO_PATH}/infrastructure/ | grep -v "^sending\|^sent\|^total"
+
+log_success "✓ Infrastructure code transferred"
+
+log_info "Transferring quality-fabric code..."
+rsync -avz --progress \
+    -e "ssh -i $SSH_KEY" \
+    --exclude '.git' \
+    --exclude 'node_modules' \
+    --exclude '__pycache__' \
+    --exclude '*.pyc' \
+    --exclude 'logs' \
+    --exclude 'results' \
+    --exclude '.pytest_cache' \
+    --exclude '.coverage' \
+    "${SCRIPT_DIR}/../quality-fabric/" \
+    ${DEMO_USER}@${DEMO_SERVER}:${DEMO_PATH}/quality-fabric/ | grep -v "^sending\|^sent\|^total"
+
+log_success "✓ Quality Fabric code transferred"
+
+log_info "Transferring shared packages..."
+rsync -avz --progress \
+    -e "ssh -i $SSH_KEY" \
+    "${SCRIPT_DIR}/../shared/packages/core-logging/" \
+    ${DEMO_USER}@${DEMO_SERVER}:${DEMO_PATH}/shared/packages/core-logging/ | grep -v "^sending\|^sent\|^total"
+
+rsync -avz --progress \
+    -e "ssh -i $SSH_KEY" \
+    "${SCRIPT_DIR}/../shared/packages/cache/" \
+    ${DEMO_USER}@${DEMO_SERVER}:${DEMO_PATH}/shared/packages/cache/ | grep -v "^sending\|^sent\|^total"
+
+log_success "✓ Shared packages transferred"
+echo ""
+
+# ============================================================================
+# PHASE 4: BuildX Setup
+# ============================================================================
+log_step "PHASE 4/7: Docker BuildX Setup"
+DEPLOYMENT_STATE="buildx_setup"
+
+log_info "Checking BuildX version..."
+BUILDX_VERSION=$(ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} "docker buildx version 2>/dev/null | grep -oP 'v\K[0-9.]+' || echo '0.0.0'")
+log_info "Current BuildX version: v$BUILDX_VERSION"
+
+REQUIRED_VERSION="0.17.0"
+if [ "$(printf '%s\n' "$REQUIRED_VERSION" "$BUILDX_VERSION" | sort -V | head -n1)" != "$REQUIRED_VERSION" ]; then
+    log_warning "BuildX version too old, upgrading to v0.19.2..."
+
+    ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} bash << 'BUILDX_UPGRADE'
+set -e
+mkdir -p ~/.docker/cli-plugins
+curl -sL -o ~/.docker/cli-plugins/docker-buildx \
+    "https://github.com/docker/buildx/releases/download/v0.19.2/buildx-v0.19.2.linux-amd64"
+chmod +x ~/.docker/cli-plugins/docker-buildx
+docker buildx version
+BUILDX_UPGRADE
+
+    log_success "✓ BuildX upgraded to v0.19.2"
+else
+    log_success "✓ BuildX version sufficient"
+fi
+
+log_info "Creating BuildX builder..."
+ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} "docker buildx rm maestro-builder 2>/dev/null || true"
+ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} "docker buildx create --name maestro-builder --use"
+ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} "docker buildx inspect --bootstrap maestro-builder > /dev/null 2>&1 &"
+sleep 5  # Give buildx time to bootstrap in background
+
+log_success "✓ BuildX builder created"
+echo ""
+
+# ============================================================================
+# PHASE 5: Infrastructure Deployment
+# ============================================================================
+log_step "PHASE 5/7: Deploying Centralized Infrastructure"
+DEPLOYMENT_STATE="infrastructure_deployment"
+
+ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} bash << 'REMOTE_INFRA'
+set -e
+cd /opt/maestro-platform/infrastructure
+
+echo "Setting up environment..."
+if [ ! -f .env.infrastructure ]; then
+    cat > .env.infrastructure << 'ENV'
+MAESTRO_POSTGRES_ADMIN_USER=maestro_admin
+MAESTRO_POSTGRES_ADMIN_PASSWORD=maestro_secure_admin_2025_change_me
+MAESTRO_REDIS_PASSWORD=maestro_redis_secure_2025
+MAESTRO_GRAFANA_ADMIN_USER=admin
+MAESTRO_GRAFANA_ADMIN_PASSWORD=grafana_secure_admin_2025_change_me
+QUALITY_FABRIC_DB_PASSWORD=qf_db_secure_2025
+MAESTRO_V2_DB_PASSWORD=mv2_db_secure_2025
+MAESTRO_FRONTEND_DB_PASSWORD=mfe_db_secure_2025
+MAESTRO_POSTGRES_PORT=25432
+MAESTRO_REDIS_PORT=27379
+PROMETHEUS_PORT=29090
+GRAFANA_PORT=23000
+JAEGER_UI_PORT=26686
+JAEGER_COLLECTOR_PORT=24268
+MAESTRO_NETWORK_NAME=maestro-network
+ENV
+    echo "✓ Created .env.infrastructure"
+else
+    echo "✓ Using existing .env.infrastructure"
+fi
+
+echo "Creating required directories..."
+mkdir -p monitoring/grafana/dashboards/{platform,quality-fabric,maestro-v2,maestro-frontend}
+mkdir -p databases/postgres/init-scripts
+mkdir -p monitoring/prometheus
+for dir in monitoring/grafana/dashboards/*; do
+    touch $dir/.gitkeep 2>/dev/null || true
+done
+
+echo "Loading environment..."
+export $(cat .env.infrastructure | grep -v '^#' | xargs)
+
+echo "Deploying infrastructure..."
+docker-compose -f docker-compose.demo.yml down --remove-orphans 2>/dev/null || true
+docker-compose -f docker-compose.demo.yml up -d
+
+echo "Waiting for services to be healthy..."
+sleep 30
+
+# Check health
+for i in {1..60}; do
+    POSTGRES_HEALTHY=$(docker inspect maestro-postgres --format='{{.State.Health.Status}}' 2>/dev/null || echo "unknown")
+    REDIS_HEALTHY=$(docker inspect maestro-redis --format='{{.State.Health.Status}}' 2>/dev/null || echo "unknown")
+    PROMETHEUS_HEALTHY=$(docker inspect maestro-prometheus --format='{{.State.Health.Status}}' 2>/dev/null || echo "unknown")
+    GRAFANA_HEALTHY=$(docker inspect maestro-grafana --format='{{.State.Health.Status}}' 2>/dev/null || echo "unknown")
+
+    if [ "$POSTGRES_HEALTHY" = "healthy" ] && \
+       [ "$REDIS_HEALTHY" = "healthy" ] && \
+       [ "$PROMETHEUS_HEALTHY" = "healthy" ] && \
+       [ "$GRAFANA_HEALTHY" = "healthy" ]; then
+        echo "✓ All infrastructure services healthy!"
+        break
+    fi
+
+    if [ $i -eq 60 ]; then
+        echo "ERROR: Services failed to become healthy after 2 minutes"
+        echo "  PostgreSQL: $POSTGRES_HEALTHY"
+        echo "  Redis: $REDIS_HEALTHY"
+        echo "  Prometheus: $PROMETHEUS_HEALTHY"
+        echo "  Grafana: $GRAFANA_HEALTHY"
+        exit 1
+    fi
+
+    echo "Waiting for health checks... ($i/60)"
+    sleep 2
+done
+
+docker-compose -f docker-compose.demo.yml ps
+REMOTE_INFRA
+
+if [ $? -ne 0 ]; then
+    log_error "Infrastructure deployment failed"
+    exit 1
+fi
+log_success "✓ Infrastructure deployed"
+echo ""
+
+# ============================================================================
+# PHASE 6: Quality Fabric Deployment
+# ============================================================================
+log_step "PHASE 6/7: Deploying Quality Fabric"
+DEPLOYMENT_STATE="quality_fabric_deployment"
+
+ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} bash << 'REMOTE_QF'
+set -e
+cd /opt/maestro-platform/quality-fabric
+
+echo "Setting up environment..."
+if [ ! -f .env ]; then
+    cat > .env << 'ENV'
+QUALITY_FABRIC_ENVIRONMENT=development
+QUALITY_FABRIC_DB_PASSWORD=qf_db_secure_2025
+MAESTRO_REDIS_PASSWORD=maestro_redis_secure_2025
+JWT_SECRET=demo_jwt_secret_min_32_characters_long_string
+QF_API_PORT=8000
+LOG_LEVEL=info
+ENV
+    echo "✓ Created .env"
+fi
+
+echo "Deploying quality-fabric..."
+docker-compose -f docker-compose.centralized.yml down 2>/dev/null || true
+docker-compose -f docker-compose.centralized.yml up -d --build
+
+echo "Waiting for quality-fabric to start..."
+sleep 20
+
+# Check health with retries
+for i in {1..60}; do
+    if curl -sf http://localhost:8000/api/health > /dev/null 2>&1; then
+        echo "✓ Quality Fabric is healthy!"
+        curl -s http://localhost:8000/api/health | python3 -m json.tool || true
+        break
+    fi
+
+    if [ $i -eq 60 ]; then
+        echo "ERROR: Quality Fabric failed to become healthy after 2 minutes"
+        echo "Logs:"
+        docker logs quality-fabric --tail 50
+        exit 1
+    fi
+
+    echo "Waiting for quality-fabric... ($i/60)"
+    sleep 2
+done
+
+docker ps --filter name=quality-fabric
+REMOTE_QF
+
+if [ $? -ne 0 ]; then
+    log_error "Quality Fabric deployment failed"
+    exit 1
+fi
+log_success "✓ Quality Fabric deployed"
+echo ""
+
+# ============================================================================
+# PHASE 7: Comprehensive Validation
+# ============================================================================
+log_step "PHASE 7/7: Running Comprehensive Validation"
+DEPLOYMENT_STATE="validation"
+
+log_info "Testing API health endpoint..."
+API_HEALTH=$(ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} "curl -sf http://localhost:8000/api/health" || echo "failed")
+if [ "$API_HEALTH" = "failed" ]; then
+    log_error "API health check failed"
+    exit 1
+else
+    log_success "✓ API is healthy"
+    echo "$API_HEALTH" | python3 -m json.tool | tee -a "$LOG_FILE"
+fi
+
+log_info "Testing Grafana..."
+GRAFANA_HEALTH=$(ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} "curl -sf http://localhost:23000/api/health" || echo "failed")
+if [ "$GRAFANA_HEALTH" = "failed" ]; then
+    log_warning "Grafana health check failed (non-critical)"
+else
+    log_success "✓ Grafana is healthy"
+fi
+
+log_info "Testing Prometheus..."
+PROMETHEUS_HEALTH=$(ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} "curl -sf http://localhost:29090/-/healthy" || echo "failed")
+if [ "$PROMETHEUS_HEALTH" = "failed" ]; then
+    log_warning "Prometheus health check failed (non-critical)"
+else
+    log_success "✓ Prometheus is healthy"
+fi
+
+log_info "Checking container status..."
+ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} "docker ps --filter name=quality-fabric --filter name=maestro" | tee -a "$LOG_FILE"
+
+echo ""
+DEPLOYMENT_STATE="completed"
+
+# ============================================================================
+# Deployment Summary
+# ============================================================================
+cat << EOF
+
+╔═══════════════════════════════════════════════════════════╗
+║              DEPLOYMENT COMPLETE ✓                        ║
+╚═══════════════════════════════════════════════════════════╝
+
+📊 Deployment Statistics:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Total Errors:        $ERROR_COUNT
+  Target Server:       $DEMO_SERVER
+  Deployment Log:      $LOG_FILE
+  Error Log:           $ERROR_LOG
+
+🌐 Access URLs:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Quality Fabric API:  http://$DEMO_SERVER:8000
+  API Documentation:   http://$DEMO_SERVER:8000/docs
+  Grafana:             http://$DEMO_SERVER:23000
+  Prometheus:          http://$DEMO_SERVER:29090
+
+📋 Infrastructure:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PostgreSQL:          $DEMO_SERVER:25432
+  Redis:               $DEMO_SERVER:27379
+  Network:             maestro-network
+
+📝 Management Commands:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  View logs:           ssh -i $SSH_KEY $DEMO_USER@$DEMO_SERVER "docker logs -f quality-fabric"
+  Restart services:    ssh -i $SSH_KEY $DEMO_USER@$DEMO_SERVER "cd $DEMO_PATH/quality-fabric && docker-compose -f docker-compose.centralized.yml restart"
+  Rollback:            ./rollback-deployment.sh
+
+EOF
+
+log_success "Deployment completed successfully!"
+log_info "Ready for testing and demonstration"
+echo ""

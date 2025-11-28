@@ -1,0 +1,278 @@
+openapi: 3.0.3
+info:
+  title: Health Check API
+  description: |
+    A production-ready health check API for monitoring service availability and system status.
+
+    ## Endpoints
+
+    - **/health** - Comprehensive health status with system information
+    - **/health/live** - Liveness probe for orchestrators (Kubernetes)
+    - **/health/ready** - Readiness probe to check if service can accept traffic
+
+    ## Status Values
+
+    - `healthy` - Service is operating normally
+    - `degraded` - Service is operational but experiencing issues
+    - `unhealthy` - Service is not operational
+
+  version: 1.0.0
+  contact:
+    name: Backend Developer
+    email: backend@example.com
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: http://0.0.0.0:8080
+    description: Production server
+
+paths:
+  /health:
+    get:
+      summary: Comprehensive Health Check
+      description: |
+        Returns detailed health information about the service including
+        system metrics, memory usage, and disk status.
+      operationId: getHealth
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Health check successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: healthy
+                timestamp: "2025-11-22T10:30:00.000Z"
+                service:
+                  name: health-check-api
+                  version: "1.0.0"
+                  environment: production
+                system:
+                  hostname: api-server-1
+                  platform: Linux
+                  python_version: "3.11.0"
+                  uptime_seconds: 3600.50
+                checks:
+                  memory:
+                    status: healthy
+                    max_rss_mb: 45.2
+                  disk:
+                    status: healthy
+                    free_gb: 50.5
+                    used_percent: 65.3
+
+  /health/live:
+    get:
+      summary: Liveness Probe
+      description: |
+        Minimal endpoint to check if the service process is alive.
+        Used by orchestrators like Kubernetes to decide if a restart is needed.
+      operationId: getLiveness
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LivenessResponse'
+              example:
+                status: healthy
+                timestamp: "2025-11-22T10:30:00.000Z"
+
+  /health/ready:
+    get:
+      summary: Readiness Probe
+      description: |
+        Check if the service is ready to accept traffic.
+        Returns 503 if the service is not ready.
+      operationId: getReadiness
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+              example:
+                status: healthy
+                ready: true
+                timestamp: "2025-11-22T10:30:00.000Z"
+        '503':
+          description: Service is not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+              example:
+                status: unhealthy
+                ready: false
+                timestamp: "2025-11-22T10:30:00.000Z"
+
+components:
+  schemas:
+    HealthStatus:
+      type: string
+      enum:
+        - healthy
+        - degraded
+        - unhealthy
+      description: Health status indicator
+
+    ServiceInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Service name
+        version:
+          type: string
+          description: Service version
+        environment:
+          type: string
+          description: Deployment environment
+      required:
+        - name
+        - version
+        - environment
+
+    SystemInfo:
+      type: object
+      properties:
+        hostname:
+          type: string
+          description: Server hostname
+        platform:
+          type: string
+          description: Operating system platform
+        python_version:
+          type: string
+          description: Python runtime version
+        uptime_seconds:
+          type: number
+          format: float
+          description: Service uptime in seconds
+      required:
+        - hostname
+        - platform
+        - python_version
+        - uptime_seconds
+
+    MemoryCheck:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/HealthStatus'
+        max_rss_mb:
+          type: number
+          format: float
+          description: Maximum resident set size in MB
+        info:
+          type: string
+          description: Additional information if check unavailable
+
+    DiskCheck:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/HealthStatus'
+        free_gb:
+          type: number
+          format: float
+          description: Free disk space in GB
+        used_percent:
+          type: number
+          format: float
+          description: Disk usage percentage
+        info:
+          type: string
+          description: Additional information if check unavailable
+
+    HealthChecks:
+      type: object
+      properties:
+        memory:
+          $ref: '#/components/schemas/MemoryCheck'
+        disk:
+          $ref: '#/components/schemas/DiskCheck'
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/HealthStatus'
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp
+        service:
+          $ref: '#/components/schemas/ServiceInfo'
+        system:
+          $ref: '#/components/schemas/SystemInfo'
+        checks:
+          $ref: '#/components/schemas/HealthChecks'
+      required:
+        - status
+        - timestamp
+        - service
+        - system
+        - checks
+
+    LivenessResponse:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/HealthStatus'
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+        - timestamp
+
+    ReadinessResponse:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/HealthStatus'
+        ready:
+          type: boolean
+          description: Whether the service is ready to accept traffic
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+        - ready
+        - timestamp
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type
+        message:
+          type: string
+          description: Error message
+        available_endpoints:
+          type: array
+          items:
+            type: string
+          description: List of available endpoints
+      required:
+        - error
+        - message
+
+tags:
+  - name: Health
+    description: Health check and monitoring endpoints

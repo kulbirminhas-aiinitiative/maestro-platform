@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: maestro-platform
+  labels:
+    name: maestro-platform
+    environment: production
+    managed-by: kubernetes
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: maestro-demo
+  labels:
+    name: maestro-demo
+    environment: demo
+    managed-by: kubernetes
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: maestro-staging
+  labels:
+    name: maestro-staging
+    environment: staging
+    managed-by: kubernetes

@@ -1,0 +1,15 @@
+{
+  "iteration_id": "test-single-101",
+  "total_scenarios": 2,
+  "passed": 2,
+  "failed": 0,
+  "skipped": 0,
+  "duration": 5.9e-05,
+  "timestamp": "2025-10-13T21:01:12.562212Z",
+  "scenarios": [],
+  "summary": {
+    "exit_code": 0,
+    "stdout_lines": 2,
+    "stderr_lines": 0
+  }
+}

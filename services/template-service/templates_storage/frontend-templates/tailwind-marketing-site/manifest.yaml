@@ -1,0 +1,120 @@
+manifest_version: '1.0'
+name: tailwind-marketing-site
+description: Clean and modern marketing website built with Tailwind CSS. Features beautiful UI components, responsive design, and conversion-optimized layouts.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: react
+  tags:
+    - marketing
+    - tailwindcss
+    - landing-page
+    - react
+    - typescript
+    - responsive
+    - conversion
+  design_system: tailwind-ui
+  ui_complexity: simple
+  use_cases:
+    - marketing-pages
+    - product-pages
+    - startup-website
+    - portfolio
+    - agency-website
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-marketing-site
+  - variable: SITE_TITLE
+    description: Site title
+    type: string
+    required: true
+    default: Your Company
+  - variable: PRIMARY_COLOR
+    description: Primary brand color (tailwind color)
+    type: string
+    required: false
+    default: blue
+  - variable: INCLUDE_HERO
+    description: Include hero section
+    type: boolean
+    required: false
+    default: true
+  - variable: INCLUDE_FEATURES
+    description: Include features section
+    type: boolean
+    required: false
+    default: true
+  - variable: INCLUDE_CTA
+    description: Include call-to-action section
+    type: boolean
+    required: false
+    default: true
+
+dependencies:
+  runtime:
+    - react@18.2.0
+    - react-dom@18.2.0
+    - tailwindcss@3.4.0
+    - '@headlessui/react@1.7.0'
+    - '@heroicons/react@2.0.0'
+    - react-router-dom@6.20.0
+  build:
+    - typescript@5.0.0
+    - vite@5.0.0
+    - postcss@8.4.0
+    - autoprefixer@10.4.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - npm run build
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - dist/**
+    - build/**
+    - .DS_Store
+
+features:
+  - "Modern hero sections with CTAs"
+  - "Feature showcases with icons"
+  - "Pricing sections"
+  - "Team member profiles"
+  - "Contact forms"
+  - "Newsletter signup"
+  - "Fully responsive design"
+  - "Accessibility optimized"
+  - "Fast loading times"
+  - "Clean typography"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  examples:
+    - examples/homepage
+    - examples/about-page
+    - examples/services-page

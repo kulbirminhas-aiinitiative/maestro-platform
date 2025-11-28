@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "id": "business-requirements-document-v1",
+    "name": "Business Requirements Document (BRD)",
+    "category": "documentation",
+    "language": "markdown",
+    "framework": "requirements",
+    "description": "Business Requirements Document template for capturing business objectives, stakeholder needs, success criteria, ROI analysis, and high-level solution requirements",
+    "tags": [
+      "business-requirements",
+      "brd",
+      "roi",
+      "stakeholder",
+      "objectives",
+      "business-case",
+      "strategy"
+    ],
+    "quality_score": 89.0,
+    "security_score": 70.0,
+    "performance_score": 70.0,
+    "maintainability_score": 90.0,
+    "test_coverage": 82.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T10:00:00.000000",
+    "updated_at": "2025-10-10T10:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "requirement_analyst"
+  },
+  "content": "# Business Requirements Document (BRD)\n\n## Executive Summary\n\n**Project Name:** {{PROJECT_NAME}}  \n**Document Version:** {{VERSION}}  \n**Date:** {{DATE}}  \n**Author:** {{AUTHOR}}  \n**Sponsor:** {{SPONSOR}}  \n**Status:** {{STATUS}}  \n\n### Overview\n{{EXECUTIVE_SUMMARY}}\n\n### Business Opportunity\n{{BUSINESS_OPPORTUNITY}}\n\n### Expected Benefits\n- {{BENEFIT_1}}\n- {{BENEFIT_2}}\n- {{BENEFIT_3}}\n\n### Investment Required\n**Total Budget:** {{TOTAL_BUDGET}}  \n**Timeline:** {{TIMELINE}}  \n**Expected ROI:** {{ROI}}  \n\n---\n\n## 1. Business Objectives\n\n### 1.1 Primary Objectives\n\n1. **{{OBJECTIVE_1}}**\n   - Description: {{OBJECTIVE_1_DESC}}\n   - Success Metric: {{OBJECTIVE_1_METRIC}}\n   - Target: {{OBJECTIVE_1_TARGET}}\n   - Timeline: {{OBJECTIVE_1_TIMELINE}}\n\n2. **{{OBJECTIVE_2}}**\n   - Description: {{OBJECTIVE_2_DESC}}\n   - Success Metric: {{OBJECTIVE_2_METRIC}}\n   - Target: {{OBJECTIVE_2_TARGET}}\n   - Timeline: {{OBJECTIVE_2_TIMELINE}}\n\n3. **{{OBJECTIVE_3}}**\n   - Description: {{OBJECTIVE_3_DESC}}\n   - Success Metric: {{OBJECTIVE_3_METRIC}}\n   - Target: {{OBJECTIVE_3_TARGET}}\n   - Timeline: {{OBJECTIVE_3_TIMELINE}}\n\n### 1.2 Secondary Objectives\n- {{SECONDARY_1}}\n- {{SECONDARY_2}}\n- {{SECONDARY_3}}\n\n---\n\n## 2. Current State Analysis\n\n### 2.1 Problem Statement\n{{PROBLEM_STATEMENT}}\n\n### 2.2 Current Process/System\n{{CURRENT_PROCESS}}\n\n### 2.3 Pain Points\n\n| Pain Point | Impact | Frequency | Affected Users | Cost Impact |\n|------------|--------|-----------|----------------|-------------|\n| {{PAIN_1}} | High/Med/Low | {{FREQ_1}} | {{USERS_1}} | {{COST_1}} |\n| {{PAIN_2}} | High/Med/Low | {{FREQ_2}} | {{USERS_2}} | {{COST_2}} |\n| {{PAIN_3}} | High/Med/Low | {{FREQ_3}} | {{USERS_3}} | {{COST_3}} |\n\n### 2.4 Current Metrics\n\n| Metric | Current Value | Industry Benchmark | Gap |\n|--------|--------------|-------------------|-----|\n| {{METRIC_1}} | {{CURRENT_1}} | {{BENCHMARK_1}} | {{GAP_1}} |\n| {{METRIC_2}} | {{CURRENT_2}} | {{BENCHMARK_2}} | {{GAP_2}} |\n| {{METRIC_3}} | {{CURRENT_3}} | {{BENCHMARK_3}} | {{GAP_3}} |\n\n---\n\n## 3. Desired Future State\n\n### 3.1 Vision Statement\n{{VISION_STATEMENT}}\n\n### 3.2 Future Process/System\n{{FUTURE_PROCESS}}\n\n### 3.3 Target Metrics\n\n| Metric | Target Value | Timeline | Improvement |\n|--------|-------------|----------|-------------|\n| {{TARGET_METRIC_1}} | {{TARGET_1}} | {{TIMELINE_1}} | {{IMPROVE_1}} |\n| {{TARGET_METRIC_2}} | {{TARGET_2}} | {{TIMELINE_2}} | {{IMPROVE_2}} |\n| {{TARGET_METRIC_3}} | {{TARGET_3}} | {{TIMELINE_3}} | {{IMPROVE_3}} |\n\n---\n\n## 4. Stakeholder Analysis\n\n### 4.1 Key Stakeholders\n\n| Stakeholder | Role | Interest | Influence | Requirements |\n|-------------|------|----------|-----------|-------------|\n| {{STAKE_1}} | {{ROLE_1}} | High/Med/Low | High/Med/Low | {{REQ_1}} |\n| {{STAKE_2}} | {{ROLE_2}} | High/Med/Low | High/Med/Low | {{REQ_2}} |\n| {{STAKE_3}} | {{ROLE_3}} | High/Med/Low | High/Med/Low | {{REQ_3}} |\n\n### 4.2 Impacted Groups\n- **Internal:** {{INTERNAL_GROUPS}}\n- **External:** {{EXTERNAL_GROUPS}}\n- **End Users:** {{END_USER_GROUPS}}\n\n---\n\n## 5. Business Requirements\n\n### 5.1 Functional Business Requirements\n\n**BR-F-001: {{BR_FUNC_1}}**\n- **Description:** {{BR_FUNC_1_DESC}}\n- **Business Value:** {{BR_FUNC_1_VALUE}}\n- **Priority:** High/Medium/Low\n- **Dependencies:** {{BR_FUNC_1_DEPS}}\n\n**BR-F-002: {{BR_FUNC_2}}**\n- **Description:** {{BR_FUNC_2_DESC}}\n- **Business Value:** {{BR_FUNC_2_VALUE}}\n- **Priority:** High/Medium/Low\n- **Dependencies:** {{BR_FUNC_2_DEPS}}\n\n### 5.2 Non-Functional Business Requirements\n\n**BR-NF-001: {{BR_NFUNC_1}}**\n- **Description:** {{BR_NFUNC_1_DESC}}\n- **Business Value:** {{BR_NFUNC_1_VALUE}}\n- **Measurement:** {{BR_NFUNC_1_MEASURE}}\n\n**BR-NF-002: {{BR_NFUNC_2}}**\n- **Description:** {{BR_NFUNC_2_DESC}}\n- **Business Value:** {{BR_NFUNC_2_VALUE}}\n- **Measurement:** {{BR_NFUNC_2_MEASURE}}\n\n---\n\n## 6. Scope\n\n### 6.1 In Scope\n- {{IN_SCOPE_1}}\n- {{IN_SCOPE_2}}\n- {{IN_SCOPE_3}}\n- {{IN_SCOPE_4}}\n\n### 6.2 Out of Scope\n- {{OUT_SCOPE_1}}\n- {{OUT_SCOPE_2}}\n- {{OUT_SCOPE_3}}\n\n### 6.3 Future Considerations\n- {{FUTURE_1}}\n- {{FUTURE_2}}\n\n---\n\n## 7. Cost-Benefit Analysis\n\n### 7.1 Costs\n\n| Cost Category | One-Time | Annual Recurring | Total (3 Years) |\n|---------------|----------|------------------|------------------|\n| Development | {{DEV_COST}} | - | {{DEV_TOTAL}} |\n| Infrastructure | {{INFRA_ONE}} | {{INFRA_ANNUAL}} | {{INFRA_TOTAL}} |\n| Licensing | {{LIC_ONE}} | {{LIC_ANNUAL}} | {{LIC_TOTAL}} |\n| Training | {{TRAIN_COST}} | - | {{TRAIN_TOTAL}} |\n| Maintenance | - | {{MAINT_ANNUAL}} | {{MAINT_TOTAL}} |\n| **Total** | **{{TOTAL_ONE}}** | **{{TOTAL_ANNUAL}}** | **{{TOTAL_3YR}}** |\n\n### 7.2 Benefits\n\n| Benefit Category | Year 1 | Year 2 | Year 3 | Total (3 Years) |\n|------------------|--------|--------|--------|------------------|\n| Cost Savings | {{SAVE_Y1}} | {{SAVE_Y2}} | {{SAVE_Y3}} | {{SAVE_TOTAL}} |\n| Revenue Increase | {{REV_Y1}} | {{REV_Y2}} | {{REV_Y3}} | {{REV_TOTAL}} |\n| Productivity Gains | {{PROD_Y1}} | {{PROD_Y2}} | {{PROD_Y3}} | {{PROD_TOTAL}} |\n| **Total** | **{{BEN_Y1}}** | **{{BEN_Y2}}** | **{{BEN_Y3}}** | **{{BEN_TOTAL}}** |\n\n### 7.3 ROI Analysis\n\n- **Total Investment:** {{TOTAL_INVESTMENT}}\n- **Total Benefits (3 years):** {{TOTAL_BENEFITS}}\n- **Net Benefit:** {{NET_BENEFIT}}\n- **ROI:** {{ROI_PERCENTAGE}}%\n- **Payback Period:** {{PAYBACK_PERIOD}} months\n- **NPV (at {{DISCOUNT_RATE}}% discount):** {{NPV}}\n\n---\n\n## 8. Risk Assessment\n\n### 8.1 Business Risks\n\n| Risk | Likelihood | Impact | Mitigation Strategy | Owner |\n|------|------------|--------|---------------------|-------|\n| {{RISK_1}} | H/M/L | H/M/L | {{MIT_1}} | {{OWNER_1}} |\n| {{RISK_2}} | H/M/L | H/M/L | {{MIT_2}} | {{OWNER_2}} |\n| {{RISK_3}} | H/M/L | H/M/L | {{MIT_3}} | {{OWNER_3}} |\n\n### 8.2 Contingency Plans\n- {{CONTINGENCY_1}}\n- {{CONTINGENCY_2}}\n- {{CONTINGENCY_3}}\n\n---\n\n## 9. Constraints & Assumptions\n\n### 9.1 Business Constraints\n- {{CONSTRAINT_1}}\n- {{CONSTRAINT_2}}\n- {{CONSTRAINT_3}}\n\n### 9.2 Assumptions\n- {{ASSUMPTION_1}}\n- {{ASSUMPTION_2}}\n- {{ASSUMPTION_3}}\n\n---\n\n## 10. Success Criteria & KPIs\n\n### 10.1 Success Criteria\n\n| Criterion | Measurement | Target | Timeline |\n|-----------|-------------|--------|----------|\n| {{CRITERION_1}} | {{MEASURE_1}} | {{TARGET_1}} | {{TIME_1}} |\n| {{CRITERION_2}} | {{MEASURE_2}} | {{TARGET_2}} | {{TIME_2}} |\n| {{CRITERION_3}} | {{MEASURE_3}} | {{TARGET_3}} | {{TIME_3}} |\n\n### 10.2 Key Performance Indicators (KPIs)\n\n| KPI | Current | Target | Measurement Frequency |\n|-----|---------|--------|-----------------------|\n| {{KPI_1}} | {{KPI_CURRENT_1}} | {{KPI_TARGET_1}} | {{KPI_FREQ_1}} |\n| {{KPI_2}} | {{KPI_CURRENT_2}} | {{KPI_TARGET_2}} | {{KPI_FREQ_2}} |\n| {{KPI_3}} | {{KPI_CURRENT_3}} | {{KPI_TARGET_3}} | {{KPI_FREQ_3}} |\n\n---\n\n## 11. Implementation Approach\n\n### 11.1 Recommended Approach\n{{APPROACH}}\n\n### 11.2 Phases\n\n| Phase | Duration | Key Deliverables | Dependencies |\n|-------|----------|------------------|-------------|\n| {{PHASE_1}} | {{DUR_1}} | {{DELIV_1}} | {{DEP_1}} |\n| {{PHASE_2}} | {{DUR_2}} | {{DELIV_2}} | {{DEP_2}} |\n| {{PHASE_3}} | {{DUR_3}} | {{DELIV_3}} | {{DEP_3}} |\n\n### 11.3 High-Level Timeline\n\n| Milestone | Date | Deliverable |\n|-----------|------|-------------|\n| {{MILESTONE_1}} | {{DATE_1}} | {{MILE_DELIV_1}} |\n| {{MILESTONE_2}} | {{DATE_2}} | {{MILE_DELIV_2}} |\n| {{MILESTONE_3}} | {{DATE_3}} | {{MILE_DELIV_3}} |\n\n---\n\n## 12. Approval & Sign-off\n\n| Role | Name | Signature | Date |\n|------|------|-----------|------|\n| Business Sponsor | {{SPONSOR_NAME}} | | |\n| Product Owner | {{PO_NAME}} | | |\n| Requirement Analyst | {{RA_NAME}} | | |\n| Finance Lead | {{FIN_NAME}} | | |\n| IT Lead | {{IT_NAME}} | | |\n\n---\n\n## Appendices\n\n### Appendix A: Glossary\n| Term | Definition |\n|------|------------|\n| {{TERM_1}} | {{DEF_1}} |\n| {{TERM_2}} | {{DEF_2}} |\n\n### Appendix B: Supporting Documents\n- {{DOC_1}}\n- {{DOC_2}}\n- {{DOC_3}}\n\n### Appendix C: Market Analysis\n{{MARKET_ANALYSIS}}\n\n### Appendix D: Competitive Analysis\n{{COMPETITIVE_ANALYSIS}}\n",
+  "variables": {
+    "PROJECT_NAME": "Project Name",
+    "VERSION": "1.0",
+    "DATE": "YYYY-MM-DD",
+    "AUTHOR": "Author Name",
+    "SPONSOR": "Sponsor Name",
+    "STATUS": "Draft/Review/Approved",
+    "TOTAL_BUDGET": "$500,000",
+    "TIMELINE": "12 months",
+    "ROI": "250%",
+    "ROI_PERCENTAGE": "150",
+    "PAYBACK_PERIOD": "18",
+    "DISCOUNT_RATE": "10"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Justifying new business initiatives",
+      "Securing executive sponsorship",
+      "Defining project scope and objectives",
+      "ROI analysis and business case development",
+      "Stakeholder alignment on business goals"
+    ],
+    "team_composition": [
+      "requirement_analyst",
+      "solution_architect",
+      "backend_developer"
+    ],
+    "estimated_time_minutes": 180,
+    "prerequisites": [
+      "Stakeholder interviews completed",
+      "Current state analysis conducted",
+      "Market research available",
+      "Financial data accessible"
+    ],
+    "related_templates": [
+      "srs-document-template",
+      "stakeholder-analysis-matrix",
+      "requirements-validation-checklist"
+    ]
+  }
+}

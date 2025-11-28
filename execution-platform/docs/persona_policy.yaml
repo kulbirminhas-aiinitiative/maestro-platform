@@ -1,0 +1,24 @@
+personas:
+  architect:
+    requires: [system_prompts]
+    provider_preferences: [claude_agent, openai, gemini]
+  code_writer:
+    requires: [system_prompts]
+    provider_preferences: [claude_agent, openai, gemini]
+  reviewer:
+    requires: [system_prompts]
+    provider_preferences: [claude_agent, openai, gemini]
+  qa_engineer:
+    requires: [system_prompts]
+    provider_preferences: [openai, claude_agent, gemini]
+  
+  # Configuration for mixed mode testing
+  architect_openai:
+    requires: [system_prompts]
+    provider_preferences: [openai, claude_agent]
+  code_writer_openai:
+    requires: [system_prompts]
+    provider_preferences: [openai, claude_agent]
+  reviewer_openai:
+    requires: [system_prompts]
+    provider_preferences: [openai, claude_agent]

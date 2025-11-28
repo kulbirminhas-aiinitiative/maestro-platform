@@ -1,0 +1,17 @@
+{
+  "project_path": "storage/templates/maestro-curated/sunday-com/",
+  "project_name": "sunday-com",
+  "total_score": 82.0,
+  "tier": "\ud83e\udd49 Silver",
+  "category_scores": {
+    "code_organization": 13.0,
+    "service_discovery": 14.0,
+    "port_allocation": 10.0,
+    "resilience_patterns": 18.0,
+    "quality_testing": 9.0,
+    "infrastructure": 10.0,
+    "documentation": 8.0
+  },
+  "violations": [],
+  "recommendations": []
+}

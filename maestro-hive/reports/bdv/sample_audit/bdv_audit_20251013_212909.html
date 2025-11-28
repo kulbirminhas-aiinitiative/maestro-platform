@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BDV Audit Report - bdv_audit_20251013_212909</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        .metric { display: inline-block; margin: 10px; padding: 15px; background: #f0f0f0; border-radius: 5px; }
+        .metric-value { font-size: 24px; font-weight: bold; color: #007bff; }
+        .violation { padding: 10px; margin: 5px 0; border-left: 4px solid #dc3545; background: #fff3cd; }
+        .warning { border-left-color: #ffc107; }
+        .info { border-left-color: #17a2b8; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #007bff; color: white; }
+    </style>
+</head>
+<body>
+    <h1>BDV Audit Report</h1>
+    <p><strong>Audit ID:</strong> bdv_audit_20251013_212909</p>
+    <p><strong>Timestamp:</strong> 2025-10-13T21:29:09.345173Z</p>
+
+    <h2>Coverage Metrics</h2>
+    <div class="metric">
+        <div>Scenario Coverage</div>
+        <div class="metric-value">100.0%</div>
+    </div>
+    <div class="metric">
+        <div>Endpoint Coverage</div>
+        <div class="metric-value">37.5%</div>
+    </div>
+    <div class="metric">
+        <div>Contract Coverage</div>
+        <div class="metric-value">100.0%</div>
+    </div>
+    <div class="metric">
+        <div>Step Coverage</div>
+        <div class="metric-value">66.7%</div>
+    </div>
+
+    <h2>Compliance Score</h2>
+    <div class="metric">
+        <div>Contract Compliance</div>
+        <div class="metric-value">66.7%</div>
+    </div>
+
+    <h2>Execution Summary</h2>
+    <table>
+        <tr><th>Metric</th><th>Value</th></tr>
+        <tr><td>Total Scenarios</td><td>3</td></tr>
+        <tr><td>Passing</td><td>2</td></tr>
+        <tr><td>Failing</td><td>1</td></tr>
+        <tr><td>Quarantined</td><td>0</td></tr>
+        <tr><td>Pass Rate</td><td>66.7%</td></tr>
+    </table>
+
+    <h2>Violations (3)</h2>
+    <div class="violation warning">
+        <strong>[WARNING] MISSING_CONTRACT_TAG</strong>
+        <p>Scenario 'User Registration' missing contract tag</p>
+        <p><em>Recommendation:</em> Add @contract tag with version (e.g., @contract:API:v1.0.0)</p>
+    </div>
+    <div class="violation warning">
+        <strong>[WARNING] FAILED_SCENARIO</strong>
+        <p>Scenario failed: Timeout waiting for response</p>
+        <p><em>Recommendation:</em> Address flaky test (quarantine if needed)</p>
+    </div>
+    <div class="violation info">
+        <strong>[INFO] ORPHANED_STEP</strong>
+        <p>Orphaned step definition (never used): Then I should be logged in</p>
+        <p><em>Recommendation:</em> Remove unused step definition or add scenarios using it</p>
+    </div>
+</body>
+</html>

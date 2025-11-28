@@ -1,0 +1,257 @@
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+
+================================================================================
+COMPLETE WORKFLOW TEST - ALL CONFIGURATIONS
+================================================================================
+
+Requirement:
+
+Create a real-time collaborative document editing platform (like Google Docs) with:
+
+Core Features:
+- Real-time collaborative editing with operational transformation
+- User presence and cursor tracking
+- Rich text formatting (bold, italic, lists, headings)
+- Version history and restore
+- Comments and suggestions
+- Share and permissions management (view, comment, edit)
+- Offline mode with conflict resolution
+
+Technical Requirements:
+- WebSocket-based real-time communication
+- Distributed system with multiple servers
+- Database for document storage and versioning
+- Caching layer for performance
+- Authentication and authorization
+- RESTful API for document management
+
+Deliverables:
+- System architecture
+- Data models
+- API specifications
+- Real-time communication protocol
+- Conflict resolution strategy
+- Deployment architecture
+
+
+
+>>> Running Configuration A: Existing Setup...
+
+================================================================================
+CONFIG A: EXISTING SETUP (Original Configuration)
+================================================================================
+
+  Phase 1/6: requirements
+    ✓ 2292ms | claude_agent | 121 tokens
+
+  Phase 2/6: architecture
+    ✓ 2224ms | claude_agent | 18 tokens
+
+  Phase 3/6: implementation
+    ✓ 2184ms | claude_agent | 18 tokens
+
+  Phase 4/6: code_generation
+    ✓ 2162ms | claude_agent | 19 tokens
+
+  Phase 5/6: testing
+    ✓ 16008ms | openai | 0 tokens
+
+  Phase 6/6: review
+    ✓ 1942ms | claude_agent | 568 tokens
+
+>>> Running Configuration B: Full Claude...
+
+================================================================================
+CONFIG B: NEW SETUP - FULL CLAUDE (Claude Code SDK)
+================================================================================
+
+  Phase 1/6: requirements
+    ✓ 1889ms | claude_agent | 121 tokens
+
+  Phase 2/6: architecture
+    ✓ 1975ms | claude_agent | 18 tokens
+
+  Phase 3/6: implementation
+    ✓ 2013ms | claude_agent | 18 tokens
+
+  Phase 4/6: code_generation
+    ✓ 2051ms | claude_agent | 19 tokens
+
+  Phase 5/6: testing
+    ✓ 2200ms | claude_agent | 18 tokens
+
+  Phase 6/6: review
+    ✓ 2073ms | claude_agent | 21 tokens
+
+>>> Running Configuration C: Mixed...
+
+================================================================================
+CONFIG C: MIXED (Claude + OpenAI + Gemini)
+================================================================================
+
+  Phase 1/6: requirements → claude_agent
+    ✓ 1978ms | claude_agent | 120 tokens
+
+  Phase 2/6: architecture → openai
+    ✓ 14850ms | openai | 0 tokens
+    → Provider switch: claude_agent → openai
+
+  Phase 3/6: implementation → claude_agent
+    ✓ 1908ms | claude_agent | 476 tokens
+    → Provider switch: openai → claude_agent
+
+  Phase 4/6: code_generation → openai
+    ✓ 8486ms | openai | 0 tokens
+    → Provider switch: claude_agent → openai
+
+  Phase 5/6: testing → openai
+    ✓ 21534ms | openai | 0 tokens
+
+  Phase 6/6: review → claude_agent
+    ✓ 2134ms | claude_agent | 580 tokens
+    → Provider switch: openai → claude_agent
+
+>>> Running Configuration D: OpenAI Only...
+
+================================================================================
+CONFIG D: ALL NON-CLAUDE - OPENAI ONLY
+================================================================================
+
+  Phase 1/6: requirements
+    ✓ 24694ms | openai | 0 tokens
+
+  Phase 2/6: architecture
+    ✓ 29477ms | openai | 0 tokens
+
+  Phase 3/6: implementation
+    ✓ 15554ms | openai | 0 tokens
+
+  Phase 4/6: code_generation
+    ✓ 21289ms | openai | 0 tokens
+
+  Phase 5/6: testing
+    ✓ 24529ms | openai | 0 tokens
+
+  Phase 6/6: review
+    ✓ 20465ms | openai | 0 tokens
+
+>>> Running Configuration E: OpenAI + Gemini...
+
+================================================================================
+CONFIG E: ALL NON-CLAUDE MIXED (OpenAI + Gemini)
+================================================================================
+
+  Phase 1/6: requirements → openai
+    ✓ 17903ms | openai | 0 tokens
+
+  Phase 2/6: architecture → openai
+    ✓ 18112ms | openai | 0 tokens
+
+  Phase 3/6: implementation → openai
+    ✓ 16842ms | openai | 0 tokens
+
+  Phase 4/6: code_generation → openai
+    ✓ 15499ms | openai | 0 tokens
+
+  Phase 5/6: testing → openai
+    ✓ 23507ms | openai | 0 tokens
+
+  Phase 6/6: review → openai
+    ✓ 11946ms | openai | 0 tokens
+
+================================================================================
+COMPREHENSIVE COMPARISON REPORT
+================================================================================
+
+A: Existing Setup
+  Description: Original default persona configuration
+  Duration: 26812ms (26.8s)
+  Success Rate: 100.0%
+  Total Tokens: 744
+  Phases: 6
+  Provider Distribution: {'claude_agent': 5, 'openai': 1}
+
+B: Full Claude
+  Description: All phases using Claude Code SDK from maestro-hive
+  Duration: 12202ms (12.2s)
+  Success Rate: 100.0%
+  Total Tokens: 215
+  Phases: 6
+  Provider Distribution: {'claude_agent': 6}
+
+C: Mixed Providers
+  Description: Strategic mix: Claude for speed, OpenAI for quality, Gemini for specific tasks
+  Duration: 50891ms (50.9s)
+  Success Rate: 100.0%
+  Total Tokens: 1176
+  Phases: 6
+  Provider Distribution: {'claude_agent': 3, 'openai': 3}
+
+D: OpenAI Only
+  Description: All phases using OpenAI API exclusively
+  Duration: 136008ms (136.0s)
+  Success Rate: 100.0%
+  Total Tokens: 0
+  Phases: 6
+  Provider Distribution: {'openai': 6}
+
+E: OpenAI + Gemini Mix
+  Description: Alternating between OpenAI and Gemini (no Claude)
+  Duration: 103810ms (103.8s)
+  Success Rate: 100.0%
+  Total Tokens: 0
+  Phases: 6
+  Provider Distribution: {'openai': 6}
+
+================================================================================
+PERFORMANCE RANKING
+================================================================================
+1. B - Full Claude: 12202ms
+2. A - Existing Setup: 26812ms
+3. C - Mixed Providers: 50891ms
+4. E - OpenAI + Gemini Mix: 103810ms
+5. D - OpenAI Only: 136008ms
+
+================================================================================
+SUCCESS RATE RANKING
+================================================================================
+1. A - Existing Setup: 100.0%
+2. B - Full Claude: 100.0%
+3. C - Mixed Providers: 100.0%
+4. D - OpenAI Only: 100.0%
+5. E - OpenAI + Gemini Mix: 100.0%
+================================================================================
+
+✓ Saved: /home/ec2-user/projects/maestro-platform/execution-platform/test-results/complete-workflow/complete_workflow_report_20251011_214253.json
+✓ Saved: /home/ec2-user/projects/maestro-platform/execution-platform/test-results/complete-workflow/complete_workflow_summary_20251011_214253.md
+
+✓ Complete workflow test finished!
+✓ All 5 configurations tested
+✓ Results saved to: /home/ec2-user/projects/maestro-platform/execution-platform/test-results/complete-workflow

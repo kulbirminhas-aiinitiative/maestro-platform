@@ -1,0 +1,122 @@
+manifest_version: '1.0'
+name: openapi-spec-template
+description: OpenAPI 3.1 specification template for designing RESTful APIs. Includes schemas, endpoints, authentication, examples, and documentation generation.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: api-design
+  sdlc_phase: design
+  language: yaml
+  framework: openapi
+  tags:
+    - openapi
+    - rest-api
+    - api-specification
+    - swagger
+    - documentation
+    - api-design
+  api_version: 3.1.0
+  complexity: intermediate
+  use_cases:
+    - api-design
+    - api-documentation
+    - contract-first-development
+    - api-client-generation
+    - api-server-stubs
+  license: MIT
+
+placeholders:
+  - variable: API_NAME
+    description: Name of the API
+    type: string
+    required: true
+  - variable: API_VERSION
+    description: API version (semver)
+    type: string
+    required: true
+    default: 1.0.0
+  - variable: API_BASE_URL
+    description: Base URL for the API
+    type: string
+    required: true
+    default: https://api.example.com
+  - variable: CONTACT_EMAIL
+    description: Contact email for API support
+    type: string
+    required: false
+  - variable: AUTH_TYPE
+    description: Authentication type
+    type: string
+    required: true
+    default: bearer
+    choices: [bearer, api-key, oauth2, basic]
+  - variable: ENABLE_CORS
+    description: Enable CORS headers
+    type: boolean
+    required: false
+    default: true
+
+dependencies:
+  runtime: []
+  build: []
+  tools:
+    - swagger-ui
+    - swagger-editor
+    - openapi-generator
+    - spectral
+    - redoc
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npx @openapitools/openapi-generator-cli validate -i openapi.yaml
+    - npx spectral lint openapi.yaml
+
+files:
+  include:
+    - openapi.yaml
+    - openapi.json
+    - schemas/**
+  exclude:
+    - .git/**
+
+features:
+  - "OpenAPI 3.1 specification compliant"
+  - "Reusable schemas and components"
+  - "Request/response examples"
+  - "Authentication schemes (Bearer, OAuth2, API Key)"
+  - "Error response standards (RFC 7807)"
+  - "Pagination patterns (offset, cursor-based)"
+  - "Rate limiting headers"
+  - "Webhook definitions"
+  - "API versioning strategy"
+  - "CORS configuration"
+  - "Validation rules and constraints"
+  - "Auto-generate client SDKs"
+  - "Interactive API documentation"
+  - "Code generation (server stubs, clients)"
+
+configuration:
+  formats:
+    - yaml
+    - json
+  validation:
+    tool: spectral
+    rules: spectral:oas
+  documentation:
+    tool: redoc
+    interactive: swagger-ui
+  generation:
+    clients: [typescript, python, java, go]
+    server: [nodejs, python, spring]
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/API_DESIGN_GUIDE.md
+  examples:
+    - examples/user-management-api
+    - examples/e-commerce-api
+    - examples/payment-api

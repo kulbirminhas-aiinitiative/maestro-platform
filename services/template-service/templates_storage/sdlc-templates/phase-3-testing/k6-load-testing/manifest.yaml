@@ -1,0 +1,118 @@
+manifest_version: '1.0'
+name: k6-load-testing-framework
+description: Comprehensive K6 load testing framework with multiple test scenarios (smoke, load, stress, spike), Grafana dashboards, and CI/CD integration for performance testing.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: testing
+  sdlc_phase: testing
+  language: javascript
+  framework: k6
+  tags:
+    - k6
+    - load-testing
+    - performance-testing
+    - stress-testing
+    - grafana
+  test_type: performance
+  complexity: intermediate
+  use_cases:
+    - load-testing
+    - performance-validation
+    - capacity-planning
+    - stress-testing
+  license: MIT
+
+placeholders:
+  - variable: API_BASE_URL
+    description: API base URL to test
+    type: string
+    required: true
+    default: https://api.example.com
+  - variable: VIRTUAL_USERS
+    description: Target number of virtual users
+    type: integer
+    required: true
+    default: 100
+  - variable: DURATION
+    description: Test duration
+    type: string
+    required: false
+    default: 5m
+  - variable: THRESHOLD_P95
+    description: P95 latency threshold (ms)
+    type: integer
+    required: false
+    default: 500
+
+dependencies:
+  runtime:
+    - k6@0.48.0
+  monitoring:
+    - grafana
+    - influxdb
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - k6 run tests/smoke.js
+
+files:
+  include:
+    - '**/*.js'
+  exclude:
+    - .git/**
+    - node_modules/**
+
+features:
+  - "Smoke test (minimal load validation)"
+  - "Load test (expected traffic patterns)"
+  - "Stress test (breaking point identification)"
+  - "Spike test (sudden traffic surge)"
+  - "Soak test (sustained load over time)"
+  - "Custom metrics and thresholds"
+  - "Parameterized test scenarios"
+  - "Environment-specific configuration"
+  - "Request grouping and tagging"
+  - "Response assertions and checks"
+  - "Grafana dashboard integration"
+  - "InfluxDB metrics export"
+  - "HTML/JSON test reports"
+  - "CI/CD pipeline integration"
+  - "Distributed execution support"
+
+configuration:
+  k6_version: 0.48.0
+  test_scenarios:
+    smoke:
+      virtual_users: 1
+      duration: 1m
+    load:
+      virtual_users: 100
+      duration: 5m
+    stress:
+      stages:
+        - duration: 2m
+          target: 100
+        - duration: 5m
+          target: 200
+        - duration: 2m
+          target: 300
+        - duration: 5m
+          target: 400
+        - duration: 10m
+          target: 0
+  thresholds:
+    http_req_duration: ['p(95)<500']
+    http_req_failed: ['rate<0.01']
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  scenarios: docs/TEST_SCENARIOS.md
+  examples:
+    - examples/api-load-test
+    - examples/websocket-test
+    - examples/graphql-test

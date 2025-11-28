@@ -1,0 +1,71 @@
+# Resilience Configuration - ADR-006 Compliant
+# Circuit breakers, retry policies, timeouts, and fallback strategies
+
+circuit_breakers:
+  kafka_producer:
+    failure_threshold: 5
+    success_threshold: 2
+    timeout: 60
+    description: "Protects Kafka producer operations"
+
+  kafka_consumer:
+    failure_threshold: 5
+    success_threshold: 2
+    timeout: 60
+    description: "Protects Kafka consumer operations"
+
+  database:
+    failure_threshold: 5
+    success_threshold: 2
+    timeout: 60
+    description: "Protects database connections"
+
+  redis:
+    failure_threshold: 3
+    success_threshold: 2
+    timeout: 30
+    description: "Protects Redis cache operations"
+
+retry_policies:
+  kafka:
+    max_retries: 3
+    initial_delay: 1.0
+    backoff_factor: 2.0
+    max_delay: 30.0
+    retryable_errors:
+      - "KafkaError"
+      - "ConnectionError"
+      - "TimeoutError"
+
+  database:
+    max_retries: 3
+    initial_delay: 1.0
+    backoff_factor: 2.0
+    max_delay: 30.0
+    retryable_errors:
+      - "DatabaseError"
+      - "ConnectionError"
+
+  redis:
+    max_retries: 2
+    initial_delay: 0.5
+    backoff_factor: 2.0
+    max_delay: 10.0
+
+timeouts:
+  kafka_publish: 30         # 30 seconds for message publishing
+  kafka_consume: 60         # 60 seconds for consuming messages
+  database_query: 10        # 10 seconds for DB queries
+  redis_operation: 5        # 5 seconds for cache operations
+  api_request: 30           # 30 seconds for API calls
+
+fallback_strategies:
+  cache:
+    primary: "redis"
+    fallback: "in_memory"
+    description: "Falls back to in-memory cache if Redis unavailable"
+
+  analytics_query:
+    primary: "postgresql"
+    fallback: "cached_results"
+    description: "Returns cached results if database unavailable"

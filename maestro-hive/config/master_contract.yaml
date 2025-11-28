@@ -1,0 +1,393 @@
+# Master Contract Configuration
+# Contract-as-Code: Version-controlled quality policies for SDLC gates
+# Version: 1.0.0
+# Last Updated: 2025-10-12
+
+version: "1.0.0"
+schema_version: "1.0"
+
+# Global Quality Policies
+global_policies:
+  # Applies to all personas unless overridden
+  default_gates:
+    code_quality:
+      enabled: true
+      threshold: 7.0  # Pylint score minimum
+      severity: BLOCKING
+      description: "Code must meet minimum quality standards"
+
+    test_coverage:
+      enabled: true
+      threshold: 0.70  # 70% minimum
+      severity: BLOCKING
+      description: "Adequate test coverage required"
+
+    security:
+      enabled: true
+      threshold: 0  # Zero vulnerabilities
+      severity: BLOCKING
+      description: "No security vulnerabilities allowed"
+
+    complexity:
+      enabled: true
+      threshold: 10  # Cyclomatic complexity
+      severity: WARNING
+      description: "Code complexity should be manageable"
+
+    documentation:
+      enabled: true
+      threshold: 0.60  # 60% minimum
+      severity: WARNING
+      description: "Code should be adequately documented"
+
+  # Contract requirement types (from output_contracts.py)
+  requirement_types:
+    - BUILD_SUCCESS
+    - NO_STUBS
+    - FUNCTIONAL
+    - PRD_TRACEABILITY
+    - TEST_COVERAGE
+    - DEPLOYMENT_READY
+    - QUALITY_SLO
+
+# Persona-Specific Policies
+persona_policies:
+  backend_developer:
+    description: "Quality gates for backend development artifacts"
+    quality_gates:
+      code_quality:
+        threshold: 8.0  # Higher standard for backend
+        severity: BLOCKING
+        rules:
+          - "No unused imports or variables"
+          - "Follow PEP 8 style guidelines"
+          - "Use type hints for all functions"
+
+      test_coverage:
+        threshold: 0.80  # 80% for backend
+        severity: BLOCKING
+        rules:
+          - "Unit tests for all business logic"
+          - "Integration tests for API endpoints"
+          - "Test both success and error paths"
+
+      security:
+        threshold: 0
+        severity: BLOCKING
+        rules:
+          - "No SQL injection vulnerabilities"
+          - "No hardcoded secrets or credentials"
+          - "Input validation for all endpoints"
+          - "Authentication and authorization checks"
+
+      complexity:
+        threshold: 10
+        severity: WARNING
+        rules:
+          - "Refactor functions with complexity > 10"
+          - "Break down complex classes"
+
+      documentation:
+        threshold: 0.70  # 70% for backend
+        severity: WARNING
+        rules:
+          - "Docstrings for all public functions"
+          - "API endpoint documentation"
+          - "Database schema documentation"
+
+    artifacts:
+      required:
+        - code_files
+        - test_files
+        - api_documentation
+      optional:
+        - database_migrations
+        - performance_benchmarks
+
+  frontend_developer:
+    description: "Quality gates for frontend development artifacts"
+    quality_gates:
+      code_quality:
+        threshold: 7.5
+        severity: BLOCKING
+        rules:
+          - "No console.log in production code"
+          - "Follow ESLint configuration"
+          - "Use TypeScript for type safety"
+
+      test_coverage:
+        threshold: 0.70  # 70% for frontend
+        severity: BLOCKING
+        rules:
+          - "Component tests for all UI components"
+          - "Integration tests for user flows"
+          - "Accessibility tests"
+
+      security:
+        threshold: 0
+        severity: BLOCKING
+        rules:
+          - "No XSS vulnerabilities"
+          - "No exposed API keys"
+          - "Secure handling of user data"
+
+      complexity:
+        threshold: 10
+        severity: WARNING
+        rules:
+          - "Keep components focused and small"
+          - "Extract complex logic to hooks/utilities"
+
+      documentation:
+        threshold: 0.60
+        severity: WARNING
+        rules:
+          - "Component props documentation"
+          - "Storybook stories for UI components"
+          - "User-facing feature documentation"
+
+    artifacts:
+      required:
+        - code_files
+        - test_files
+        - component_documentation
+      optional:
+        - storybook_stories
+        - e2e_tests
+
+  qa_engineer:
+    description: "Quality gates for QA artifacts"
+    quality_gates:
+      code_quality:
+        threshold: 7.0
+        severity: BLOCKING
+        rules:
+          - "Clean test code with no duplication"
+          - "Reusable test utilities"
+
+      test_coverage:
+        threshold: 0.90  # 90% for QA (comprehensive testing)
+        severity: BLOCKING
+        rules:
+          - "Test all acceptance criteria"
+          - "Edge case and boundary testing"
+          - "Regression test coverage"
+
+      security:
+        threshold: 0
+        severity: BLOCKING
+        rules:
+          - "Security test cases for auth flows"
+          - "Penetration testing for critical paths"
+
+      complexity:
+        threshold: 8
+        severity: WARNING
+        rules:
+          - "Keep test scenarios simple and readable"
+          - "Use page object pattern for UI tests"
+
+      documentation:
+        threshold: 0.80  # 80% for QA (high documentation standard)
+        severity: BLOCKING
+        rules:
+          - "Test plan documentation"
+          - "Test case descriptions"
+          - "Bug report templates"
+
+    artifacts:
+      required:
+        - test_plan
+        - test_cases
+        - test_results
+        - bug_reports
+      optional:
+        - performance_test_results
+        - security_scan_results
+
+  project_reviewer:
+    description: "Quality gates for project review artifacts"
+    quality_gates:
+      code_quality:
+        threshold: 8.5  # Highest standard for reviewers
+        severity: BLOCKING
+        rules:
+          - "Code review checklist completed"
+          - "Architecture compliance verified"
+
+      documentation:
+        threshold: 0.90  # 90% documentation required
+        severity: BLOCKING
+        rules:
+          - "Review comments documented"
+          - "Architecture decisions recorded"
+          - "Risk assessment completed"
+
+      traceability:
+        threshold: 1.0  # 100% traceability
+        severity: BLOCKING
+        rules:
+          - "All requirements traced to implementation"
+          - "All user stories linked to code changes"
+
+    artifacts:
+      required:
+        - review_report
+        - architecture_assessment
+        - risk_analysis
+        - approval_decision
+      optional:
+        - improvement_recommendations
+
+# Build and Deployment Policies
+build_policies:
+  build_success:
+    severity: BLOCKING
+    description: "Build must succeed without errors"
+    rules:
+      - "Zero compilation errors"
+      - "Zero linting errors (if configured as blocking)"
+      - "All dependencies resolved"
+
+  no_stubs:
+    severity: BLOCKING
+    threshold: 0.05  # Max 5% stub rate
+    description: "Minimize placeholder/stub code"
+    rules:
+      - "No TODO/FIXME in production code"
+      - "No NotImplementedError in production paths"
+      - "Mock services only in test code"
+
+# Security Policies
+security_policies:
+  vulnerability_threshold: 0  # Zero tolerance
+  severity_blocking:
+    - CRITICAL
+    - HIGH
+  severity_warning:
+    - MEDIUM
+    - LOW
+
+  required_scans:
+    - dependency_scan
+    - static_analysis
+    - secret_detection
+
+  compliance:
+    - "No hardcoded credentials"
+    - "No exposed API keys"
+    - "Secure password storage"
+    - "Input validation and sanitization"
+
+# Traceability Policies
+traceability_policies:
+  prd_traceability:
+    enabled: true
+    severity: BLOCKING
+    threshold: 0.90  # 90% of requirements traced
+    description: "Requirements must be traceable to implementation"
+
+  user_story_linking:
+    enabled: true
+    severity: WARNING
+    description: "Link code changes to user stories"
+
+# Deployment Readiness Policies
+deployment_policies:
+  required_artifacts:
+    - passing_tests
+    - approved_review
+    - documented_changes
+    - deployment_plan
+
+  required_checks:
+    - build_success
+    - test_success
+    - security_scan_clean
+    - no_blocking_issues
+
+  rollback_plan:
+    required: true
+    severity: BLOCKING
+
+# Quality SLO Policies
+quality_slo_policies:
+  overall_score:
+    minimum: 70.0  # Minimum overall quality score
+    target: 85.0   # Target quality score
+    severity: BLOCKING
+
+  gates_passed:
+    minimum_ratio: 0.80  # At least 80% of gates must pass
+    severity: BLOCKING
+
+  blocking_gates:
+    - code_quality
+    - test_coverage
+    - security
+
+  warning_gates:
+    - complexity
+    - documentation
+
+# Policy Override Rules
+override_policies:
+  adr_required: true  # ADR (Architecture Decision Record) required for bypass
+  approval_required: true
+  audit_trail: true
+  max_bypass_rate: 0.10  # Alert if >10% bypass rate
+
+  allowed_overrides:
+    - gate: "complexity"
+      condition: "With documented justification"
+      approval_level: "tech_lead"
+
+    - gate: "documentation"
+      condition: "For prototype/POC only"
+      approval_level: "project_manager"
+
+    - gate: "test_coverage"
+      condition: "Legacy code with separate test plan"
+      approval_level: "tech_lead + qa_lead"
+
+  prohibited_overrides:
+    - security
+    - build_success
+
+# Metrics and Monitoring
+monitoring_policies:
+  track_metrics:
+    - overall_quality_score
+    - gate_pass_rate
+    - bypass_rate
+    - execution_time
+    - artifact_completeness
+
+  alert_conditions:
+    - condition: "overall_quality_score < 60"
+      severity: "critical"
+      action: "Block phase transition"
+
+    - condition: "bypass_rate > 0.10"
+      severity: "warning"
+      action: "Require management review"
+
+    - condition: "security_gate_failures > 0"
+      severity: "critical"
+      action: "Immediate notification"
+
+# Integration Settings
+integration:
+  quality_fabric:
+    endpoint: "http://localhost:8000/api/sdlc"
+    timeout: 30
+    retry_count: 3
+
+  phase_gate_validator:
+    enabled: true
+    enforcement_mode: "blocking"  # or "advisory"
+
+  reporting:
+    format: "json"
+    include_recommendations: true
+    include_execution_time: true

@@ -1,0 +1,117 @@
+manifest_version: '1.0'
+name: docusaurus-docs
+description: Modern documentation site built with Docusaurus. Features versioning, search, MDX support, and beautiful documentation layouts for technical projects.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: docusaurus
+  tags:
+    - documentation
+    - docusaurus
+    - react
+    - mdx
+    - technical-docs
+    - api-docs
+    - typescript
+  design_system: docusaurus
+  ui_complexity: simple
+  use_cases:
+    - documentation
+    - api-documentation
+    - technical-writing
+    - knowledge-base
+    - developer-portal
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-documentation
+  - variable: DOCS_TITLE
+    description: Documentation site title
+    type: string
+    required: true
+    default: My Documentation
+  - variable: GITHUB_REPO
+    description: GitHub repository URL
+    type: string
+    required: false
+    default: ''
+  - variable: ENABLE_BLOG
+    description: Enable blog section
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_VERSIONING
+    description: Enable documentation versioning
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_SEARCH
+    description: Enable Algolia search
+    type: boolean
+    required: false
+    default: true
+
+dependencies:
+  runtime:
+    - '@docusaurus/core@3.0.0'
+    - '@docusaurus/preset-classic@3.0.0'
+    - react@18.2.0
+    - react-dom@18.2.0
+  build:
+    - typescript@5.0.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - npm run build
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - build/**
+    - .docusaurus/**
+    - .DS_Store
+
+features:
+  - "MDX support for interactive documentation"
+  - "Document versioning"
+  - "Full-text search with Algolia"
+  - "API documentation generation"
+  - "Code syntax highlighting"
+  - "Sidebar navigation"
+  - "Dark mode toggle"
+  - "Blog integration"
+  - "Internationalization (i18n)"
+  - "SEO optimized"
+  - "Edit on GitHub links"
+  - "Responsive design"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  examples:
+    - examples/api-docs
+    - examples/tutorial
+    - examples/versioning

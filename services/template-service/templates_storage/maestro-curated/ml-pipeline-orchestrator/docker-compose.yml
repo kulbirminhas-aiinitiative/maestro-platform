@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  ml-pipeline-api:
+    build: .
+    container_name: ml-pipeline-api
+    ports:
+      - "8000:8000"
+      - "9090:9090"
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - LOG_LEVEL=INFO
+      - MAX_PARALLEL_TASKS=10
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/mlpipeline
+    volumes:
+      - ./output:/app/output
+      - ./artifacts:/app/artifacts
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+    networks:
+      - ml-pipeline-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ml-pipeline-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - ml-pipeline-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ml-pipeline-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=mlpipeline
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - ml-pipeline-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ml-pipeline-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+    networks:
+      - ml-pipeline-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ml-pipeline-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - ml-pipeline-network
+
+volumes:
+  redis-data:
+  postgres-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  ml-pipeline-network:
+    driver: bridge

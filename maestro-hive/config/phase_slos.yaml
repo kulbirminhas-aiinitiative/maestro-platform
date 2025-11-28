@@ -1,0 +1,1064 @@
+# Phase SLOs Configuration
+# Per-phase Service Level Objectives and Exit Criteria for SDLC
+# Version: 1.0.0
+# Last Updated: 2025-10-12
+
+version: "1.0.0"
+schema_version: "1.0"
+
+# Global Phase Settings
+global_settings:
+  enforcement_mode: "blocking"  # blocking, advisory, or mixed
+  gate_evaluation_timeout: 300  # seconds
+  retry_on_failure: true
+  max_retries: 2
+
+# Phase 0: Requirements Gathering & Analysis
+requirements:
+  phase_name: "Requirements Gathering & Analysis"
+  phase_id: "requirements"
+  description: "Gather, analyze, and document project requirements"
+
+  # Success Criteria (quantitative thresholds)
+  success_criteria:
+    documentation_completeness:
+      threshold: 0.90  # 90% of expected documentation sections completed
+      severity: BLOCKING
+      description: "PRD must be comprehensive"
+
+    stakeholder_approval:
+      threshold: 1.0  # 100% required stakeholders approved
+      severity: BLOCKING
+      description: "All stakeholders must approve requirements"
+
+    acceptance_criteria_defined:
+      threshold: 1.0  # 100% of user stories have acceptance criteria
+      severity: BLOCKING
+      description: "Clear acceptance criteria for all requirements"
+
+    requirements_traceability:
+      threshold: 0.95  # 95% of requirements have unique IDs
+      severity: WARNING
+      description: "Requirements must be traceable"
+
+    clarity_score:
+      threshold: 0.80  # 80% clarity (no ambiguous language)
+      severity: WARNING
+      description: "Requirements should be clear and unambiguous"
+
+  # Required Artifacts
+  required_artifacts:
+    - prd_document
+    - user_stories
+    - acceptance_criteria
+    - stakeholder_signoffs
+
+  optional_artifacts:
+    - competitive_analysis
+    - user_research
+    - technical_constraints
+
+  # Exit Gates
+  exit_gates:
+    - gate: "documentation_complete"
+      condition: "documentation_completeness >= 0.90"
+      severity: BLOCKING
+
+    - gate: "stakeholder_approved"
+      condition: "stakeholder_approval == 1.0"
+      severity: BLOCKING
+
+    - gate: "acceptance_criteria_defined"
+      condition: "acceptance_criteria_defined == 1.0"
+      severity: BLOCKING
+
+  # Success Metrics
+  metrics:
+    - metric: "requirements_count"
+      target: ">= 10"
+      description: "Sufficient requirements captured"
+
+    - metric: "user_stories_count"
+      target: ">= 5"
+      description: "Adequate user stories defined"
+
+    - metric: "phase_duration_days"
+      target: "<= 5"
+      description: "Requirements phase completed within timeline"
+
+# Phase 1: Design & Architecture
+design:
+  phase_name: "Design & Architecture"
+  phase_id: "design"
+  description: "Create system architecture and design specifications"
+
+  success_criteria:
+    architecture_documentation:
+      threshold: 0.90
+      severity: BLOCKING
+      description: "Complete architecture documentation"
+
+    design_review_approval:
+      threshold: 1.0  # All reviewers approved
+      severity: BLOCKING
+      description: "Design must be reviewed and approved"
+
+    api_specification_completeness:
+      threshold: 0.95  # 95% of endpoints documented
+      severity: BLOCKING
+      description: "API contracts must be defined"
+
+    database_schema_defined:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Database schema must be complete"
+
+    security_design_review:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Security architecture reviewed"
+
+    scalability_assessment:
+      threshold: 0.80
+      severity: WARNING
+      description: "Scalability considerations documented"
+
+  required_artifacts:
+    - architecture_diagram
+    - api_specification
+    - database_schema
+    - design_document
+    - security_design
+
+  optional_artifacts:
+    - sequence_diagrams
+    - data_flow_diagrams
+    - infrastructure_diagram
+
+  exit_gates:
+    - gate: "architecture_approved"
+      condition: "design_review_approval == 1.0"
+      severity: BLOCKING
+
+    - gate: "api_spec_complete"
+      condition: "api_specification_completeness >= 0.95"
+      severity: BLOCKING
+
+    - gate: "security_reviewed"
+      condition: "security_design_review == 1.0"
+      severity: BLOCKING
+
+  metrics:
+    - metric: "api_endpoints_count"
+      target: ">= 5"
+      description: "Adequate API coverage"
+
+    - metric: "design_iterations"
+      target: "<= 3"
+      description: "Efficient design process"
+
+    - metric: "phase_duration_days"
+      target: "<= 7"
+      description: "Design phase completed within timeline"
+
+# Phase 2: Implementation
+implementation:
+  phase_name: "Implementation"
+  phase_id: "implementation"
+  description: "Develop and implement the designed solution"
+
+  success_criteria:
+    build_success_rate:
+      threshold: 0.95  # 95% of builds succeed
+      severity: BLOCKING
+      description: "Code must build reliably"
+
+    code_quality_score:
+      threshold: 8.0  # Pylint/ESLint score >= 8.0
+      severity: BLOCKING
+      description: "High code quality standards"
+
+    test_coverage:
+      threshold: 0.80  # 80% code coverage
+      severity: BLOCKING
+      description: "Adequate test coverage"
+
+    stub_rate:
+      threshold: 0.05  # Max 5% stub/placeholder code
+      severity: BLOCKING
+      description: "Minimal placeholder code"
+
+    security_vulnerabilities:
+      threshold: 0  # Zero critical/high vulnerabilities
+      severity: BLOCKING
+      description: "No security issues"
+
+    code_review_completion:
+      threshold: 1.0  # 100% of code reviewed
+      severity: BLOCKING
+      description: "All code must be reviewed"
+
+    documentation_coverage:
+      threshold: 0.70  # 70% of code documented
+      severity: WARNING
+      description: "Code should be documented"
+
+  required_artifacts:
+    - source_code
+    - unit_tests
+    - integration_tests
+    - code_review_records
+    - build_logs
+
+  optional_artifacts:
+    - performance_benchmarks
+    - api_documentation
+    - deployment_scripts
+
+  exit_gates:
+    - gate: "build_success"
+      condition: "build_success_rate >= 0.95"
+      severity: BLOCKING
+
+    - gate: "quality_threshold"
+      condition: "code_quality_score >= 8.0 AND test_coverage >= 0.80"
+      severity: BLOCKING
+
+    - gate: "security_clean"
+      condition: "security_vulnerabilities == 0"
+      severity: BLOCKING
+
+    - gate: "no_stubs"
+      condition: "stub_rate <= 0.05"
+      severity: BLOCKING
+
+    - gate: "code_reviewed"
+      condition: "code_review_completion == 1.0"
+      severity: BLOCKING
+
+  metrics:
+    - metric: "lines_of_code"
+      target: ">= 500"
+      description: "Substantial implementation"
+
+    - metric: "test_count"
+      target: ">= 20"
+      description: "Comprehensive test suite"
+
+    - metric: "phase_duration_days"
+      target: "<= 10"
+      description: "Implementation completed within timeline"
+
+    - metric: "defect_density"
+      target: "<= 0.05"
+      description: "Low defect rate (defects per LOC)"
+
+# Phase 3: Testing & Quality Assurance
+testing:
+  phase_name: "Testing & Quality Assurance"
+  phase_id: "testing"
+  description: "Comprehensive testing and quality validation"
+
+  success_criteria:
+    test_pass_rate:
+      threshold: 0.95  # 95% of tests pass
+      severity: BLOCKING
+      description: "High test pass rate"
+
+    acceptance_criteria_met:
+      threshold: 1.0  # 100% of acceptance criteria validated
+      severity: BLOCKING
+      description: "All acceptance criteria must pass"
+
+    regression_test_coverage:
+      threshold: 0.90  # 90% of previous functionality tested
+      severity: BLOCKING
+      description: "Comprehensive regression testing"
+
+    performance_slo_met:
+      threshold: 0.95  # 95% of performance SLOs met
+      severity: WARNING
+      description: "Performance requirements should be met"
+
+    security_testing_complete:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Security testing must be complete"
+
+    critical_bugs:
+      threshold: 0  # Zero critical bugs
+      severity: BLOCKING
+      description: "No critical issues"
+
+    high_priority_bugs:
+      threshold: 2  # Max 2 high priority bugs
+      severity: WARNING
+      description: "Minimal high priority issues"
+
+  required_artifacts:
+    - test_plan
+    - test_cases
+    - test_results
+    - bug_reports
+    - regression_test_results
+    - security_test_results
+
+  optional_artifacts:
+    - performance_test_results
+    - load_test_results
+    - penetration_test_results
+
+  exit_gates:
+    - gate: "tests_passing"
+      condition: "test_pass_rate >= 0.95"
+      severity: BLOCKING
+
+    - gate: "acceptance_validated"
+      condition: "acceptance_criteria_met == 1.0"
+      severity: BLOCKING
+
+    - gate: "no_critical_bugs"
+      condition: "critical_bugs == 0"
+      severity: BLOCKING
+
+    - gate: "security_validated"
+      condition: "security_testing_complete == 1.0"
+      severity: BLOCKING
+
+  metrics:
+    - metric: "total_test_cases"
+      target: ">= 50"
+      description: "Comprehensive test coverage"
+
+    - metric: "bugs_found"
+      target: "<= 10"
+      description: "Low defect count"
+
+    - metric: "bugs_fixed"
+      target: ">= 0.95"
+      description: "95% of bugs fixed"
+
+    - metric: "phase_duration_days"
+      target: "<= 7"
+      description: "Testing completed within timeline"
+
+# Phase 4: Deployment & Release
+deployment:
+  phase_name: "Deployment & Release"
+  phase_id: "deployment"
+  description: "Deploy solution to production environment"
+
+  success_criteria:
+    deployment_success:
+      threshold: 1.0  # Deployment must succeed
+      severity: BLOCKING
+      description: "Successful deployment"
+
+    smoke_tests_passed:
+      threshold: 1.0  # All smoke tests pass
+      severity: BLOCKING
+      description: "Post-deployment validation"
+
+    rollback_plan_ready:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Rollback plan must exist"
+
+    monitoring_configured:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Monitoring must be set up"
+
+    documentation_updated:
+      threshold: 0.90  # 90% of docs updated
+      severity: WARNING
+      description: "Documentation should be current"
+
+    stakeholder_notification:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Stakeholders must be notified"
+
+  required_artifacts:
+    - deployment_plan
+    - rollback_plan
+    - smoke_test_results
+    - deployment_checklist
+    - release_notes
+
+  optional_artifacts:
+    - runbook
+    - incident_response_plan
+    - capacity_planning_doc
+
+  exit_gates:
+    - gate: "deployment_successful"
+      condition: "deployment_success == 1.0 AND smoke_tests_passed == 1.0"
+      severity: BLOCKING
+
+    - gate: "rollback_ready"
+      condition: "rollback_plan_ready == 1.0"
+      severity: BLOCKING
+
+    - gate: "monitoring_active"
+      condition: "monitoring_configured == 1.0"
+      severity: BLOCKING
+
+  metrics:
+    - metric: "deployment_time_minutes"
+      target: "<= 30"
+      description: "Efficient deployment process"
+
+    - metric: "downtime_minutes"
+      target: "<= 5"
+      description: "Minimal service interruption"
+
+    - metric: "post_deployment_incidents"
+      target: "== 0"
+      description: "Clean deployment"
+
+# Phase 5: Monitoring & Operations
+monitoring:
+  phase_name: "Monitoring & Operations"
+  phase_id: "monitoring"
+  description: "Monitor production system and ensure operational stability"
+
+  success_criteria:
+    uptime_slo:
+      threshold: 0.995  # 99.5% uptime
+      severity: BLOCKING
+      description: "High availability required"
+
+    error_rate:
+      threshold: 0.01  # Max 1% error rate
+      severity: BLOCKING
+      description: "Low error rate"
+
+    response_time_p95:
+      threshold: 1000  # 1 second p95 response time
+      severity: WARNING
+      description: "Fast response times"
+
+    alert_response_time_minutes:
+      threshold: 15  # Respond to alerts within 15 minutes
+      severity: BLOCKING
+      description: "Timely incident response"
+
+    incident_resolution_hours:
+      threshold: 4  # Resolve incidents within 4 hours
+      severity: WARNING
+      description: "Quick incident resolution"
+
+    monitoring_coverage:
+      threshold: 0.95  # 95% of services monitored
+      severity: BLOCKING
+      description: "Comprehensive monitoring"
+
+  required_artifacts:
+    - monitoring_dashboards
+    - alert_configurations
+    - incident_logs
+    - performance_metrics
+    - availability_reports
+
+  optional_artifacts:
+    - capacity_reports
+    - cost_analysis
+    - optimization_recommendations
+
+  exit_gates:
+    - gate: "slo_met"
+      condition: "uptime_slo >= 0.995 AND error_rate <= 0.01"
+      severity: BLOCKING
+
+    - gate: "monitoring_complete"
+      condition: "monitoring_coverage >= 0.95"
+      severity: BLOCKING
+
+    - gate: "alerts_configured"
+      condition: "alert_response_time_minutes <= 15"
+      severity: BLOCKING
+
+  metrics:
+    - metric: "incidents_count"
+      target: "<= 2"
+      description: "Stable operation"
+
+    - metric: "mean_time_to_recovery_minutes"
+      target: "<= 30"
+      description: "Fast recovery"
+
+    - metric: "customer_satisfaction"
+      target: ">= 4.0"
+      description: "High user satisfaction (1-5 scale)"
+
+# Phase 6: Review & Retrospective
+review:
+  phase_name: "Review & Retrospective"
+  phase_id: "review"
+  description: "Review project outcomes and conduct retrospective"
+
+  success_criteria:
+    requirements_fulfilled:
+      threshold: 0.95  # 95% of requirements met
+      severity: BLOCKING
+      description: "Requirements satisfaction"
+
+    quality_score:
+      threshold: 85.0  # Overall quality score >= 85
+      severity: BLOCKING
+      description: "High quality delivery"
+
+    retrospective_completed:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Retrospective must be conducted"
+
+    lessons_documented:
+      threshold: 1.0
+      severity: WARNING
+      description: "Lessons learned should be documented"
+
+    stakeholder_satisfaction:
+      threshold: 0.80  # 80% satisfaction
+      severity: WARNING
+      description: "Stakeholder satisfaction"
+
+  required_artifacts:
+    - project_review_report
+    - retrospective_notes
+    - lessons_learned
+    - success_metrics_report
+
+  optional_artifacts:
+    - improvement_recommendations
+    - knowledge_transfer_materials
+
+  exit_gates:
+    - gate: "requirements_met"
+      condition: "requirements_fulfilled >= 0.95"
+      severity: BLOCKING
+
+    - gate: "quality_achieved"
+      condition: "quality_score >= 85.0"
+      severity: BLOCKING
+
+    - gate: "retrospective_done"
+      condition: "retrospective_completed == 1.0"
+      severity: BLOCKING
+
+  metrics:
+    - metric: "requirements_met_count"
+      target: ">= 0.95"
+      description: "Requirements satisfaction rate"
+
+    - metric: "technical_debt_items"
+      target: "<= 5"
+      description: "Minimal technical debt"
+
+    - metric: "improvement_actions"
+      target: ">= 3"
+      description: "Continuous improvement focus"
+
+# Cross-Phase Policies
+cross_phase_policies:
+  quality_trend:
+    description: "Quality should improve or remain stable across phases"
+    enforcement: "advisory"
+
+  velocity_tracking:
+    description: "Track and maintain consistent velocity"
+    enforcement: "advisory"
+
+  risk_management:
+    description: "Proactively manage and mitigate risks"
+    enforcement: "blocking"
+
+# Bypass and Override Rules
+bypass_rules:
+  # Gates that can be bypassed with ADR
+  bypassable_gates:
+    - gate: "documentation_coverage"
+      phases: ["implementation"]
+      requires_adr: true
+      approval_level: "tech_lead"
+
+    - gate: "performance_slo_met"
+      phases: ["testing"]
+      requires_adr: true
+      approval_level: "tech_lead"
+
+    - gate: "high_priority_bugs"
+      phases: ["testing"]
+      requires_adr: true
+      approval_level: "product_manager"
+
+  # Gates that cannot be bypassed
+  non_bypassable_gates:
+    - "build_success"
+    - "security_vulnerabilities"
+    - "critical_bugs"
+    - "deployment_success"
+    - "stakeholder_approval"
+
+  # Bypass tracking
+  audit_trail:
+    enabled: true
+    log_location: "logs/phase_gate_bypasses.jsonl"
+    alert_threshold: 0.10  # Alert if >10% of gates bypassed
+
+# Reporting Configuration
+reporting:
+  phase_completion_report:
+    enabled: true
+    format: "json"
+    include_metrics: true
+    include_artifacts: true
+
+  gate_evaluation_report:
+    enabled: true
+    format: "json"
+    include_recommendations: true
+
+  trend_analysis:
+    enabled: true
+    window_days: 30
+
+# =============================================================================
+# CUSTOM PHASE TYPES - Added Phase 1
+# =============================================================================
+# Support for non-standard workflow node types (backend, frontend, architecture, services)
+# Added: 2025-10-12 to address Phase 0 validation findings
+
+# Backend Service Development
+backend:
+  phase_name: "Backend Service Development"
+  phase_id: "backend"
+  description: "Develop backend services, APIs, and business logic"
+
+  success_criteria:
+    build_success_rate:
+      threshold: 0.95
+      severity: BLOCKING
+      description: "Backend must build reliably"
+
+    code_quality_score:
+      threshold: 8.0
+      severity: BLOCKING
+      description: "High code quality for backend services"
+
+    test_coverage:
+      threshold: 0.80
+      severity: BLOCKING
+      description: "Adequate backend test coverage"
+
+    api_contract_compliance:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "API contracts must be fulfilled"
+
+    security_vulnerabilities:
+      threshold: 0
+      severity: BLOCKING
+      description: "Zero security vulnerabilities in backend"
+
+    security_scan_complete:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Security scanning must be completed"
+
+    database_migration_safe:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Database migrations must be safe and reversible"
+
+    code_review_completion:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "All backend code must be reviewed"
+
+  required_artifacts:
+    - source_code
+    - unit_tests
+    - integration_tests
+    - api_documentation
+    - security_scan_report
+
+  exit_gates:
+    - gate: "build_success"
+      condition: "build_success_rate >= 0.95"
+      severity: BLOCKING
+
+    - gate: "quality_threshold"
+      condition: "code_quality_score >= 8.0 AND test_coverage >= 0.80"
+      severity: BLOCKING
+
+    - gate: "security_clean"
+      condition: "security_vulnerabilities == 0"
+      severity: BLOCKING
+
+    - gate: "security_scanned"
+      condition: "security_scan_complete == 1.0"
+      severity: BLOCKING
+
+    - gate: "code_reviewed"
+      condition: "code_review_completion == 1.0"
+      severity: BLOCKING
+
+    - gate: "api_contract_valid"
+      condition: "api_contract_compliance == 1.0"
+      severity: BLOCKING
+
+  metrics:
+    - metric: "api_endpoints_implemented"
+      target: ">= 5"
+      description: "Substantial API implementation"
+
+    - metric: "response_time_ms"
+      target: "<= 200"
+      description: "Fast API response times"
+
+
+# Frontend/UI Development
+frontend:
+  phase_name: "Frontend/UI Development"
+  phase_id: "frontend"
+  description: "Develop user interface and frontend components"
+
+  success_criteria:
+    build_success_rate:
+      threshold: 0.95
+      severity: BLOCKING
+      description: "Frontend must build reliably"
+
+    code_quality_score:
+      threshold: 8.0
+      severity: BLOCKING
+      description: "High code quality for frontend"
+
+    test_coverage:
+      threshold: 0.75
+      severity: BLOCKING
+      description: "Adequate frontend test coverage (lower than backend)"
+
+    ui_component_coverage:
+      threshold: 0.90
+      severity: BLOCKING
+      description: "90% of UI components implemented"
+
+    accessibility_score:
+      threshold: 0.85
+      severity: BLOCKING
+      description: "85% accessibility compliance (WCAG 2.1)"
+
+    security_vulnerabilities:
+      threshold: 0
+      severity: BLOCKING
+      description: "Zero security vulnerabilities in frontend"
+
+    security_scan_complete:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Frontend security scanning completed"
+
+    code_review_completion:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "All frontend code reviewed"
+
+    bundle_size_kb:
+      threshold: 500
+      severity: WARNING
+      description: "Keep bundle size under 500KB"
+
+  required_artifacts:
+    - source_code
+    - unit_tests
+    - component_tests
+    - ui_screenshots
+    - security_scan_report
+
+  exit_gates:
+    - gate: "build_success"
+      condition: "build_success_rate >= 0.95"
+      severity: BLOCKING
+
+    - gate: "quality_threshold"
+      condition: "code_quality_score >= 8.0 AND test_coverage >= 0.75"
+      severity: BLOCKING
+
+    - gate: "security_clean"
+      condition: "security_vulnerabilities == 0"
+      severity: BLOCKING
+
+    - gate: "security_scanned"
+      condition: "security_scan_complete == 1.0"
+      severity: BLOCKING
+
+    - gate: "code_reviewed"
+      condition: "code_review_completion == 1.0"
+      severity: BLOCKING
+
+    - gate: "ui_complete"
+      condition: "ui_component_coverage >= 0.90"
+      severity: BLOCKING
+
+    - gate: "accessible"
+      condition: "accessibility_score >= 0.85"
+      severity: BLOCKING
+
+  metrics:
+    - metric: "components_count"
+      target: ">= 10"
+      description: "Sufficient UI components"
+
+    - metric: "page_load_time_ms"
+      target: "<= 1000"
+      description: "Fast page load times"
+
+
+# Architecture/Design Phases
+architecture:
+  phase_name: "Architecture Definition"
+  phase_id: "architecture"
+  description: "Define technical architecture and design patterns"
+
+  success_criteria:
+    architecture_document_complete:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Architecture documentation must be complete"
+
+    design_review_approval:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Architecture must be reviewed and approved"
+
+    security_architecture_review:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Security architecture must be reviewed"
+
+    scalability_assessment_complete:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Scalability analysis must be complete"
+
+    technology_stack_approved:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Technology choices must be approved"
+
+  required_artifacts:
+    - architecture_diagram
+    - technology_decision_records
+    - security_architecture_doc
+    - scalability_analysis
+
+  exit_gates:
+    - gate: "architecture_complete"
+      condition: "architecture_document_complete == 1.0"
+      severity: BLOCKING
+
+    - gate: "design_approved"
+      condition: "design_review_approval == 1.0"
+      severity: BLOCKING
+
+    - gate: "security_reviewed"
+      condition: "security_architecture_review == 1.0"
+      severity: BLOCKING
+
+    - gate: "scalability_assessed"
+      condition: "scalability_assessment_complete == 1.0"
+      severity: BLOCKING
+
+  metrics:
+    - metric: "adr_count"
+      target: ">= 3"
+      description: "Architectural Decision Records documented"
+
+    - metric: "review_iterations"
+      target: "<= 2"
+      description: "Efficient architecture review process"
+
+
+# Generic Custom Component Template
+# Use this for any custom phase type not explicitly defined above
+# (e.g., service_1, service_2, integration, data_pipeline, etc.)
+custom_component:
+  phase_name: "Custom Component Development"
+  phase_id: "custom_component"
+  description: "Generic template for custom workflow components"
+
+  success_criteria:
+    build_success_rate:
+      threshold: 0.90
+      severity: BLOCKING
+      description: "Component must build successfully"
+
+    code_quality_score:
+      threshold: 7.5
+      severity: BLOCKING
+      description: "Good code quality"
+
+    test_coverage:
+      threshold: 0.70
+      severity: BLOCKING
+      description: "Basic test coverage"
+
+    security_vulnerabilities:
+      threshold: 0
+      severity: BLOCKING
+      description: "Zero critical security vulnerabilities"
+
+    security_scan_complete:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Security scanning must be completed"
+
+    code_review_completion:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Code must be reviewed"
+
+  required_artifacts:
+    - source_code
+    - tests
+    - documentation
+
+  exit_gates:
+    - gate: "build_success"
+      condition: "build_success_rate >= 0.90"
+      severity: BLOCKING
+
+    - gate: "quality_threshold"
+      condition: "code_quality_score >= 7.5 AND test_coverage >= 0.70"
+      severity: BLOCKING
+
+    - gate: "security_clean"
+      condition: "security_vulnerabilities == 0"
+      severity: BLOCKING
+
+    - gate: "security_scanned"
+      condition: "security_scan_complete == 1.0"
+      severity: BLOCKING
+
+    - gate: "code_reviewed"
+      condition: "code_review_completion == 1.0"
+      severity: BLOCKING
+
+  metrics:
+    - metric: "component_complexity"
+      target: "<= 10"
+      description: "Manageable component complexity"
+
+
+# Service-Specific Templates (for microservices architectures)
+# These can be used for service_1, service_2, etc. by referencing "service_template"
+service_template:
+  phase_name: "Microservice Development"
+  phase_id: "service_template"
+  description: "Template for microservice development"
+
+  success_criteria:
+    build_success_rate:
+      threshold: 0.95
+      severity: BLOCKING
+      description: "Service must build reliably"
+
+    code_quality_score:
+      threshold: 8.0
+      severity: BLOCKING
+      description: "High code quality for microservices"
+
+    test_coverage:
+      threshold: 0.80
+      severity: BLOCKING
+      description: "Comprehensive service testing"
+
+    api_contract_compliance:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Service API contracts must be fulfilled"
+
+    security_vulnerabilities:
+      threshold: 0
+      severity: BLOCKING
+      description: "Zero security vulnerabilities"
+
+    security_scan_complete:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Security scanning completed"
+
+    health_check_implemented:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Service must have health check endpoint"
+
+    observability_configured:
+      threshold: 1.0
+      severity: BLOCKING
+      description: "Logging and metrics must be configured"
+
+  required_artifacts:
+    - source_code
+    - unit_tests
+    - integration_tests
+    - api_documentation
+    - deployment_config
+    - security_scan_report
+
+  exit_gates:
+    - gate: "build_success"
+      condition: "build_success_rate >= 0.95"
+      severity: BLOCKING
+
+    - gate: "quality_threshold"
+      condition: "code_quality_score >= 8.0 AND test_coverage >= 0.80"
+      severity: BLOCKING
+
+    - gate: "security_clean"
+      condition: "security_vulnerabilities == 0"
+      severity: BLOCKING
+
+    - gate: "security_scanned"
+      condition: "security_scan_complete == 1.0"
+      severity: BLOCKING
+
+    - gate: "health_check"
+      condition: "health_check_implemented == 1.0"
+      severity: BLOCKING
+
+    - gate: "observability"
+      condition: "observability_configured == 1.0"
+      severity: BLOCKING
+
+  metrics:
+    - metric: "service_dependencies"
+      target: "<= 5"
+      description: "Limit service coupling"
+
+    - metric: "response_time_ms"
+      target: "<= 200"
+      description: "Fast service response"
+
+
+# Fallback Configuration
+# If a phase_id doesn't match any definition above, apply these minimal gates
+fallback_validation:
+  enabled: true
+  description: "Minimal validation for undefined phase types"
+
+  minimum_gates:
+    - gate: "basic_validation"
+      condition: "true"  # Always pass, but log the undefined phase
+      severity: WARNING
+      message: "Phase type not defined in phase_slos.yaml - using fallback validation"
+
+  # Log undefined phases for monitoring
+  audit:
+    enabled: true
+    log_location: "logs/undefined_phases.jsonl"
+    alert_on_usage: true
+

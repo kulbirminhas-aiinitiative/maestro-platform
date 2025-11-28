@@ -1,0 +1,121 @@
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+Claude CLI failed with exit code 1: Error: When using --print, --output-format=stream-json requires --verbose
+
+
+================================================================================
+COMPREHENSIVE END-TO-END PROVIDER COMPARISON
+================================================================================
+
+Test Requirement:
+
+Build a microservices-based e-commerce platform with:
+- User service (authentication, profiles, preferences)
+- Product catalog service (inventory, search, recommendations)
+- Shopping cart service (session management, cart operations)
+- Order service (checkout, payment integration, order tracking)
+- Notification service (email, SMS, push notifications)
+
+Include: API contracts, data models, inter-service communication, error handling, and deployment architecture.
+
+
+
+================================================================================
+TEST A: FULL CLAUDE (Real Claude Code SDK)
+================================================================================
+
+  Phase 1: requirements (architect)
+    ✓ 2043ms | claude_agent | 59 tokens
+
+  Phase 2: architecture (architect)
+    ✓ 2051ms | claude_agent | 16 tokens
+
+  Phase 3: implementation (code_writer)
+    ✓ 2225ms | claude_agent | 16 tokens
+
+  Phase 4: review (reviewer)
+    ✓ 2036ms | claude_agent | 18 tokens
+
+================================================================================
+TEST B: FULL OPENAI (Real OpenAI API)
+================================================================================
+
+  Phase 1: requirements (architect_openai)
+    ✓ 21931ms | openai | 0 tokens
+
+  Phase 2: architecture (architect_openai)
+    ✓ 11220ms | openai | 0 tokens
+
+  Phase 3: implementation (code_writer_openai)
+    ✓ 18023ms | openai | 0 tokens
+
+  Phase 4: review (reviewer_openai)
+    ✓ 10612ms | openai | 0 tokens
+
+================================================================================
+TEST C: MIXED (A+B) - Alternating Claude and OpenAI
+================================================================================
+
+  Phase 1: requirements (architect → claude_agent)
+    ✓ 2047ms | claude_agent | 57 tokens
+
+  Phase 2: architecture (architect_openai → openai)
+    ✓ 15076ms | openai | 0 tokens
+    → Provider switch: claude_agent → openai
+
+  Phase 3: implementation (code_writer → claude_agent)
+    ✓ 2259ms | claude_agent | 456 tokens
+    → Provider switch: openai → claude_agent
+
+  Phase 4: review (reviewer_openai → openai)
+    ✓ 5120ms | openai | 0 tokens
+    → Provider switch: claude_agent → openai
+
+================================================================================
+COMPREHENSIVE ANALYSIS
+================================================================================
+
+A_FullClaude: All phases using Claude Code SDK from maestro-hive
+  Duration: 8357ms
+  Success Rate: 100.0%
+  Total Tokens: 109
+  Gaps Found: 0
+
+B_FullOpenAI: All phases using OpenAI API
+  Duration: 61786ms
+  Success Rate: 100.0%
+  Total Tokens: 0
+  Gaps Found: 0
+
+C_Mixed_AB: Alternating between Claude and OpenAI across phases
+  Duration: 24503ms
+  Success Rate: 100.0%
+  Total Tokens: 513
+  Gaps Found: 0
+
+================================================================================
+SUMMARY
+================================================================================
+Total Configurations Tested: 3
+Total Gaps Identified: 0
+Critical Gaps: 0
+Warnings: 0
+
+Performance:
+  Fastest: A_FullClaude (8357ms)
+  Average: 31549ms
+================================================================================
+
+✓ Saved: /home/ec2-user/projects/maestro-platform/execution-platform/test-results/comprehensive-e2e/comprehensive_analysis_20251011_211949.json
+✓ Saved: /home/ec2-user/projects/maestro-platform/execution-platform/test-results/comprehensive-e2e/gap_analysis_20251011_211949.md
+
+✓ Comprehensive end-to-end test complete!
+✓ Results saved to: /home/ec2-user/projects/maestro-platform/execution-platform/test-results/comprehensive-e2e

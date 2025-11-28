@@ -1,0 +1,110 @@
+manifest_version: '1.0'
+name: ant-design-enterprise
+description: Enterprise-level UI design system built with Ant Design. Features comprehensive component library, design language, and best practices for business applications.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: react
+  tags:
+    - ant-design
+    - antd
+    - enterprise
+    - react
+    - typescript
+    - design-system
+    - components
+    - business
+  design_system: ant-design
+  ui_complexity: intermediate
+  use_cases:
+    - enterprise-applications
+    - admin-systems
+    - business-tools
+    - crm
+    - erp
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-antd-app
+  - variable: THEME_PRIMARY_COLOR
+    description: Primary theme color (hex)
+    type: string
+    required: false
+    default: '#1890ff'
+  - variable: ENABLE_PRO_COMPONENTS
+    description: Include Ant Design Pro components
+    type: boolean
+    required: false
+    default: false
+  - variable: LOCALE
+    description: Default locale
+    type: string
+    required: false
+    default: en_US
+
+dependencies:
+  runtime:
+    - react@18.2.0
+    - react-dom@18.2.0
+    - antd@5.12.0
+    - '@ant-design/icons@5.2.0'
+    - dayjs@1.11.0
+  build:
+    - typescript@5.0.0
+    - vite@5.0.0
+    - less@4.2.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - dist/**
+    - .DS_Store
+
+features:
+  - "60+ high-quality React components"
+  - "Enterprise-class UI design language"
+  - "Customizable theme with design tokens"
+  - "Internationalization support"
+  - "TypeScript definitions"
+  - "Form components with complex validation"
+  - "Data display components (Table, Tree, etc.)"
+  - "Rich set of icons"
+  - "Layout and navigation components"
+  - "Feedback components"
+  - "Accessibility support"
+  - "Mobile responsive"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/COMPONENTS.md
+  examples:
+    - examples/form-advanced
+    - examples/data-table
+    - examples/custom-theme

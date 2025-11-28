@@ -1,0 +1,59 @@
+{
+  "metadata": {
+    "id": "saga-orchestration-pattern-v1",
+    "name": "Saga Pattern for Distributed Transactions (Orchestration)",
+    "category": "backend",
+    "language": "typescript",
+    "framework": "nodejs",
+    "description": "Saga pattern implementation for managing distributed transactions across microservices with orchestration, compensation logic, and failure handling",
+    "tags": [
+      "saga",
+      "distributed-transactions",
+      "microservices",
+      "orchestration",
+      "compensation",
+      "eventual-consistency"
+    ],
+    "quality_score": 91.0,
+    "security_score": 84.0,
+    "performance_score": 86.0,
+    "maintainability_score": 88.0,
+    "test_coverage": 84.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T11:00:00.000000",
+    "updated_at": "2025-10-10T11:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "solution_architect"
+  },
+  "content": "/**\n * Saga Pattern: Distributed Transaction Management\n * \n * Use Cases:\n * - E-commerce checkout (order, payment, inventory, shipping)\n * - Travel booking (flight, hotel, car rental)\n * - Multi-service workflows\n * \n * Benefits:\n * - Maintains data consistency without distributed transactions\n * - Handles partial failures gracefully\n * - Supports long-running transactions\n * - Decoupled services\n */\n\ninterface SagaStep {\n  name: string;\n  action: () => Promise<any>;\n  compensation: (data?: any) => Promise<void>;\n}\n\ninterface SagaContext {\n  sagaId: string;\n  data: Record<string, any>;\n  completedSteps: string[];\n  status: 'PENDING' | 'SUCCESS' | 'COMPENSATING' | 'FAILED';\n}\n\nclass SagaOrchestrator {\n  private steps: SagaStep[] = [];\n  \n  addStep(step: SagaStep): SagaOrchestrator {\n    this.steps.push(step);\n    return this;\n  }\n  \n  async execute(initialData: Record<string, any> = {}): Promise<SagaContext> {\n    const context: SagaContext = {\n      sagaId: generateId(),\n      data: initialData,\n      completedSteps: [],\n      status: 'PENDING'\n    };\n    \n    try {\n      // Execute all steps sequentially\n      for (const step of this.steps) {\n        console.log(`Executing step: ${step.name}`);\n        \n        const result = await step.action();\n        context.data[step.name] = result;\n        context.completedSteps.push(step.name);\n        \n        // Save saga state (for recovery)\n        await this.saveSagaState(context);\n      }\n      \n      context.status = 'SUCCESS';\n      return context;\n      \n    } catch (error) {\n      console.error(`Saga failed at step ${context.completedSteps.length + 1}:`, error);\n      \n      // Compensate completed steps in reverse order\n      await this.compensate(context);\n      \n      context.status = 'FAILED';\n      throw error;\n    }\n  }\n  \n  private async compensate(context: SagaContext): Promise<void> {\n    context.status = 'COMPENSATING';\n    \n    // Compensate in reverse order\n    for (let i = context.completedSteps.length - 1; i >= 0; i--) {\n      const stepName = context.completedSteps[i];\n      const step = this.steps.find(s => s.name === stepName);\n      \n      if (step) {\n        try {\n          console.log(`Compensating step: ${stepName}`);\n          await step.compensation(context.data[stepName]);\n        } catch (compensationError) {\n          console.error(`Compensation failed for ${stepName}:`, compensationError);\n          // Log to dead-letter queue for manual intervention\n        }\n      }\n    }\n  }\n  \n  private async saveSagaState(context: SagaContext): Promise<void> {\n    // Persist saga state to database for recovery\n    // In case of crash, can resume or compensate from last known state\n  }\n}\n\n// =============================================================================\n// Example: E-Commerce Checkout Saga\n// =============================================================================\n\ninterface Order {\n  orderId: string;\n  customerId: string;\n  items: Array<{productId: string; quantity: number; price: number}>;\n  totalAmount: number;\n}\n\ninterface Payment {\n  paymentId: string;\n  orderId: string;\n  amount: number;\n  status: string;\n}\n\nclass CheckoutSaga {\n  private orderService: OrderService;\n  private paymentService: PaymentService;\n  private inventoryService: InventoryService;\n  private shippingService: ShippingService;\n  \n  constructor(\n    orderService: OrderService,\n    paymentService: PaymentService,\n    inventoryService: InventoryService,\n    shippingService: ShippingService\n  ) {\n    this.orderService = orderService;\n    this.paymentService = paymentService;\n    this.inventoryService = inventoryService;\n    this.shippingService = shippingService;\n  }\n  \n  async executeCheckout(customerId: string, items: any[], paymentMethod: any): Promise<string> {\n    const saga = new SagaOrchestrator();\n    \n    // Step 1: Create Order\n    saga.addStep({\n      name: 'createOrder',\n      action: async () => {\n        const order = await this.orderService.createOrder({\n          customerId,\n          items,\n          status: 'PENDING'\n        });\n        return order;\n      },\n      compensation: async (order: Order) => {\n        await this.orderService.cancelOrder(order.orderId);\n      }\n    });\n    \n    // Step 2: Reserve Inventory\n    saga.addStep({\n      name: 'reserveInventory',\n      action: async () => {\n        const reservations = await this.inventoryService.reserveItems(items);\n        return reservations;\n      },\n      compensation: async (reservations: any) => {\n        await this.inventoryService.releaseReservations(reservations);\n      }\n    });\n    \n    // Step 3: Process Payment\n    saga.addStep({\n      name: 'processPayment',\n      action: async () => {\n        const payment = await this.paymentService.charge({\n          customerId,\n          amount: items.reduce((sum, item) => sum + item.price * item.quantity, 0),\n          method: paymentMethod\n        });\n        \n        if (payment.status !== 'SUCCESS') {\n          throw new Error('Payment failed');\n        }\n        \n        return payment;\n      },\n      compensation: async (payment: Payment) => {\n        await this.paymentService.refund(payment.paymentId);\n      }\n    });\n    \n    // Step 4: Create Shipment\n    saga.addStep({\n      name: 'createShipment',\n      action: async () => {\n        const shipment = await this.shippingService.createShipment({\n          customerId,\n          items\n        });\n        return shipment;\n      },\n      compensation: async (shipment: any) => {\n        await this.shippingService.cancelShipment(shipment.shipmentId);\n      }\n    });\n    \n    const result = await saga.execute();\n    return result.data.createOrder.orderId;\n  }\n}\n\n// Mock Services (replace with actual implementations)\nclass OrderService {\n  async createOrder(data: any): Promise<Order> {\n    return {\n      orderId: generateId(),\n      customerId: data.customerId,\n      items: data.items,\n      totalAmount: 100\n    };\n  }\n  \n  async cancelOrder(orderId: string): Promise<void> {\n    console.log(`Cancelling order: ${orderId}`);\n  }\n}\n\nclass PaymentService {\n  async charge(data: any): Promise<Payment> {\n    return {\n      paymentId: generateId(),\n      orderId: 'order-123',\n      amount: data.amount,\n      status: 'SUCCESS'\n    };\n  }\n  \n  async refund(paymentId: string): Promise<void> {\n    console.log(`Refunding payment: ${paymentId}`);\n  }\n}\n\nclass InventoryService {\n  async reserveItems(items: any[]): Promise<any> {\n    return { reservationId: generateId(), items };\n  }\n  \n  async releaseReservations(reservations: any): Promise<void> {\n    console.log(`Releasing reservations: ${reservations.reservationId}`);\n  }\n}\n\nclass ShippingService {\n  async createShipment(data: any): Promise<any> {\n    return { shipmentId: generateId() };\n  }\n  \n  async cancelShipment(shipmentId: string): Promise<void> {\n    console.log(`Cancelling shipment: ${shipmentId}`);\n  }\n}\n\nfunction generateId(): string {\n  return Math.random().toString(36).substring(7);\n}\n\nexport { SagaOrchestrator, CheckoutSaga };\n",
+  "variables": {},
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "E-commerce checkout workflows",
+      "Travel booking systems",
+      "Distributed transaction management",
+      "Multi-service business processes",
+      "Order fulfillment pipelines"
+    ],
+    "team_composition": [
+      "solution_architect",
+      "backend_developer",
+      "devops_engineer"
+    ],
+    "estimated_time_minutes": 150,
+    "prerequisites": [
+      "Microservices architecture in place",
+      "Compensation logic defined",
+      "Event sourcing understanding",
+      "Idempotent service operations"
+    ],
+    "related_templates": [
+      "event-driven-architecture",
+      "circuit-breaker-pattern",
+      "cqrs-pattern"
+    ]
+  }
+}

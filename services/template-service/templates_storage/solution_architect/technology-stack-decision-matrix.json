@@ -1,0 +1,74 @@
+{
+  "metadata": {
+    "id": "technology-stack-decision-matrix-v1",
+    "name": "Technology Stack Decision Matrix & Evaluation Framework",
+    "category": "documentation",
+    "language": "markdown",
+    "framework": "architecture",
+    "description": "Comprehensive technology evaluation framework for selecting tech stack components with weighted scoring, risk assessment, and TCO analysis",
+    "tags": [
+      "technology-selection",
+      "decision-matrix",
+      "architecture",
+      "evaluation",
+      "tco",
+      "risk-assessment"
+    ],
+    "quality_score": 89.0,
+    "security_score": 75.0,
+    "performance_score": 72.0,
+    "maintainability_score": 92.0,
+    "test_coverage": 80.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T11:00:00.000000",
+    "updated_at": "2025-10-10T11:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "solution_architect"
+  },
+  "content": "# Technology Stack Decision Matrix\n\n## Project Context\n\n**Project:** {{PROJECT_NAME}}  \n**Decision Date:** {{DATE}}  \n**Architect:** {{ARCHITECT_NAME}}  \n**Technology Category:** {{TECH_CATEGORY}}  \n\n### Requirements Summary\n{{REQUIREMENTS_SUMMARY}}\n\n---\n\n## Evaluation Criteria & Weights\n\n| Criterion | Weight | Description |\n|-----------|--------|-------------|\n| Performance | {{PERF_WEIGHT}}% | Throughput, latency, resource efficiency |\n| Scalability | {{SCALE_WEIGHT}}% | Horizontal/vertical scaling, load handling |\n| Developer Experience | {{DX_WEIGHT}}% | Learning curve, documentation, tooling |\n| Community & Support | {{COMMUNITY_WEIGHT}}% | Ecosystem size, commercial support |\n| Cost (TCO) | {{COST_WEIGHT}}% | Licensing, infrastructure, maintenance |\n| Security | {{SECURITY_WEIGHT}}% | Vulnerability history, security features |\n| Maturity & Stability | {{MATURITY_WEIGHT}}% | Production readiness, breaking changes |\n| Integration | {{INTEGRATION_WEIGHT}}% | Compatibility with existing stack |\n| **Total** | **100%** | |\n\n---\n\n## Option 1: {{OPTION_1_NAME}}\n\n### Overview\n{{OPTION_1_DESCRIPTION}}\n\n### Evaluation Scores (1-10)\n\n| Criterion | Score | Weighted | Justification |\n|-----------|-------|----------|---------------|\n| Performance | {{O1_PERF}}/10 | {{O1_PERF_W}} | {{O1_PERF_JUST}} |\n| Scalability | {{O1_SCALE}}/10 | {{O1_SCALE_W}} | {{O1_SCALE_JUST}} |\n| Developer Experience | {{O1_DX}}/10 | {{O1_DX_W}} | {{O1_DX_JUST}} |\n| Community & Support | {{O1_COMM}}/10 | {{O1_COMM_W}} | {{O1_COMM_JUST}} |\n| Cost (TCO) | {{O1_COST}}/10 | {{O1_COST_W}} | {{O1_COST_JUST}} |\n| Security | {{O1_SEC}}/10 | {{O1_SEC_W}} | {{O1_SEC_JUST}} |\n| Maturity & Stability | {{O1_MAT}}/10 | {{O1_MAT_W}} | {{O1_MAT_JUST}} |\n| Integration | {{O1_INT}}/10 | {{O1_INT_W}} | {{O1_INT_JUST}} |\n| **Total Weighted Score** | | **{{O1_TOTAL}}/100** | |\n\n### Pros\n- {{O1_PRO_1}}\n- {{O1_PRO_2}}\n- {{O1_PRO_3}}\n\n### Cons\n- {{O1_CON_1}}\n- {{O1_CON_2}}\n\n### TCO Analysis (3 years)\n- Licensing: {{O1_LICENSE_COST}}\n- Infrastructure: {{O1_INFRA_COST}}\n- Development: {{O1_DEV_COST}}\n- Maintenance: {{O1_MAINT_COST}}\n- **Total**: {{O1_TOTAL_COST}}\n\n---\n\n## Option 2: {{OPTION_2_NAME}}\n\n### Overview\n{{OPTION_2_DESCRIPTION}}\n\n### Evaluation Scores (1-10)\n\n| Criterion | Score | Weighted | Justification |\n|-----------|-------|----------|---------------|\n| Performance | {{O2_PERF}}/10 | {{O2_PERF_W}} | {{O2_PERF_JUST}} |\n| Scalability | {{O2_SCALE}}/10 | {{O2_SCALE_W}} | {{O2_SCALE_JUST}} |\n| Developer Experience | {{O2_DX}}/10 | {{O2_DX_W}} | {{O2_DX_JUST}} |\n| Community & Support | {{O2_COMM}}/10 | {{O2_COMM_W}} | {{O2_COMM_JUST}} |\n| Cost (TCO) | {{O2_COST}}/10 | {{O2_COST_W}} | {{O2_COST_JUST}} |\n| Security | {{O2_SEC}}/10 | {{O2_SEC_W}} | {{O2_SEC_JUST}} |\n| Maturity & Stability | {{O2_MAT}}/10 | {{O2_MAT_W}} | {{O2_MAT_JUST}} |\n| Integration | {{O2_INT}}/10 | {{O2_INT_W}} | {{O2_INT_JUST}} |\n| **Total Weighted Score** | | **{{O2_TOTAL}}/100** | |\n\n---\n\n## Option 3: {{OPTION_3_NAME}}\n\n[Similar structure as above]\n\n**Total Weighted Score**: {{O3_TOTAL}}/100\n\n---\n\n## Comparison Summary\n\n| Criterion | {{OPTION_1_NAME}} | {{OPTION_2_NAME}} | {{OPTION_3_NAME}} | Winner |\n|-----------|-------------------|-------------------|-------------------|--------|\n| Performance | {{O1_PERF}} | {{O2_PERF}} | {{O3_PERF}} | {{PERF_WINNER}} |\n| Scalability | {{O1_SCALE}} | {{O2_SCALE}} | {{O3_SCALE}} | {{SCALE_WINNER}} |\n| Developer Experience | {{O1_DX}} | {{O2_DX}} | {{O3_DX}} | {{DX_WINNER}} |\n| Community | {{O1_COMM}} | {{O2_COMM}} | {{O3_COMM}} | {{COMM_WINNER}} |\n| Cost | {{O1_COST}} | {{O2_COST}} | {{O3_COST}} | {{COST_WINNER}} |\n| Security | {{O1_SEC}} | {{O2_SEC}} | {{O3_SEC}} | {{SEC_WINNER}} |\n| **Total Score** | **{{O1_TOTAL}}** | **{{O2_TOTAL}}** | **{{O3_TOTAL}}** | **{{OVERALL_WINNER}}** |\n\n---\n\n## Risk Assessment\n\n### {{OPTION_1_NAME}} Risks\n\n| Risk | Likelihood | Impact | Mitigation |\n|------|------------|--------|-----------|\n| {{O1_RISK_1}} | H/M/L | H/M/L | {{O1_MIT_1}} |\n| {{O1_RISK_2}} | H/M/L | H/M/L | {{O1_MIT_2}} |\n\n---\n\n## Recommendation\n\n**Selected Technology**: {{RECOMMENDED_OPTION}}\n\n### Rationale\n{{RECOMMENDATION_RATIONALE}}\n\n### Implementation Plan\n1. {{IMPL_STEP_1}}\n2. {{IMPL_STEP_2}}\n3. {{IMPL_STEP_3}}\n\n### Success Criteria\n- {{SUCCESS_1}}\n- {{SUCCESS_2}}\n\n---\n\n## References\n- {{REFERENCE_1}}\n- {{REFERENCE_2}}\n\n**Approved By**: {{APPROVER}}  \n**Date**: {{APPROVAL_DATE}}  \n",
+  "variables": {
+    "PROJECT_NAME": "Project Name",
+    "DATE": "YYYY-MM-DD",
+    "ARCHITECT_NAME": "Architect Name",
+    "TECH_CATEGORY": "Database/Framework/Cloud Platform",
+    "PERF_WEIGHT": "20",
+    "SCALE_WEIGHT": "15",
+    "DX_WEIGHT": "15",
+    "COMMUNITY_WEIGHT": "10",
+    "COST_WEIGHT": "15",
+    "SECURITY_WEIGHT": "15",
+    "MATURITY_WEIGHT": "10",
+    "INTEGRATION_WEIGHT": "10",
+    "OPTION_1_NAME": "PostgreSQL",
+    "OPTION_2_NAME": "MongoDB",
+    "OPTION_3_NAME": "DynamoDB"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Database selection",
+      "Frontend framework choice",
+      "Cloud provider selection",
+      "Message broker evaluation",
+      "Monitoring tool selection"
+    ],
+    "team_composition": [
+      "solution_architect",
+      "backend_developer",
+      "devops_engineer"
+    ],
+    "estimated_time_minutes": 120,
+    "prerequisites": [
+      "Requirements clearly defined",
+      "Options researched",
+      "Stakeholder input gathered",
+      "Budget constraints known"
+    ],
+    "related_templates": [
+      "architecture-decision-record",
+      "scalability-planning-template"
+    ]
+  }
+}

@@ -1,0 +1,148 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-pipeline-api
+  labels:
+    app: ml-pipeline
+    component: api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ml-pipeline
+      component: api
+  template:
+    metadata:
+      labels:
+        app: ml-pipeline
+        component: api
+    spec:
+      containers:
+      - name: api
+        image: ml-pipeline:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: API_HOST
+          value: "0.0.0.0"
+        - name: API_PORT
+          value: "8000"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: MAX_PARALLEL_TASKS
+          value: "10"
+        - name: REDIS_URL
+          value: "redis://ml-pipeline-redis:6379/0"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: ml-pipeline-secrets
+              key: database-url
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: output
+          mountPath: /app/output
+        - name: artifacts
+          mountPath: /app/artifacts
+      volumes:
+      - name: output
+        persistentVolumeClaim:
+          claimName: ml-pipeline-output
+      - name: artifacts
+        persistentVolumeClaim:
+          claimName: ml-pipeline-artifacts
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-pipeline-api
+  labels:
+    app: ml-pipeline
+    component: api
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  - port: 9090
+    targetPort: 9090
+    protocol: TCP
+    name: metrics
+  selector:
+    app: ml-pipeline
+    component: api
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ml-pipeline-output
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ml-pipeline-artifacts
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ml-pipeline-api-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ml-pipeline-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

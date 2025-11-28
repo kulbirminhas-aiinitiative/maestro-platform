@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "id": "fastapi-async-crud-complete-v1",
+    "name": "FastAPI Async CRUD with SQLAlchemy 2.0",
+    "category": "api",
+    "language": "python",
+    "framework": "fastapi",
+    "description": "Production-ready async CRUD operations with SQLAlchemy 2.0, Pydantic V2 validation, error handling, and pagination support",
+    "tags": [
+      "crud",
+      "rest",
+      "api",
+      "sqlalchemy",
+      "pydantic",
+      "async",
+      "pagination",
+      "error-handling"
+    ],
+    "quality_score": 85.0,
+    "security_score": 80.0,
+    "performance_score": 90.0,
+    "maintainability_score": 85.0,
+    "test_coverage": 75.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-04T20:00:00.000000",
+    "updated_at": "2025-10-04T20:00:00.000000",
+    "created_by": "template_enhancement_phase1",
+    "persona": "backend_developer"
+  },
+  "content": "from fastapi import FastAPI, Depends, HTTPException, Query, status\nfrom sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker\nfrom sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column\nfrom sqlalchemy import select, func\nfrom pydantic import BaseModel, Field, ConfigDict\nfrom typing import List, Optional\nfrom datetime import datetime\nimport logging\n\nlogger = logging.getLogger(__name__)\n\n# Database setup\nDATABASE_URL = \"postgresql+asyncpg://user:pass@localhost/dbname\"\nengine = create_async_engine(DATABASE_URL, echo=True, pool_pre_ping=True)\nasync_session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)\n\nclass Base(DeclarativeBase):\n    pass\n\n# SQLAlchemy Model\nclass ItemModel(Base):\n    __tablename__ = \"items\"\n    \n    id: Mapped[int] = mapped_column(primary_key=True, index=True)\n    name: Mapped[str] = mapped_column(index=True)\n    description: Mapped[Optional[str]]\n    price: Mapped[float]\n    is_active: Mapped[bool] = mapped_column(default=True)\n    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)\n    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)\n\n# Pydantic Schemas\nclass ItemBase(BaseModel):\n    name: str = Field(..., min_length=1, max_length=100, description=\"Item name\")\n    description: Optional[str] = Field(None, max_length=500)\n    price: float = Field(..., gt=0, description=\"Item price must be positive\")\n    is_active: bool = Field(default=True)\n\nclass ItemCreate(ItemBase):\n    pass\n\nclass ItemUpdate(BaseModel):\n    name: Optional[str] = Field(None, min_length=1, max_length=100)\n    description: Optional[str] = Field(None, max_length=500)\n    price: Optional[float] = Field(None, gt=0)\n    is_active: Optional[bool] = None\n\nclass ItemResponse(ItemBase):\n    model_config = ConfigDict(from_attributes=True)\n    \n    id: int\n    created_at: datetime\n    updated_at: datetime\n\nclass PaginatedResponse(BaseModel):\n    items: List[ItemResponse]\n    total: int\n    page: int\n    page_size: int\n    total_pages: int\n\n# Dependency\nasync def get_db() -> AsyncSession:\n    async with async_session_maker() as session:\n        try:\n            yield session\n        finally:\n            await session.close()\n\n# FastAPI app\napp = FastAPI(title=\"Async CRUD API\", version=\"1.0.0\")\n\n@app.post(\"/items/\", response_model=ItemResponse, status_code=status.HTTP_201_CREATED)\nasync def create_item(\n    item: ItemCreate,\n    db: AsyncSession = Depends(get_db)\n) -> ItemResponse:\n    \"\"\"Create a new item with validation and error handling\"\"\"\n    try:\n        db_item = ItemModel(**item.model_dump())\n        db.add(db_item)\n        await db.commit()\n        await db.refresh(db_item)\n        logger.info(f\"Created item with id={db_item.id}\")\n        return db_item\n    except Exception as e:\n        await db.rollback()\n        logger.error(f\"Error creating item: {str(e)}\")\n        raise HTTPException(\n            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,\n            detail=\"Failed to create item\"\n        )\n\n@app.get(\"/items/{item_id}\", response_model=ItemResponse)\nasync def read_item(\n    item_id: int,\n    db: AsyncSession = Depends(get_db)\n) -> ItemResponse:\n    \"\"\"Get item by ID with proper error handling\"\"\"\n    result = await db.execute(select(ItemModel).filter(ItemModel.id == item_id))\n    item = result.scalar_one_or_none()\n    \n    if not item:\n        raise HTTPException(\n            status_code=status.HTTP_404_NOT_FOUND,\n            detail=f\"Item with id={item_id} not found\"\n        )\n    \n    return item\n\n@app.get(\"/items/\", response_model=PaginatedResponse)\nasync def list_items(\n    page: int = Query(1, ge=1, description=\"Page number\"),\n    page_size: int = Query(10, ge=1, le=100, description=\"Items per page\"),\n    search: Optional[str] = Query(None, description=\"Search in name\"),\n    is_active: Optional[bool] = Query(None, description=\"Filter by active status\"),\n    db: AsyncSession = Depends(get_db)\n) -> PaginatedResponse:\n    \"\"\"List items with pagination, filtering, and search\"\"\"\n    # Build query\n    query = select(ItemModel)\n    \n    if search:\n        query = query.filter(ItemModel.name.ilike(f\"%{search}%\"))\n    if is_active is not None:\n        query = query.filter(ItemModel.is_active == is_active)\n    \n    # Get total count\n    count_query = select(func.count()).select_from(query.subquery())\n    total = await db.scalar(count_query)\n    \n    # Apply pagination\n    offset = (page - 1) * page_size\n    query = query.offset(offset).limit(page_size)\n    \n    # Execute query\n    result = await db.execute(query)\n    items = result.scalars().all()\n    \n    return PaginatedResponse(\n        items=items,\n        total=total,\n        page=page,\n        page_size=page_size,\n        total_pages=(total + page_size - 1) // page_size\n    )\n\n@app.put(\"/items/{item_id}\", response_model=ItemResponse)\nasync def update_item(\n    item_id: int,\n    item_update: ItemUpdate,\n    db: AsyncSession = Depends(get_db)\n) -> ItemResponse:\n    \"\"\"Update item with partial updates support\"\"\"\n    result = await db.execute(select(ItemModel).filter(ItemModel.id == item_id))\n    db_item = result.scalar_one_or_none()\n    \n    if not db_item:\n        raise HTTPException(\n            status_code=status.HTTP_404_NOT_FOUND,\n            detail=f\"Item with id={item_id} not found\"\n        )\n    \n    # Update only provided fields\n    update_data = item_update.model_dump(exclude_unset=True)\n    for key, value in update_data.items():\n        setattr(db_item, key, value)\n    \n    try:\n        await db.commit()\n        await db.refresh(db_item)\n        logger.info(f\"Updated item with id={item_id}\")\n        return db_item\n    except Exception as e:\n        await db.rollback()\n        logger.error(f\"Error updating item: {str(e)}\")\n        raise HTTPException(\n            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,\n            detail=\"Failed to update item\"\n        )\n\n@app.delete(\"/items/{item_id}\", status_code=status.HTTP_204_NO_CONTENT)\nasync def delete_item(\n    item_id: int,\n    db: AsyncSession = Depends(get_db)\n) -> None:\n    \"\"\"Delete item (hard delete)\"\"\"\n    result = await db.execute(select(ItemModel).filter(ItemModel.id == item_id))\n    db_item = result.scalar_one_or_none()\n    \n    if not db_item:\n        raise HTTPException(\n            status_code=status.HTTP_404_NOT_FOUND,\n            detail=f\"Item with id={item_id} not found\"\n        )\n    \n    try:\n        await db.delete(db_item)\n        await db.commit()\n        logger.info(f\"Deleted item with id={item_id}\")\n    except Exception as e:\n        await db.rollback()\n        logger.error(f\"Error deleting item: {str(e)}\")\n        raise HTTPException(\n            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,\n            detail=\"Failed to delete item\"\n        )",
+  "variables": {
+    "DATABASE_URL": "postgresql+asyncpg://user:pass@localhost/dbname",
+    "TABLE_NAME": "items",
+    "MODEL_NAME": "Item"
+  },
+  "dependencies": [
+    "fastapi==0.109.0",
+    "sqlalchemy[asyncio]==2.0.25",
+    "asyncpg==0.29.0",
+    "pydantic==2.5.3"
+  ],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Building async REST APIs with FastAPI",
+      "CRUD operations with SQLAlchemy 2.0",
+      "Pagination and filtering patterns",
+      "Production-ready error handling"
+    ],
+    "team_composition": [
+      "backend_developer"
+    ],
+    "estimated_time_minutes": 45,
+    "prerequisites": [
+      "PostgreSQL database setup",
+      "Basic understanding of async/await",
+      "Familiarity with SQLAlchemy and Pydantic"
+    ],
+    "related_templates": [
+      "fastapi-jwt-authentication",
+      "sqlalchemy-async-patterns",
+      "pydantic-validation-patterns"
+    ]
+  }
+}

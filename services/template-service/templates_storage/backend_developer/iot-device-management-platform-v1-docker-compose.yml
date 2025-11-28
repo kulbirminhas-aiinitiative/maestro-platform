@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  iot_device_management_platform:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iot-device-management-platform-v1
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - MQTT_BROKER_URL=${MQTT_BROKER_URL}
+      - MQTT_USERNAME=${MQTT_USERNAME}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
+      - INFLUXDB_URL=${INFLUXDB_URL}
+      - INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - INFLUXDB_ORG=${INFLUXDB_ORG}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET}
+      - REDIS_URL=${REDIS_URL}
+      - ANOMALY_THRESHOLD=${ANOMALY_THRESHOLD}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - app-data:/app/data
+      - app-logs:/app/logs
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+volumes:
+  app-data:
+  app-logs:
+
+networks:
+  app-network:
+    driver: bridge

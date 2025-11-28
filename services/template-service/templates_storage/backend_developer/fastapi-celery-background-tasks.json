@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "id": "fastapi-celery-tasks-v1",
+    "name": "FastAPI Background Tasks with Celery & Redis",
+    "category": "background-processing",
+    "language": "python",
+    "framework": "fastapi",
+    "description": "Production-ready Celery integration with FastAPI for async background tasks, periodic tasks, task monitoring, and result tracking",
+    "tags": [
+      "celery",
+      "background-tasks",
+      "async",
+      "redis",
+      "task-queue",
+      "periodic-tasks"
+    ],
+    "quality_score": 87.0,
+    "security_score": 82.0,
+    "performance_score": 90.0,
+    "maintainability_score": 86.0,
+    "test_coverage": 78.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-04T20:00:00.000000",
+    "updated_at": "2025-10-04T20:00:00.000000",
+    "created_by": "template_enhancement_phase1",
+    "persona": "backend_developer"
+  },
+  "content": "from fastapi import FastAPI, BackgroundTasks, HTTPException, status\nfrom celery import Celery, Task, states\nfrom celery.result import AsyncResult\nfrom celery.schedules import crontab\nfrom pydantic import BaseModel, EmailStr, Field\nfrom typing import Optional, Any, Dict\nfrom datetime import datetime, timedelta\nimport os\nimport logging\nimport smtplib\nfrom email.mime.text import MIMEText\nfrom email.mime.multipart import MIMEMultipart\n\nlogger = logging.getLogger(__name__)\n\n# Configuration\nREDIS_URL = os.getenv(\"REDIS_URL\", \"redis://localhost:6379/0\")\nCELERY_BROKER_URL = os.getenv(\"CELERY_BROKER_URL\", REDIS_URL)\nCELERY_RESULT_BACKEND = os.getenv(\"CELERY_RESULT_BACKEND\", REDIS_URL)\n\n# Celery app initialization\ncelery_app = Celery(\n    \"worker\",\n    broker=CELERY_BROKER_URL,\n    backend=CELERY_RESULT_BACKEND,\n    include=[\"app.tasks\"]\n)\n\n# Celery configuration\ncelery_app.conf.update(\n    task_serializer=\"json\",\n    accept_content=[\"json\"],\n    result_serializer=\"json\",\n    timezone=\"UTC\",\n    enable_utc=True,\n    task_track_started=True,\n    task_time_limit=30 * 60,  # 30 minutes\n    task_soft_time_limit=25 * 60,  # 25 minutes\n    worker_prefetch_multiplier=1,\n    worker_max_tasks_per_child=1000,\n    task_acks_late=True,\n    task_reject_on_worker_lost=True,\n    result_expires=3600,  # 1 hour\n)\n\n# Periodic tasks schedule\ncelery_app.conf.beat_schedule = {\n    \"cleanup-expired-data\": {\n        \"task\": \"app.tasks.cleanup_expired_data\",\n        \"schedule\": crontab(hour=\"2\", minute=\"0\"),  # Daily at 2 AM\n    },\n    \"send-daily-report\": {\n        \"task\": \"app.tasks.send_daily_report\",\n        \"schedule\": crontab(hour=\"9\", minute=\"0\"),  # Daily at 9 AM\n    },\n    \"health-check\": {\n        \"task\": \"app.tasks.health_check\",\n        \"schedule\": 300.0,  # Every 5 minutes\n    },\n}\n\n# Custom Celery task base class\nclass CallbackTask(Task):\n    \"\"\"Base task with callbacks for success/failure\"\"\"\n    \n    def on_success(self, retval, task_id, args, kwargs):\n        logger.info(f\"Task {task_id} succeeded with result: {retval}\")\n        # Can send notifications, update database, etc.\n        return super().on_success(retval, task_id, args, kwargs)\n    \n    def on_failure(self, exc, task_id, args, kwargs, einfo):\n        logger.error(f\"Task {task_id} failed: {exc}\")\n        # Can send error notifications, trigger alerts, etc.\n        return super().on_failure(exc, task_id, args, kwargs, einfo)\n    \n    def on_retry(self, exc, task_id, args, kwargs, einfo):\n        logger.warning(f\"Task {task_id} retrying: {exc}\")\n        return super().on_retry(exc, task_id, args, kwargs, einfo)\n\n# Task definitions\n@celery_app.task(base=CallbackTask, bind=True, max_retries=3)\ndef send_email_task(self, to_email: str, subject: str, body: str) -> Dict[str, Any]:\n    \"\"\"\n    Send email via SMTP with retry logic\n    \"\"\"\n    try:\n        logger.info(f\"Sending email to {to_email}\")\n        \n        # Email configuration\n        smtp_server = os.getenv(\"SMTP_SERVER\", \"smtp.gmail.com\")\n        smtp_port = int(os.getenv(\"SMTP_PORT\", \"587\"))\n        smtp_username = os.getenv(\"SMTP_USERNAME\")\n        smtp_password = os.getenv(\"SMTP_PASSWORD\")\n        \n        # Create message\n        msg = MIMEMultipart()\n        msg[\"From\"] = smtp_username\n        msg[\"To\"] = to_email\n        msg[\"Subject\"] = subject\n        msg.attach(MIMEText(body, \"html\"))\n        \n        # Send email\n        with smtplib.SMTP(smtp_server, smtp_port) as server:\n            server.starttls()\n            server.login(smtp_username, smtp_password)\n            server.send_message(msg)\n        \n        logger.info(f\"Email sent successfully to {to_email}\")\n        return {\n            \"status\": \"success\",\n            \"to_email\": to_email,\n            \"sent_at\": datetime.utcnow().isoformat()\n        }\n        \n    except smtplib.SMTPException as exc:\n        logger.error(f\"SMTP error sending email: {exc}\")\n        # Retry with exponential backoff\n        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))\n    except Exception as exc:\n        logger.error(f\"Unexpected error sending email: {exc}\")\n        raise\n\n@celery_app.task(base=CallbackTask)\ndef process_large_file(file_path: str, user_id: int) -> Dict[str, Any]:\n    \"\"\"\n    Process large file upload in background\n    \"\"\"\n    try:\n        logger.info(f\"Processing file {file_path} for user {user_id}\")\n        \n        # Simulate file processing\n        import time\n        time.sleep(5)  # Simulate work\n        \n        # Update progress (can be tracked via task result)\n        processed_rows = 1000\n        \n        return {\n            \"status\": \"completed\",\n            \"file_path\": file_path,\n            \"processed_rows\": processed_rows,\n            \"user_id\": user_id,\n            \"completed_at\": datetime.utcnow().isoformat()\n        }\n        \n    except Exception as exc:\n        logger.error(f\"Error processing file: {exc}\")\n        raise\n\n@celery_app.task\ndef generate_report(report_type: str, filters: Dict[str, Any]) -> Dict[str, Any]:\n    \"\"\"\n    Generate complex report asynchronously\n    \"\"\"\n    try:\n        logger.info(f\"Generating {report_type} report with filters: {filters}\")\n        \n        # Simulate report generation\n        import time\n        time.sleep(10)\n        \n        report_url = f\"https://example.com/reports/{report_type}_123.pdf\"\n        \n        return {\n            \"status\": \"success\",\n            \"report_type\": report_type,\n            \"report_url\": report_url,\n            \"generated_at\": datetime.utcnow().isoformat()\n        }\n        \n    except Exception as exc:\n        logger.error(f\"Error generating report: {exc}\")\n        raise\n\n@celery_app.task\ndef cleanup_expired_data() -> Dict[str, Any]:\n    \"\"\"\n    Periodic task to cleanup expired data\n    \"\"\"\n    try:\n        logger.info(\"Running cleanup task\")\n        \n        # Cleanup logic here\n        deleted_count = 42\n        \n        return {\n            \"status\": \"success\",\n            \"deleted_count\": deleted_count,\n            \"executed_at\": datetime.utcnow().isoformat()\n        }\n        \n    except Exception as exc:\n        logger.error(f\"Error in cleanup task: {exc}\")\n        raise\n\n@celery_app.task\ndef send_daily_report() -> Dict[str, Any]:\n    \"\"\"\n    Send daily report to admins\n    \"\"\"\n    try:\n        logger.info(\"Sending daily report\")\n        \n        # Generate and send report\n        # ...\n        \n        return {\n            \"status\": \"success\",\n            \"sent_at\": datetime.utcnow().isoformat()\n        }\n        \n    except Exception as exc:\n        logger.error(f\"Error sending daily report: {exc}\")\n        raise\n\n@celery_app.task\ndef health_check() -> Dict[str, Any]:\n    \"\"\"\n    Periodic health check\n    \"\"\"\n    return {\n        \"status\": \"healthy\",\n        \"timestamp\": datetime.utcnow().isoformat()\n    }\n\n# FastAPI integration\napp = FastAPI(title=\"Celery Background Tasks API\")\n\n# Pydantic models\nclass EmailRequest(BaseModel):\n    to_email: EmailStr\n    subject: str = Field(..., min_length=1, max_length=200)\n    body: str\n\nclass TaskResponse(BaseModel):\n    task_id: str\n    status: str\n    message: str\n\nclass TaskStatusResponse(BaseModel):\n    task_id: str\n    status: str\n    result: Optional[Any] = None\n    error: Optional[str] = None\n    progress: Optional[Dict[str, Any]] = None\n\nclass ReportRequest(BaseModel):\n    report_type: str\n    filters: Dict[str, Any] = {}\n\n# API endpoints\n@app.post(\"/tasks/send-email\", response_model=TaskResponse)\nasync def trigger_send_email(request: EmailRequest):\n    \"\"\"\n    Trigger background email sending task\n    \"\"\"\n    task = send_email_task.delay(\n        to_email=request.to_email,\n        subject=request.subject,\n        body=request.body\n    )\n    \n    return TaskResponse(\n        task_id=task.id,\n        status=\"queued\",\n        message=\"Email task queued successfully\"\n    )\n\n@app.post(\"/tasks/generate-report\", response_model=TaskResponse)\nasync def trigger_generate_report(request: ReportRequest):\n    \"\"\"\n    Trigger background report generation\n    \"\"\"\n    task = generate_report.delay(\n        report_type=request.report_type,\n        filters=request.filters\n    )\n    \n    return TaskResponse(\n        task_id=task.id,\n        status=\"queued\",\n        message=\"Report generation task queued successfully\"\n    )\n\n@app.get(\"/tasks/{task_id}\", response_model=TaskStatusResponse)\nasync def get_task_status(task_id: str):\n    \"\"\"\n    Check status of a background task\n    \"\"\"\n    task_result = AsyncResult(task_id, app=celery_app)\n    \n    response = TaskStatusResponse(\n        task_id=task_id,\n        status=task_result.state\n    )\n    \n    if task_result.state == states.PENDING:\n        response.result = None\n        response.error = None\n    elif task_result.state == states.SUCCESS:\n        response.result = task_result.result\n    elif task_result.state == states.FAILURE:\n        response.error = str(task_result.info)\n    elif task_result.state == states.RETRY:\n        response.error = \"Task is being retried\"\n    \n    return response\n\n@app.delete(\"/tasks/{task_id}\")\nasync def cancel_task(task_id: str):\n    \"\"\"\n    Cancel a running or pending task\n    \"\"\"\n    task_result = AsyncResult(task_id, app=celery_app)\n    \n    if task_result.state in [states.PENDING, states.STARTED, states.RETRY]:\n        task_result.revoke(terminate=True)\n        return {\"message\": \"Task cancelled successfully\"}\n    else:\n        raise HTTPException(\n            status_code=status.HTTP_400_BAD_REQUEST,\n            detail=f\"Cannot cancel task in state: {task_result.state}\"\n        )\n\n@app.get(\"/health\")\nasync def health():\n    \"\"\"\n    Health check endpoint\n    \"\"\"\n    return {\"status\": \"healthy\", \"timestamp\": datetime.utcnow().isoformat()}",
+  "variables": {
+    "REDIS_URL": "redis://localhost:6379/0",
+    "CELERY_BROKER_URL": "redis://localhost:6379/0",
+    "CELERY_RESULT_BACKEND": "redis://localhost:6379/0"
+  },
+  "dependencies": [
+    "fastapi==0.109.0",
+    "celery[redis]==5.3.4",
+    "redis==5.0.1",
+    "pydantic[email]==2.5.3"
+  ],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Background email sending",
+      "Large file processing",
+      "Report generation",
+      "Periodic cleanup tasks",
+      "Async task execution"
+    ],
+    "team_composition": [
+      "backend_developer",
+      "devops_engineer"
+    ],
+    "estimated_time_minutes": 75,
+    "prerequisites": [
+      "Redis server running",
+      "Celery worker running (celery -A app.tasks worker -l info)",
+      "Celery beat for periodic tasks (celery -A app.tasks beat)",
+      "SMTP configuration for email tasks"
+    ],
+    "related_templates": [
+      "fastapi-async-crud-complete",
+      "redis-patterns",
+      "docker-compose-dev"
+    ]
+  }
+}

@@ -1,0 +1,105 @@
+manifest_version: '1.0'
+name: tailwind-starter
+description: Utility-first CSS starter project with Tailwind CSS. Features modern development workflow, customizable design system, and rapid UI development.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: react
+  tags:
+    - tailwindcss
+    - utility-css
+    - react
+    - typescript
+    - design-system
+    - rapid-development
+  design_system: tailwind
+  ui_complexity: simple
+  use_cases:
+    - web-applications
+    - rapid-prototyping
+    - custom-design
+    - landing-pages
+    - ui-development
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-tailwind-app
+  - variable: ENABLE_FORMS_PLUGIN
+    description: Include Tailwind Forms plugin
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_TYPOGRAPHY_PLUGIN
+    description: Include Tailwind Typography plugin
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_ASPECT_RATIO_PLUGIN
+    description: Include Aspect Ratio plugin
+    type: boolean
+    required: false
+    default: false
+
+dependencies:
+  runtime:
+    - react@18.2.0
+    - react-dom@18.2.0
+    - tailwindcss@3.4.0
+  build:
+    - typescript@5.0.0
+    - vite@5.0.0
+    - postcss@8.4.0
+    - autoprefixer@10.4.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - dist/**
+    - .DS_Store
+
+features:
+  - "Utility-first CSS approach"
+  - "Customizable design tokens"
+  - "Responsive design utilities"
+  - "Dark mode with class strategy"
+  - "JIT (Just-In-Time) compiler"
+  - "PurgeCSS for production optimization"
+  - "Official plugins (Forms, Typography)"
+  - "VSCode IntelliSense support"
+  - "Component-friendly"
+  - "Minimal runtime overhead"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/CUSTOMIZATION.md
+  examples:
+    - examples/components
+    - examples/layouts
+    - examples/custom-utilities

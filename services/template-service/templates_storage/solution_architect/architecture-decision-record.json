@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "id": "architecture-decision-record-v1",
+    "name": "Architecture Decision Record (ADR) Template",
+    "category": "documentation",
+    "language": "markdown",
+    "framework": "architecture",
+    "description": "Lightweight Architecture Decision Record template for documenting significant architectural decisions, context, alternatives considered, and consequences using Michael Nygard's ADR format",
+    "tags": [
+      "adr",
+      "architecture",
+      "decision-making",
+      "documentation",
+      "governance",
+      "technical-debt"
+    ],
+    "quality_score": 90.0,
+    "security_score": 72.0,
+    "performance_score": 70.0,
+    "maintainability_score": 95.0,
+    "test_coverage": 80.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T11:00:00.000000",
+    "updated_at": "2025-10-10T11:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "solution_architect"
+  },
+  "content": "# ADR {{ADR_NUMBER}}: {{DECISION_TITLE}}\n\n## Status\n{{STATUS}}\n<!-- Proposed | Accepted | Deprecated | Superseded by ADR-XXX -->\n\n## Context\n\n{{PROBLEM_STATEMENT}}\n\n### Current Situation\n{{CURRENT_SITUATION}}\n\n### Forces & Constraints\n- {{FORCE_1}}\n- {{FORCE_2}}\n- {{FORCE_3}}\n- Technical constraints: {{TECHNICAL_CONSTRAINTS}}\n- Business constraints: {{BUSINESS_CONSTRAINTS}}\n- Timeline constraints: {{TIMELINE}}\n\n### Stakeholders\n- {{STAKEHOLDER_1}} - {{ROLE_1}}\n- {{STAKEHOLDER_2}} - {{ROLE_2}}\n\n---\n\n## Decision\n\n{{DECISION_STATEMENT}}\n\n### Solution Overview\n{{SOLUTION_DESCRIPTION}}\n\n### Key Components\n1. **{{COMPONENT_1}}**: {{COMPONENT_1_DESC}}\n2. **{{COMPONENT_2}}**: {{COMPONENT_2_DESC}}\n3. **{{COMPONENT_3}}**: {{COMPONENT_3_DESC}}\n\n---\n\n## Alternatives Considered\n\n### Alternative 1: {{ALT_1_NAME}}\n**Description:** {{ALT_1_DESC}}\n\n**Pros:**\n- {{ALT_1_PRO_1}}\n- {{ALT_1_PRO_2}}\n\n**Cons:**\n- {{ALT_1_CON_1}}\n- {{ALT_1_CON_2}}\n\n**Why rejected:** {{ALT_1_REJECTION_REASON}}\n\n### Alternative 2: {{ALT_2_NAME}}\n**Description:** {{ALT_2_DESC}}\n\n**Pros:**\n- {{ALT_2_PRO_1}}\n- {{ALT_2_PRO_2}}\n\n**Cons:**\n- {{ALT_2_CON_1}}\n- {{ALT_2_CON_2}}\n\n**Why rejected:** {{ALT_2_REJECTION_REASON}}\n\n---\n\n## Consequences\n\n### Positive\n- {{POSITIVE_1}}\n- {{POSITIVE_2}}\n- {{POSITIVE_3}}\n\n### Negative\n- {{NEGATIVE_1}}\n- {{NEGATIVE_2}}\n\n### Neutral\n- {{NEUTRAL_1}}\n- {{NEUTRAL_2}}\n\n### Technical Debt Introduced\n- {{TECH_DEBT_1}}\n- {{TECH_DEBT_2}}\n\n### Risks\n| Risk | Likelihood | Impact | Mitigation |\n|------|------------|--------|-----------|\n| {{RISK_1}} | H/M/L | H/M/L | {{MITIGATION_1}} |\n| {{RISK_2}} | H/M/L | H/M/L | {{MITIGATION_2}} |\n\n---\n\n## Implementation\n\n### Timeline\n- Start Date: {{START_DATE}}\n- Target Completion: {{TARGET_DATE}}\n- Actual Completion: {{ACTUAL_DATE}}\n\n### Teams Impacted\n- {{TEAM_1}}\n- {{TEAM_2}}\n\n### Migration Strategy\n{{MIGRATION_STRATEGY}}\n\n### Rollback Plan\n{{ROLLBACK_PLAN}}\n\n---\n\n## References\n- {{REFERENCE_1}}\n- {{REFERENCE_2}}\n- Related ADRs: {{RELATED_ADRS}}\n\n---\n\n## Notes\n\n**Author:** {{AUTHOR}}  \n**Date:** {{DATE}}  \n**Reviewed By:** {{REVIEWERS}}  \n**Last Updated:** {{LAST_UPDATED}}  \n",
+  "variables": {
+    "ADR_NUMBER": "001",
+    "DECISION_TITLE": "Use Microservices Architecture",
+    "STATUS": "Accepted",
+    "AUTHOR": "Solution Architect",
+    "DATE": "YYYY-MM-DD",
+    "START_DATE": "YYYY-MM-DD",
+    "TARGET_DATE": "YYYY-MM-DD"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Documenting significant architectural decisions",
+      "Technology stack selection",
+      "Design pattern adoption",
+      "Infrastructure choices",
+      "Data storage strategy decisions"
+    ],
+    "team_composition": [
+      "solution_architect",
+      "backend_developer",
+      "devops_engineer"
+    ],
+    "estimated_time_minutes": 60,
+    "prerequisites": [
+      "Problem clearly defined",
+      "Alternatives researched",
+      "Stakeholder input gathered",
+      "Impact analysis completed"
+    ],
+    "related_templates": [
+      "technology-stack-decision-matrix",
+      "scalability-planning-template"
+    ]
+  }
+}

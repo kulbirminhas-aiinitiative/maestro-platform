@@ -1,0 +1,53 @@
+{
+  "metadata": {
+    "id": "react-tanstack-query-v1",
+    "name": "React Data Fetching with TanStack Query",
+    "category": "data-fetching",
+    "language": "typescript",
+    "framework": "react",
+    "description": "Production-ready data fetching with TanStack Query (React Query) including caching, optimistic updates, infinite scroll, and error handling",
+    "tags": ["react", "tanstack-query", "react-query", "data-fetching", "caching", "optimistic-updates"],
+    "quality_score": 91.0,
+    "security_score": 85.0,
+    "performance_score": 93.0,
+    "maintainability_score": 90.0,
+    "test_coverage": 86.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-04T20:00:00.000000",
+    "updated_at": "2025-10-04T20:00:00.000000",
+    "created_by": "template_enhancement_phase1",
+    "persona": "frontend_developer"
+  },
+  "content": "import { useQuery, useMutation, useQueryClient, useInfiniteQuery, QueryClient, QueryClientProvider } from '@tanstack/react-query';\nimport { ReactQueryDevtools } from '@tanstack/react-query-devtools';\nimport axios from 'axios';\nimport { toast } from 'react-hot-toast';\n\n// API client setup\nconst api = axios.create({\n  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',\n  timeout: 10000,\n});\n\n// Types\ninterface Post {\n  id: number;\n  title: string;\n  content: string;\n  authorId: number;\n  createdAt: string;\n}\n\ninterface PaginatedResponse<T> {\n  items: T[];\n  total: number;\n  page: number;\n  pageSize: number;\n  hasNext: boolean;\n}\n\n// API functions\nconst postApi = {\n  getAll: async (page = 1, limit = 10): Promise<PaginatedResponse<Post>> => {\n    const { data } = await api.get(`/posts?page=${page}&limit=${limit}`);\n    return data;\n  },\n  \n  getById: async (id: number): Promise<Post> => {\n    const { data } = await api.get(`/posts/${id}`);\n    return data;\n  },\n  \n  create: async (post: Omit<Post, 'id' | 'createdAt'>): Promise<Post> => {\n    const { data } = await api.post('/posts', post);\n    return data;\n  },\n  \n  update: async ({ id, ...post }: Partial<Post> & { id: number }): Promise<Post> => {\n    const { data } = await api.put(`/posts/${id}`, post);\n    return data;\n  },\n  \n  delete: async (id: number): Promise<void> => {\n    await api.delete(`/posts/${id}`);\n  },\n};\n\n// Query keys factory\nconst postKeys = {\n  all: ['posts'] as const,\n  lists: () => [...postKeys.all, 'list'] as const,\n  list: (page: number, limit: number) => [...postKeys.lists(), { page, limit }] as const,\n  details: () => [...postKeys.all, 'detail'] as const,\n  detail: (id: number) => [...postKeys.details(), id] as const,\n};\n\n// Custom hooks\nexport function usePosts(page = 1, limit = 10) {\n  return useQuery({\n    queryKey: postKeys.list(page, limit),\n    queryFn: () => postApi.getAll(page, limit),\n    staleTime: 5 * 60 * 1000, // 5 minutes\n    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)\n    retry: 3,\n    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),\n  });\n}\n\nexport function usePost(id: number) {\n  return useQuery({\n    queryKey: postKeys.detail(id),\n    queryFn: () => postApi.getById(id),\n    enabled: !!id, // Only run if id exists\n    staleTime: 5 * 60 * 1000,\n  });\n}\n\n// Infinite scroll hook\nexport function useInfinitePosts(limit = 10) {\n  return useInfiniteQuery({\n    queryKey: ['posts', 'infinite'],\n    queryFn: ({ pageParam = 1 }) => postApi.getAll(pageParam, limit),\n    getNextPageParam: (lastPage) => {\n      return lastPage.hasNext ? lastPage.page + 1 : undefined;\n    },\n    initialPageParam: 1,\n    staleTime: 5 * 60 * 1000,\n  });\n}\n\n// Mutations with optimistic updates\nexport function useCreatePost() {\n  const queryClient = useQueryClient();\n  \n  return useMutation({\n    mutationFn: postApi.create,\n    onMutate: async (newPost) => {\n      // Cancel outgoing refetches\n      await queryClient.cancelQueries({ queryKey: postKeys.lists() });\n      \n      // Snapshot previous value\n      const previousPosts = queryClient.getQueryData(postKeys.lists());\n      \n      // Optimistically update\n      queryClient.setQueryData<PaginatedResponse<Post>>(postKeys.list(1, 10), (old) => {\n        if (!old) return old;\n        return {\n          ...old,\n          items: [{ id: Date.now(), ...newPost, createdAt: new Date().toISOString() }, ...old.items],\n          total: old.total + 1,\n        };\n      });\n      \n      return { previousPosts };\n    },\n    onError: (err, newPost, context) => {\n      // Rollback on error\n      if (context?.previousPosts) {\n        queryClient.setQueryData(postKeys.lists(), context.previousPosts);\n      }\n      toast.error('Failed to create post');\n    },\n    onSuccess: () => {\n      toast.success('Post created successfully!');\n    },\n    onSettled: () => {\n      // Refetch to ensure consistency\n      queryClient.invalidateQueries({ queryKey: postKeys.lists() });\n    },\n  });\n}\n\nexport function useUpdatePost() {\n  const queryClient = useQueryClient();\n  \n  return useMutation({\n    mutationFn: postApi.update,\n    onMutate: async (updatedPost) => {\n      await queryClient.cancelQueries({ queryKey: postKeys.detail(updatedPost.id) });\n      \n      const previousPost = queryClient.getQueryData(postKeys.detail(updatedPost.id));\n      \n      queryClient.setQueryData<Post>(postKeys.detail(updatedPost.id), (old) => {\n        if (!old) return old;\n        return { ...old, ...updatedPost };\n      });\n      \n      return { previousPost };\n    },\n    onError: (err, variables, context) => {\n      if (context?.previousPost) {\n        queryClient.setQueryData(postKeys.detail(variables.id), context.previousPost);\n      }\n      toast.error('Failed to update post');\n    },\n    onSuccess: () => {\n      toast.success('Post updated successfully!');\n    },\n    onSettled: (data, error, variables) => {\n      queryClient.invalidateQueries({ queryKey: postKeys.detail(variables.id) });\n      queryClient.invalidateQueries({ queryKey: postKeys.lists() });\n    },\n  });\n}\n\nexport function useDeletePost() {\n  const queryClient = useQueryClient();\n  \n  return useMutation({\n    mutationFn: postApi.delete,\n    onSuccess: (_, deletedId) => {\n      queryClient.invalidateQueries({ queryKey: postKeys.lists() });\n      queryClient.removeQueries({ queryKey: postKeys.detail(deletedId) });\n      toast.success('Post deleted successfully!');\n    },\n    onError: () => {\n      toast.error('Failed to delete post');\n    },\n  });\n}\n\n// Component examples\nexport function PostsList() {\n  const [page, setPage] = React.useState(1);\n  const { data, isLoading, isError, error } = usePosts(page, 10);\n  const createPost = useCreatePost();\n  const deletePost = useDeletePost();\n  \n  if (isLoading) return <div>Loading...</div>;\n  if (isError) return <div>Error: {error.message}</div>;\n  \n  return (\n    <div>\n      <button\n        onClick={() => createPost.mutate({ title: 'New Post', content: 'Content', authorId: 1 })}\n        disabled={createPost.isPending}\n      >\n        Create Post\n      </button>\n      \n      {data?.items.map((post) => (\n        <div key={post.id}>\n          <h3>{post.title}</h3>\n          <p>{post.content}</p>\n          <button onClick={() => deletePost.mutate(post.id)}>Delete</button>\n        </div>\n      ))}\n      \n      <div>\n        <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>\n          Previous\n        </button>\n        <span>Page {page}</span>\n        <button onClick={() => setPage((p) => p + 1)} disabled={!data?.hasNext}>\n          Next\n        </button>\n      </div>\n    </div>\n  );\n}\n\n// Infinite scroll component\nexport function InfinitePostsList() {\n  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfinitePosts();\n  const observerRef = React.useRef<IntersectionObserver>();\n  const loadMoreRef = React.useRef<HTMLDivElement>(null);\n  \n  React.useEffect(() => {\n    if (observerRef.current) observerRef.current.disconnect();\n    \n    observerRef.current = new IntersectionObserver((entries) => {\n      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {\n        fetchNextPage();\n      }\n    });\n    \n    if (loadMoreRef.current) {\n      observerRef.current.observe(loadMoreRef.current);\n    }\n    \n    return () => observerRef.current?.disconnect();\n  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);\n  \n  if (isLoading) return <div>Loading...</div>;\n  \n  return (\n    <div>\n      {data?.pages.map((page, i) => (\n        <React.Fragment key={i}>\n          {page.items.map((post) => (\n            <div key={post.id}>\n              <h3>{post.title}</h3>\n              <p>{post.content}</p>\n            </div>\n          ))}\n        </React.Fragment>\n      ))}\n      \n      <div ref={loadMoreRef}>\n        {isFetchingNextPage && <div>Loading more...</div>}\n      </div>\n    </div>\n  );\n}\n\n// App setup\nexport function App() {\n  const queryClient = new QueryClient({\n    defaultOptions: {\n      queries: {\n        refetchOnWindowFocus: false,\n        retry: 1,\n      },\n    },\n  });\n  \n  return (\n    <QueryClientProvider client={queryClient}>\n      <PostsList />\n      <ReactQueryDevtools initialIsOpen={false} />\n    </QueryClientProvider>\n  );\n}",
+  "variables": {},
+  "dependencies": [
+    "@tanstack/react-query@^5.17.0",
+    "@tanstack/react-query-devtools@^5.17.0",
+    "axios@^1.6.5",
+    "react-hot-toast@^2.4.1"
+  ],
+  "workflow_context": {
+    "typical_use_cases": [
+      "API data fetching with caching",
+      "Optimistic UI updates",
+      "Infinite scroll pagination",
+      "Real-time data synchronization",
+      "Background data refetching"
+    ],
+    "team_composition": ["frontend_developer", "backend_developer"],
+    "estimated_time_minutes": 45,
+    "prerequisites": [
+      "React 18+",
+      "TypeScript",
+      "REST API backend",
+      "Understanding of caching strategies"
+    ],
+    "related_templates": [
+      "axios-interceptors",
+      "react-custom-hooks",
+      "infinite-scroll-patterns"
+    ]
+  }
+}

@@ -1,0 +1,117 @@
+manifest_version: '1.0'
+name: scrum-sprint-template
+description: Complete Scrum framework template with sprint planning, daily standups, sprint reviews, and retrospectives. Includes user story templates, acceptance criteria, and velocity tracking.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: project-management
+  sdlc_phase: planning
+  language: markdown
+  framework: scrum
+  tags:
+    - scrum
+    - agile
+    - sprint-planning
+    - project-management
+    - ceremonies
+    - backlog
+    - velocity
+  methodology: agile
+  team_size: 5-9
+  sprint_duration: 2-weeks
+  use_cases:
+    - software-development
+    - product-development
+    - agile-teams
+    - iterative-delivery
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: My Project
+  - variable: SPRINT_DURATION
+    description: Sprint duration in weeks
+    type: integer
+    required: true
+    default: 2
+    choices: [1, 2, 3, 4]
+  - variable: TEAM_SIZE
+    description: Number of team members
+    type: integer
+    required: false
+    default: 7
+  - variable: VELOCITY_TARGET
+    description: Target story points per sprint
+    type: integer
+    required: false
+    default: 40
+  - variable: PRODUCT_OWNER
+    description: Product owner name
+    type: string
+    required: true
+  - variable: SCRUM_MASTER
+    description: Scrum master name
+    type: string
+    required: true
+
+dependencies:
+  runtime: []
+  build: []
+  tools:
+    - jira
+    - github-projects
+    - azure-devops
+    - trello
+
+hooks:
+  pre_generation: []
+  post_generation: []
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - .DS_Store
+
+features:
+  - "Sprint planning template with capacity calculation"
+  - "Daily standup question framework"
+  - "Sprint review agenda and demo checklist"
+  - "Retrospective templates (Start/Stop/Continue, 4Ls, Sailboat)"
+  - "User story template with INVEST criteria"
+  - "Acceptance criteria checklist"
+  - "Definition of Done (DoD) template"
+  - "Definition of Ready (DoR) template"
+  - "Velocity tracking spreadsheet"
+  - "Burndown chart template"
+  - "Sprint backlog management"
+  - "Impediment log"
+
+configuration:
+  ceremonies:
+    sprint_planning:
+      duration_hours: 4
+      attendees: [team, product_owner, scrum_master]
+    daily_standup:
+      duration_minutes: 15
+      time: "09:30 AM"
+    sprint_review:
+      duration_hours: 2
+      stakeholders_required: true
+    sprint_retrospective:
+      duration_hours: 1.5
+      format: start_stop_continue
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  examples:
+    - examples/sprint-1-planning
+    - examples/user-story-template
+    - examples/retrospective-notes

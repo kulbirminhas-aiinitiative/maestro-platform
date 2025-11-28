@@ -1,0 +1,206 @@
+{
+  "timestamp": "2025-10-11T21:19:49.071839",
+  "configurations": [
+    {
+      "config_name": "A_FullClaude",
+      "config_description": "All phases using Claude Code SDK from maestro-hive",
+      "duration_ms": 8356.749,
+      "total_phases": 4,
+      "successful_phases": 4,
+      "success_rate": 100.0,
+      "total_tokens": 109,
+      "phases": [
+        {
+          "phase_name": "requirements",
+          "persona": "architect",
+          "provider_used": "claude_agent",
+          "duration_ms": 2043.2922840118408,
+          "tokens_used": 59,
+          "output_length": 110,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n",
+          "success": true,
+          "error": null
+        },
+        {
+          "phase_name": "architecture",
+          "persona": "architect",
+          "provider_used": "claude_agent",
+          "duration_ms": 2051.436424255371,
+          "tokens_used": 16,
+          "output_length": 110,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n",
+          "success": true,
+          "error": null
+        },
+        {
+          "phase_name": "implementation",
+          "persona": "code_writer",
+          "provider_used": "claude_agent",
+          "duration_ms": 2225.1574993133545,
+          "tokens_used": 16,
+          "output_length": 110,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n",
+          "success": true,
+          "error": null
+        },
+        {
+          "phase_name": "review",
+          "persona": "reviewer",
+          "provider_used": "claude_agent",
+          "duration_ms": 2036.348581314087,
+          "tokens_used": 18,
+          "output_length": 110,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n",
+          "success": true,
+          "error": null
+        }
+      ],
+      "gap_analysis": {
+        "total_gaps": 0,
+        "total_warnings": 0,
+        "total_errors": 0,
+        "gaps": [],
+        "warnings": [],
+        "errors": []
+      }
+    },
+    {
+      "config_name": "B_FullOpenAI",
+      "config_description": "All phases using OpenAI API",
+      "duration_ms": 61785.86,
+      "total_phases": 4,
+      "successful_phases": 4,
+      "success_rate": 100.0,
+      "total_tokens": 0,
+      "phases": [
+        {
+          "phase_name": "requirements",
+          "persona": "architect_openai",
+          "provider_used": "openai",
+          "duration_ms": 21931.03051185608,
+          "tokens_used": 0,
+          "output_length": 3864,
+          "output_preview": "### Requirements Analysis and Documentation for Microservices-Based E-Commerce Platform\n\n---\n\n#### 1. Overview\nThe goal is to build a microservices-based e-commerce platform composed of various servic",
+          "success": true,
+          "error": null
+        },
+        {
+          "phase_name": "architecture",
+          "persona": "architect_openai",
+          "provider_used": "openai",
+          "duration_ms": 11219.651699066162,
+          "tokens_used": 0,
+          "output_length": 2961,
+          "output_preview": "```json\n{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": \"optional string\"\n  }\n}\n```\n\n- **Standardized Error Codes**:\n  - `400 Bad Request`: Invalid input parameters.\n  - `",
+          "success": true,
+          "error": null
+        },
+        {
+          "phase_name": "implementation",
+          "persona": "code_writer_openai",
+          "provider_used": "openai",
+          "duration_ms": 18022.84836769104,
+          "tokens_used": 0,
+          "output_length": 4914,
+          "output_preview": "### Implementation Plan for E-commerce Microservices Architecture\n\n#### Project Overview\nThis implementation plan describes the steps to build an e-commerce platform based on a microservices architect",
+          "success": true,
+          "error": null
+        },
+        {
+          "phase_name": "review",
+          "persona": "reviewer_openai",
+          "provider_used": "openai",
+          "duration_ms": 10612.194061279297,
+          "tokens_used": 0,
+          "output_length": 2777,
+          "output_preview": "a robust, scalable, and efficient system that can handle varying demands and offer a seamless experience to users. \n\n### Recommendations for Quality and Completeness\n\n1. **Detail on Core Services**:\n ",
+          "success": true,
+          "error": null
+        }
+      ],
+      "gap_analysis": {
+        "total_gaps": 0,
+        "total_warnings": 0,
+        "total_errors": 0,
+        "gaps": [],
+        "warnings": [],
+        "errors": []
+      }
+    },
+    {
+      "config_name": "C_Mixed_AB",
+      "config_description": "Alternating between Claude and OpenAI across phases",
+      "duration_ms": 24503.134,
+      "total_phases": 4,
+      "successful_phases": 4,
+      "success_rate": 100.0,
+      "total_tokens": 513,
+      "phases": [
+        {
+          "phase_name": "requirements",
+          "persona": "architect",
+          "provider_used": "claude_agent",
+          "duration_ms": 2047.2099781036377,
+          "tokens_used": 57,
+          "output_length": 110,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n",
+          "success": true,
+          "error": null
+        },
+        {
+          "phase_name": "architecture",
+          "persona": "architect_openai",
+          "provider_used": "openai",
+          "duration_ms": 15076.120376586914,
+          "tokens_used": 0,
+          "output_length": 3737,
+          "output_preview": "The error message you're encountering indicates an issue related to command-line options used in a tool that processes JSON data. It suggests that when using the `--print` option alongside `--output-f",
+          "success": true,
+          "error": null
+        },
+        {
+          "phase_name": "implementation",
+          "persona": "code_writer",
+          "provider_used": "claude_agent",
+          "duration_ms": 2259.359121322632,
+          "tokens_used": 456,
+          "output_length": 110,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n",
+          "success": true,
+          "error": null
+        },
+        {
+          "phase_name": "review",
+          "persona": "reviewer_openai",
+          "provider_used": "openai",
+          "duration_ms": 5120.288848876953,
+          "tokens_used": 0,
+          "output_length": 1406,
+          "output_preview": "The error message you provided indicates that there is a command-line tool or script that you are trying to execute, and it has exited with an error code of 1. The specific error states that when usin",
+          "success": true,
+          "error": null
+        }
+      ],
+      "gap_analysis": {
+        "total_gaps": 0,
+        "total_warnings": 0,
+        "total_errors": 0,
+        "gaps": [],
+        "warnings": [],
+        "errors": []
+      }
+    }
+  ],
+  "comparison": {
+    "fastest_config": "A_FullClaude",
+    "fastest_time": 8356.749,
+    "slowest_time": 61785.86,
+    "average_time": 31548.580999999995,
+    "token_range": "0 - 513"
+  },
+  "gap_summary": {
+    "total_gaps": 0,
+    "critical_gaps": [],
+    "warnings": []
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "id": "security-architecture-template-v1",
+    "name": "Security Architecture & Threat Modeling Template",
+    "category": "documentation",
+    "language": "markdown",
+    "framework": "security",
+    "description": "Comprehensive security architecture template with threat modeling (STRIDE), security controls, compliance requirements, and defense-in-depth strategies",
+    "tags": [
+      "security",
+      "threat-modeling",
+      "stride",
+      "compliance",
+      "architecture",
+      "defense-in-depth"
+    ],
+    "quality_score": 92.0,
+    "security_score": 98.0,
+    "performance_score": 75.0,
+    "maintainability_score": 90.0,
+    "test_coverage": 87.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T11:00:00.000000",
+    "updated_at": "2025-10-10T11:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "solution_architect"
+  },
+  "content": "# Security Architecture Document\n\n## System Overview\n\n**System:** {{SYSTEM_NAME}}  \n**Classification:** {{DATA_CLASSIFICATION}}  \n**Compliance Requirements:** {{COMPLIANCE_REQS}}  \n**Architect:** {{ARCHITECT}}  \n**Date:** {{DATE}}  \n\n---\n\n## Security Principles\n\n### Defense in Depth\n- {{LAYER_1}}\n- {{LAYER_2}}\n- {{LAYER_3}}\n\n### Zero Trust Architecture\n- Never trust, always verify\n- Least privilege access\n- Assume breach\n\n---\n\n## Threat Model (STRIDE)\n\n### S - Spoofing Identity\n\n| Asset | Threat | Likelihood | Impact | Mitigation | Status |\n|-------|--------|------------|--------|------------|--------|\n| {{ASSET_S1}} | {{THREAT_S1}} | H/M/L | H/M/L | {{MIT_S1}} | {{STATUS_S1}} |\n\n### T - Tampering with Data\n\n| Asset | Threat | Likelihood | Impact | Mitigation | Status |\n|-------|--------|------------|--------|------------|--------|\n| {{ASSET_T1}} | {{THREAT_T1}} | H/M/L | H/M/L | {{MIT_T1}} | {{STATUS_T1}} |\n\n### R - Repudiation\n\n| Asset | Threat | Likelihood | Impact | Mitigation | Status |\n|-------|--------|------------|--------|------------|--------|\n| {{ASSET_R1}} | {{THREAT_R1}} | H/M/L | H/M/L | {{MIT_R1}} | {{STATUS_R1}} |\n\n### I - Information Disclosure\n\n| Asset | Threat | Likelihood | Impact | Mitigation | Status |\n|-------|--------|------------|--------|------------|--------|\n| {{ASSET_I1}} | {{THREAT_I1}} | H/M/L | H/M/L | {{MIT_I1}} | {{STATUS_I1}} |\n\n### D - Denial of Service\n\n| Asset | Threat | Likelihood | Impact | Mitigation | Status |\n|-------|--------|------------|--------|------------|--------|\n| {{ASSET_D1}} | {{THREAT_D1}} | H/M/L | H/M/L | {{MIT_D1}} | {{STATUS_D1}} |\n\n### E - Elevation of Privilege\n\n| Asset | Threat | Likelihood | Impact | Mitigation | Status |\n|-------|--------|------------|--------|------------|--------|\n| {{ASSET_E1}} | {{THREAT_E1}} | H/M/L | H/M/L | {{MIT_E1}} | {{STATUS_E1}} |\n\n---\n\n## Security Controls\n\n### Authentication\n\n**Method:** {{AUTH_METHOD}}  \n**MFA:** {{MFA_ENABLED}}  \n**Session Timeout:** {{SESSION_TIMEOUT}} minutes  \n**Password Policy:**\n- Minimum length: {{PWD_MIN_LENGTH}} characters\n- Complexity: {{PWD_COMPLEXITY}}\n- Rotation: {{PWD_ROTATION}} days\n- History: {{PWD_HISTORY}} passwords\n\n### Authorization\n\n**Model:** RBAC/ABAC  \n**Roles:** {{ROLES_LIST}}  \n**Principle:** Least Privilege  \n\n### Data Protection\n\n| Data Type | In Transit | At Rest | Backup | Retention |\n|-----------|------------|---------|--------|----------|\n| PII | TLS 1.3 | AES-256 | Encrypted | {{PII_RETENTION}} |\n| Credentials | TLS 1.3 | bcrypt | Encrypted | {{CRED_RETENTION}} |\n| Financial | TLS 1.3 | AES-256 | Encrypted | {{FIN_RETENTION}} |\n\n### Network Security\n\n- Firewall rules: Deny all by default\n- VPC/Subnet isolation\n- WAF protection\n- DDoS mitigation\n- API Gateway rate limiting: {{RATE_LIMIT}}\n\n### Application Security (OWASP Top 10)\n\n- [ ] A01: Broken Access Control - {{A01_MITIGATION}}\n- [ ] A02: Cryptographic Failures - {{A02_MITIGATION}}\n- [ ] A03: Injection - {{A03_MITIGATION}}\n- [ ] A04: Insecure Design - {{A04_MITIGATION}}\n- [ ] A05: Security Misconfiguration - {{A05_MITIGATION}}\n- [ ] A06: Vulnerable Components - {{A06_MITIGATION}}\n- [ ] A07: Identification/Auth Failures - {{A07_MITIGATION}}\n- [ ] A08: Software/Data Integrity - {{A08_MITIGATION}}\n- [ ] A09: Logging/Monitoring Failures - {{A09_MITIGATION}}\n- [ ] A10: SSRF - {{A10_MITIGATION}}\n\n---\n\n## Compliance\n\n### GDPR (if applicable)\n- [ ] Data Subject Access Requests (DSAR)\n- [ ] Right to Erasure\n- [ ] Data Portability\n- [ ] Consent Management\n- [ ] Data Processing Records\n\n### HIPAA (if applicable)\n- [ ] PHI Encryption\n- [ ] Access Controls\n- [ ] Audit Logging\n- [ ] Business Associate Agreements\n\n### SOC 2\n- [ ] Security\n- [ ] Availability  \n- [ ] Processing Integrity\n- [ ] Confidentiality\n- [ ] Privacy\n\n---\n\n## Monitoring & Incident Response\n\n### Security Monitoring\n\n| Event Type | Log Level | Retention | Alert Threshold |\n|------------|-----------|-----------|----------------|\n| Failed Login | WARN | {{LOGIN_RETENTION}} | {{LOGIN_THRESHOLD}} attempts |\n| Privilege Escalation | ERROR | {{PRIV_RETENTION}} | Immediate |\n| Data Access | INFO | {{ACCESS_RETENTION}} | Pattern detection |\n\n### Incident Response Plan\n\n1. **Detection:** {{DETECTION_METHOD}}\n2. **Containment:** {{CONTAINMENT_PROCEDURE}}\n3. **Eradication:** {{ERADICATION_PROCEDURE}}\n4. **Recovery:** {{RECOVERY_PROCEDURE}}\n5. **Lessons Learned:** {{POST_INCIDENT_REVIEW}}\n\n---\n\n## Security Testing\n\n### Vulnerability Scanning\n- Frequency: {{SCAN_FREQUENCY}}\n- Tools: {{SCAN_TOOLS}}\n- Remediation SLA: Critical {{CRITICAL_SLA}}, High {{HIGH_SLA}}\n\n### Penetration Testing\n- Frequency: {{PENTEST_FREQUENCY}}\n- Scope: {{PENTEST_SCOPE}}\n- Vendor: {{PENTEST_VENDOR}}\n\n### Security Code Review\n- SAST Tools: {{SAST_TOOLS}}\n- DAST Tools: {{DAST_TOOLS}}\n- Frequency: Every PR/Commit\n\n---\n\n**Approved By:** {{APPROVER}}  \n**Next Review:** {{NEXT_REVIEW}}  \n",
+  "variables": {
+    "SYSTEM_NAME": "System Name",
+    "DATA_CLASSIFICATION": "Confidential/Internal/Public",
+    "COMPLIANCE_REQS": "GDPR, HIPAA, SOC 2",
+    "DATE": "YYYY-MM-DD",
+    "AUTH_METHOD": "OAuth 2.0 + JWT",
+    "MFA_ENABLED": "Yes",
+    "SESSION_TIMEOUT": "30",
+    "PWD_MIN_LENGTH": "12",
+    "RATE_LIMIT": "100 req/min",
+    "SCAN_FREQUENCY": "Weekly",
+    "PENTEST_FREQUENCY": "Quarterly"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Security architecture design",
+      "Threat modeling",
+      "Compliance documentation",
+      "Security audit preparation",
+      "Penetration test scoping"
+    ],
+    "team_composition": [
+      "solution_architect",
+      "security_specialist",
+      "backend_developer"
+    ],
+    "estimated_time_minutes": 240,
+    "prerequisites": [
+      "System architecture defined",
+      "Data flows mapped",
+      "Compliance requirements understood",
+      "Assets identified"
+    ],
+    "related_templates": [
+      "multi-tenant-architecture-pattern",
+      "api-gateway-bff-pattern",
+      "non-functional-requirements-template"
+    ]
+  }
+}

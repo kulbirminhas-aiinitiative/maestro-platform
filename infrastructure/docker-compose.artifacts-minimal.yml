@@ -1,0 +1,161 @@
+# Minimal Artifact Management Stack
+# For quick deployment focusing on PyPI migration
+# Includes: MinIO, Nexus, MLflow only
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # STORAGE LAYER - MinIO
+  # ============================================================================
+
+  maestro-minio:
+    image: minio/minio:latest
+    container_name: maestro-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:?Please set MINIO_ROOT_PASSWORD}
+      - MINIO_BROWSER=on
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+    ports:
+      - "${MINIO_API_PORT:-29000}:9000"
+      - "${MINIO_CONSOLE_PORT:-29001}:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - maestro-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    labels:
+      - "maestro.service=minio"
+      - "maestro.layer=storage"
+
+  # MinIO Client - Auto-create buckets
+  maestro-minio-init:
+    image: minio/mc:latest
+    container_name: maestro-minio-init
+    depends_on:
+      maestro-minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set maestro http://maestro-minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD};
+      mc mb --ignore-existing maestro/mlflow-artifacts;
+      mc mb --ignore-existing maestro/dvc-storage;
+      mc mb --ignore-existing maestro/nexus-blobs;
+      mc mb --ignore-existing maestro/backups;
+      echo 'Buckets created successfully';
+      exit 0;
+      "
+    networks:
+      - maestro-network
+    labels:
+      - "maestro.service=minio-init"
+      - "maestro.layer=storage"
+
+  # ============================================================================
+  # ARTIFACT REPOSITORY - Nexus OSS
+  # ============================================================================
+
+  maestro-nexus:
+    image: sonatype/nexus3:latest
+    container_name: maestro-nexus
+    restart: unless-stopped
+    environment:
+      - INSTALL4J_ADD_VM_PARAMS=-Xms2703m -Xmx2703m -XX:MaxDirectMemorySize=2703m
+      - NEXUS_CONTEXT=/
+    ports:
+      - "${NEXUS_WEB_PORT:-28081}:8081"
+      - "${NEXUS_DOCKER_PORT:-28082}:8082"
+      - "${NEXUS_PYPI_PORT:-28083}:8083"
+      - "${NEXUS_NPM_PORT:-28084}:8084"
+    volumes:
+      - nexus_data:/nexus-data
+    networks:
+      - maestro-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/service/rest/v1/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    labels:
+      - "maestro.service=nexus"
+      - "maestro.layer=artifact-registry"
+
+  # ============================================================================
+  # ML PLATFORM - Enhanced MLflow
+  # ============================================================================
+
+  maestro-mlflow:
+    image: python:3.11-slim
+    container_name: maestro-mlflow
+    restart: unless-stopped
+    depends_on:
+      maestro-minio:
+        condition: service_healthy
+    environment:
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER:-minioadmin}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - MLFLOW_S3_ENDPOINT_URL=http://maestro-minio:9000
+      - MLFLOW_S3_IGNORE_TLS=true
+    ports:
+      - "${MLFLOW_PORT:-25000}:5000"
+    command: >
+      sh -c "
+        pip install mlflow boto3 psycopg2-binary &&
+        mlflow server
+          --host 0.0.0.0
+          --port 5000
+          --backend-store-uri postgresql://maestro_admin:${MAESTRO_POSTGRES_ADMIN_PASSWORD}@maestro-postgres:5432/mlflow
+          --default-artifact-root s3://mlflow-artifacts/
+          --serve-artifacts
+      "
+    volumes:
+      - mlflow_data:/mlflow
+    networks:
+      - maestro-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    labels:
+      - "maestro.service=mlflow"
+      - "maestro.layer=ml-platform"
+
+# ============================================================================
+# NETWORKS
+# ============================================================================
+
+networks:
+  maestro-network:
+    external: true
+    name: maestro-network
+
+# ============================================================================
+# VOLUMES
+# ============================================================================
+
+volumes:
+  minio_data:
+    name: maestro_minio_data
+    labels:
+      - "maestro.volume=minio"
+
+  nexus_data:
+    name: maestro_nexus_data
+    labels:
+      - "maestro.volume=nexus"
+
+  mlflow_data:
+    name: maestro_mlflow_data
+    labels:
+      - "maestro.volume=mlflow"

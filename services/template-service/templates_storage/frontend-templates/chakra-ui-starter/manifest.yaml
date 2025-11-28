@@ -1,0 +1,108 @@
+manifest_version: '1.0'
+name: chakra-ui-starter
+description: Modern React application starter with Chakra UI. Features accessible components, utility props, and excellent developer experience for rapid UI development.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: react
+  tags:
+    - ui-library
+    - chakra-ui
+    - react
+    - typescript
+    - accessibility
+    - components
+    - design-system
+  design_system: chakra-ui
+  ui_complexity: simple
+  use_cases:
+    - web-applications
+    - component-library
+    - ui-kit
+    - rapid-prototyping
+    - accessible-apps
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-chakra-app
+  - variable: COLOR_MODE
+    description: Initial color mode
+    type: string
+    required: false
+    default: light
+    choices:
+      - light
+      - dark
+      - system
+  - variable: ENABLE_ICONS
+    description: Include Chakra UI icons
+    type: boolean
+    required: false
+    default: true
+
+dependencies:
+  runtime:
+    - react@18.2.0
+    - react-dom@18.2.0
+    - '@chakra-ui/react@2.8.0'
+    - '@chakra-ui/icons@2.1.0'
+    - '@emotion/react@11.11.0'
+    - '@emotion/styled@11.11.0'
+    - framer-motion@10.16.0
+  build:
+    - typescript@5.0.0
+    - vite@5.0.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - dist/**
+    - .DS_Store
+
+features:
+  - "Accessible component library (WCAG compliant)"
+  - "Style props for rapid styling"
+  - "Responsive design utilities"
+  - "Dark mode with color mode manager"
+  - "Composable component architecture"
+  - "Form components with validation"
+  - "Layout components (Stack, Grid, Flex)"
+  - "Customizable theme tokens"
+  - "TypeScript support"
+  - "Excellent documentation"
+  - "Tree-shakeable"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/THEMING.md
+  examples:
+    - examples/layout-patterns
+    - examples/form-examples
+    - examples/custom-components

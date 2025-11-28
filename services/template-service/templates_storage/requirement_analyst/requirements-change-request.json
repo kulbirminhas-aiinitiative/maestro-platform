@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "id": "requirements-change-request-v1",
+    "name": "Requirements Change Request (RCR) Form",
+    "category": "documentation",
+    "language": "markdown",
+    "framework": "change-management",
+    "description": "Formal requirements change request template for managing scope changes, impact analysis, approval workflow, and traceability of requirement modifications",
+    "tags": [
+      "change-request",
+      "requirements",
+      "scope-management",
+      "impact-analysis",
+      "change-control",
+      "approval-workflow"
+    ],
+    "quality_score": 87.0,
+    "security_score": 75.0,
+    "performance_score": 70.0,
+    "maintainability_score": 91.0,
+    "test_coverage": 83.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T10:00:00.000000",
+    "updated_at": "2025-10-10T10:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "requirement_analyst"
+  },
+  "content": "# Requirements Change Request (RCR)\n\n## RCR Information\n\n**RCR ID:** {{RCR_ID}}  \n**Date Submitted:** {{DATE_SUBMITTED}}  \n**Submitted By:** {{SUBMITTER_NAME}}  \n**Department:** {{DEPARTMENT}}  \n**Contact:** {{CONTACT_INFO}}  \n**Priority:** {{PRIORITY}}  \n**Status:** {{STATUS}}  \n\n---\n\n## 1. Change Details\n\n### 1.1 Change Title\n{{CHANGE_TITLE}}\n\n### 1.2 Change Type\n- [ ] New Requirement\n- [ ] Modify Existing Requirement\n- [ ] Delete Requirement\n- [ ] Clarification/Refinement\n- [ ] Defect Correction\n\n### 1.3 Affected Requirement(s)\n\n| Requirement ID | Current Description | Priority | Status |\n|----------------|---------------------|----------|--------|\n| {{REQ_ID_1}} | {{REQ_DESC_1}} | {{REQ_PRI_1}} | {{REQ_STATUS_1}} |\n| {{REQ_ID_2}} | {{REQ_DESC_2}} | {{REQ_PRI_2}} | {{REQ_STATUS_2}} |\n\n---\n\n## 2. Justification\n\n### 2.1 Business Reason\n{{BUSINESS_REASON}}\n\n### 2.2 Problem Being Addressed\n{{PROBLEM_STATEMENT}}\n\n### 2.3 Expected Benefits\n1. {{BENEFIT_1}}\n2. {{BENEFIT_2}}\n3. {{BENEFIT_3}}\n\n### 2.4 Impact of NOT Implementing\n{{NO_CHANGE_IMPACT}}\n\n---\n\n## 3. Proposed Change\n\n### 3.1 Current State (As-Is)\n```\n{{CURRENT_REQUIREMENT}}\n```\n\n### 3.2 Proposed State (To-Be)\n```\n{{PROPOSED_REQUIREMENT}}\n```\n\n### 3.3 Detailed Description\n{{DETAILED_DESCRIPTION}}\n\n### 3.4 New Acceptance Criteria\n- {{ACCEPTANCE_1}}\n- {{ACCEPTANCE_2}}\n- {{ACCEPTANCE_3}}\n\n---\n\n## 4. Impact Analysis\n\n### 4.1 Scope Impact\n\n| Area | Impact Level | Description |\n|------|--------------|-------------|\n| Functionality | High/Med/Low/None | {{FUNC_IMPACT}} |\n| User Interface | High/Med/Low/None | {{UI_IMPACT}} |\n| Database Schema | High/Med/Low/None | {{DB_IMPACT}} |\n| APIs/Interfaces | High/Med/Low/None | {{API_IMPACT}} |\n| Integration Points | High/Med/Low/None | {{INTEG_IMPACT}} |\n| Security | High/Med/Low/None | {{SEC_IMPACT}} |\n| Performance | High/Med/Low/None | {{PERF_IMPACT}} |\n\n### 4.2 Affected Components\n\n| Component | Type | Modification Required | Estimated Effort |\n|-----------|------|----------------------|------------------|\n| {{COMPONENT_1}} | {{TYPE_1}} | {{MOD_1}} | {{EFFORT_1}} hours |\n| {{COMPONENT_2}} | {{TYPE_2}} | {{MOD_2}} | {{EFFORT_2}} hours |\n| {{COMPONENT_3}} | {{TYPE_3}} | {{MOD_3}} | {{EFFORT_3}} hours |\n\n### 4.3 Affected Documents\n- [ ] Business Requirements Document (BRD)\n- [ ] Software Requirements Specification (SRS)\n- [ ] System Design Document\n- [ ] API Documentation\n- [ ] User Manual\n- [ ] Test Plans\n- [ ] {{CUSTOM_DOC_1}}\n- [ ] {{CUSTOM_DOC_2}}\n\n### 4.4 Affected Stakeholders\n\n| Stakeholder | Role | Impact | Notification Required |\n|-------------|------|--------|----------------------|\n| {{STAKE_1}} | {{ROLE_1}} | {{IMPACT_1}} | Yes/No |\n| {{STAKE_2}} | {{ROLE_2}} | {{IMPACT_2}} | Yes/No |\n| {{STAKE_3}} | {{ROLE_3}} | {{IMPACT_3}} | Yes/No |\n\n---\n\n## 5. Schedule Impact\n\n### 5.1 Timeline Analysis\n\n**Current Project Timeline:**\n- Sprint: {{CURRENT_SPRINT}}\n- Release Date: {{CURRENT_RELEASE_DATE}}\n- Milestones Affected: {{AFFECTED_MILESTONES}}\n\n**Estimated Implementation Time:**\n- Analysis & Design: {{DESIGN_HOURS}} hours\n- Development: {{DEV_HOURS}} hours\n- Testing: {{TEST_HOURS}} hours\n- Documentation: {{DOC_HOURS}} hours\n- **Total**: {{TOTAL_HOURS}} hours ({{TOTAL_DAYS}} days)\n\n**Impact on Schedule:**\n- [ ] No impact on current schedule\n- [ ] Delay of {{DELAY_DAYS}} days\n- [ ] Requires additional sprint\n- [ ] Impacts release date\n\n**Revised Timeline:**\n- New Release Date: {{NEW_RELEASE_DATE}}\n- New Milestones: {{NEW_MILESTONES}}\n\n---\n\n## 6. Resource Impact\n\n### 6.1 Team Resources Required\n\n| Role | Person | Effort (hours) | Availability |\n|------|--------|---------------|-------------|\n| Requirement Analyst | {{RA_NAME}} | {{RA_HOURS}} | {{RA_AVAIL}} |\n| Solution Architect | {{SA_NAME}} | {{SA_HOURS}} | {{SA_AVAIL}} |\n| Backend Developer | {{BE_NAME}} | {{BE_HOURS}} | {{BE_AVAIL}} |\n| Frontend Developer | {{FE_NAME}} | {{FE_HOURS}} | {{FE_AVAIL}} |\n| QA Engineer | {{QA_NAME}} | {{QA_HOURS}} | {{QA_AVAIL}} |\n| DevOps Engineer | {{DO_NAME}} | {{DO_HOURS}} | {{DO_AVAIL}} |\n\n### 6.2 Additional Resources Needed\n- {{RESOURCE_1}}\n- {{RESOURCE_2}}\n- {{RESOURCE_3}}\n\n---\n\n## 7. Cost Impact\n\n### 7.1 Cost Breakdown\n\n| Cost Category | Amount | Notes |\n|---------------|--------|-------|\n| Development Labor | {{DEV_COST}} | {{DEV_NOTES}} |\n| Testing Labor | {{TEST_COST}} | {{TEST_NOTES}} |\n| Infrastructure | {{INFRA_COST}} | {{INFRA_NOTES}} |\n| Third-party Services | {{THIRD_PARTY_COST}} | {{THIRD_PARTY_NOTES}} |\n| Training | {{TRAINING_COST}} | {{TRAINING_NOTES}} |\n| **Total Estimated Cost** | **{{TOTAL_COST}}** | |\n\n### 7.2 Budget Impact\n- Current Budget: {{CURRENT_BUDGET}}\n- Budget Remaining: {{BUDGET_REMAINING}}\n- Change Cost: {{TOTAL_COST}}\n- New Budget Remaining: {{NEW_BUDGET_REMAINING}}\n- [ ] Within budget\n- [ ] Requires additional budget approval\n\n---\n\n## 8. Risk Assessment\n\n### 8.1 Risks of Implementing Change\n\n| Risk | Likelihood | Impact | Mitigation Strategy |\n|------|------------|--------|---------------------|\n| {{RISK_1}} | H/M/L | H/M/L | {{MITIGATION_1}} |\n| {{RISK_2}} | H/M/L | H/M/L | {{MITIGATION_2}} |\n| {{RISK_3}} | H/M/L | H/M/L | {{MITIGATION_3}} |\n\n### 8.2 Risks of NOT Implementing Change\n\n| Risk | Likelihood | Impact | Consequence |\n|------|------------|--------|-------------|\n| {{NO_IMPL_RISK_1}} | H/M/L | H/M/L | {{CONSEQUENCE_1}} |\n| {{NO_IMPL_RISK_2}} | H/M/L | H/M/L | {{CONSEQUENCE_2}} |\n\n---\n\n## 9. Alternative Solutions\n\n### Alternative 1: {{ALTERNATIVE_1_NAME}}\n**Description:** {{ALTERNATIVE_1_DESC}}  \n**Pros:** {{ALTERNATIVE_1_PROS}}  \n**Cons:** {{ALTERNATIVE_1_CONS}}  \n**Cost:** {{ALTERNATIVE_1_COST}}  \n**Timeline:** {{ALTERNATIVE_1_TIME}}  \n\n### Alternative 2: {{ALTERNATIVE_2_NAME}}\n**Description:** {{ALTERNATIVE_2_DESC}}  \n**Pros:** {{ALTERNATIVE_2_PROS}}  \n**Cons:** {{ALTERNATIVE_2_CONS}}  \n**Cost:** {{ALTERNATIVE_2_COST}}  \n**Timeline:** {{ALTERNATIVE_2_TIME}}  \n\n### Recommended Solution\n{{RECOMMENDED_SOLUTION}}\n\n---\n\n## 10. Implementation Plan\n\n### 10.1 Phases\n\n| Phase | Activities | Duration | Dependencies |\n|-------|-----------|----------|-------------|\n| {{PHASE_1}} | {{ACTIVITIES_1}} | {{DURATION_1}} | {{DEPENDENCIES_1}} |\n| {{PHASE_2}} | {{ACTIVITIES_2}} | {{DURATION_2}} | {{DEPENDENCIES_2}} |\n| {{PHASE_3}} | {{ACTIVITIES_3}} | {{DURATION_3}} | {{DEPENDENCIES_3}} |\n\n### 10.2 Rollback Plan\n{{ROLLBACK_PLAN}}\n\n---\n\n## 11. Approval Workflow\n\n### 11.1 Review & Approval\n\n| Role | Name | Recommendation | Signature | Date |\n|------|------|----------------|-----------|------|\n| Requirement Analyst | {{RA_NAME}} | Approve/Reject/Defer | | |\n| Technical Lead | {{TL_NAME}} | Approve/Reject/Defer | | |\n| Product Owner | {{PO_NAME}} | Approve/Reject/Defer | | |\n| Project Manager | {{PM_NAME}} | Approve/Reject/Defer | | |\n| Sponsor | {{SPONSOR_NAME}} | Approve/Reject/Defer | | |\n\n### 11.2 Approval Comments\n\n**Requirement Analyst:**\n{{RA_COMMENTS}}\n\n**Technical Lead:**\n{{TL_COMMENTS}}\n\n**Product Owner:**\n{{PO_COMMENTS}}\n\n**Project Manager:**\n{{PM_COMMENTS}}\n\n### 11.3 Final Decision\n\n- [ ] **Approved** - Proceed with implementation\n- [ ] **Approved with Conditions** - {{CONDITIONS}}\n- [ ] **Rejected** - Reason: {{REJECTION_REASON}}\n- [ ] **Deferred** - Review Date: {{DEFER_DATE}}, Reason: {{DEFER_REASON}}\n\n**Decision Date:** {{DECISION_DATE}}  \n**Decision By:** {{DECISION_BY}}  \n\n---\n\n## 12. Traceability\n\n### 12.1 Related Changes\n\n| Related RCR | Relationship | Status |\n|-------------|--------------|--------|\n| {{RCR_REL_1}} | {{REL_TYPE_1}} | {{REL_STATUS_1}} |\n| {{RCR_REL_2}} | {{REL_TYPE_2}} | {{REL_STATUS_2}} |\n\n### 12.2 Affected Test Cases\n\n| Test Case ID | Modification Required | Status |\n|--------------|----------------------|--------|\n| {{TC_1}} | {{TC_MOD_1}} | {{TC_STATUS_1}} |\n| {{TC_2}} | {{TC_MOD_2}} | {{TC_STATUS_2}} |\n\n---\n\n## 13. Implementation Tracking\n\n### 13.1 Action Items\n\n| Action | Owner | Due Date | Status |\n|--------|-------|----------|--------|\n| {{ACTION_1}} | {{OWNER_1}} | {{DUE_1}} | {{ACTION_STATUS_1}} |\n| {{ACTION_2}} | {{OWNER_2}} | {{DUE_2}} | {{ACTION_STATUS_2}} |\n| {{ACTION_3}} | {{OWNER_3}} | {{DUE_3}} | {{ACTION_STATUS_3}} |\n\n### 13.2 Completion Criteria\n- [ ] All affected requirements updated\n- [ ] Design documents updated\n- [ ] Code changes completed\n- [ ] Tests updated and passing\n- [ ] Documentation updated\n- [ ] Stakeholders notified\n- [ ] Training completed (if required)\n- [ ] Change deployed to production\n\n---\n\n## Revision History\n\n| Version | Date | Author | Changes |\n|---------|------|--------|----------|\n| {{VER_1}} | {{DATE_1}} | {{AUTH_1}} | {{CHANGE_1}} |\n| {{VER_2}} | {{DATE_2}} | {{AUTH_2}} | {{CHANGE_2}} |\n",
+  "variables": {
+    "RCR_ID": "RCR-001",
+    "DATE_SUBMITTED": "YYYY-MM-DD",
+    "SUBMITTER_NAME": "Submitter Name",
+    "DEPARTMENT": "Department",
+    "PRIORITY": "High/Medium/Low",
+    "STATUS": "Submitted/Under Review/Approved/Rejected",
+    "CURRENT_SPRINT": "Sprint 5",
+    "TOTAL_HOURS": "40",
+    "TOTAL_DAYS": "5",
+    "TOTAL_COST": "$10,000",
+    "CURRENT_BUDGET": "$100,000",
+    "BUDGET_REMAINING": "$20,000"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Managing scope changes during project execution",
+      "Formal approval of requirement modifications",
+      "Impact analysis for requirement changes",
+      "Tracking change history and traceability",
+      "Change control board (CCB) reviews"
+    ],
+    "team_composition": [
+      "requirement_analyst",
+      "solution_architect",
+      "backend_developer",
+      "qa_engineer"
+    ],
+    "estimated_time_minutes": 90,
+    "prerequisites": [
+      "Existing requirements documented",
+      "Change justification prepared",
+      "Impact analysis completed",
+      "Stakeholder input gathered"
+    ],
+    "related_templates": [
+      "srs-document-template",
+      "requirements-traceability-matrix",
+      "requirements-validation-checklist"
+    ]
+  }
+}

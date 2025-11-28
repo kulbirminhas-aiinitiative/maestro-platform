@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sunday-staging
+  labels:
+    name: sunday-staging
+    environment: staging
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sunday-production
+  labels:
+    name: sunday-production
+    environment: production
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sunday-monitoring
+  labels:
+    name: sunday-monitoring
+    environment: shared

@@ -1,0 +1,32 @@
+{
+  "workflow_id": "test_workflow_001",
+  "workflow_name": "Test SDLC Workflow",
+  "nodes": [
+    {
+      "id": "node-1",
+      "phase_type": "requirements",
+      "label": "Requirements Phase",
+      "phase_config": {
+        "requirementText": "Build a simple todo application",
+        "assigned_team": ["requirement_analyst"],
+        "executor_ai": "requirement_analyst"
+      }
+    },
+    {
+      "id": "node-2",
+      "phase_type": "implementation",
+      "label": "Implementation Phase",
+      "phase_config": {
+        "implementationDetails": "Implement the todo app with React",
+        "assigned_team": ["frontend_developer", "backend_developer"],
+        "executor_ai": "frontend_developer"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1",
+      "target": "node-2"
+    }
+  ]
+}

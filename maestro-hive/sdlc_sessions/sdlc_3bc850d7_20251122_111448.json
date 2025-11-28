@@ -1,0 +1,16 @@
+{
+  "session_id": "sdlc_3bc850d7_20251122_111448",
+  "requirement": "# JIRA Task: MD-131\n**Priority**: Highest\n**Type**: Task\n**Status**: To Do\n\n## Summary\n[CRITICAL] Implement DDE Workflow Execution Engine\n\n## Description\nImplement Dependency-Driven Execution (DDE) - 'Built Right' validation system.\n\nComponents:\n1. Interface-first execution pattern\n2. Capability-based routing to AI agents\n3. Quality gate enforcement at each phase\n4. Artifact stamping with metadata\n5. Contract version tracking\n\nValidates:\n- Execution follows correct dependency order (interfaces first, then implementations)\n- All quality gates pass\n- Capability-based routing is correct\n- Artifacts are properly stamped\n\nFiles to create:\n- backend/src/services/dde-executor.service.ts\n- backend/src/services/quality-gate.service.ts\n- backend/src/types/dde.types.ts\n\nEstimated effort: 3-4 weeks\n\n## Epic Context\n**Epic**: MD-592 - Epic 1: Core Execution Engine (DDE)\n\n## Labels\ncritical, dde, e2e-phase-1, execution-engine, tri-modal\n\n## Metadata\n- Created: 2025-11-21T12:37:34.452+0000\n- Updated: 2025-11-21T18:43:31.125+0000\n- Assignee: kulbir.minhas\n- Reporter: kulbir.minhas\n",
+  "output_dir": "generated/md-131-test",
+  "created_at": "2025-11-22T11:14:48.909508",
+  "last_updated": "2025-11-22T11:14:48.909509",
+  "completed_personas": [],
+  "files_registry": {},
+  "persona_outputs": {},
+  "metadata": {
+    "phase_history": [],
+    "current_phase": null,
+    "iteration_count": 0,
+    "workflow_mode": "sequential"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "id": "459dfeb5-b7bd-450f-8149-007a30a5338c",
+    "name": "Flask REST API with JWT Auth",
+    "category": "api",
+    "language": "python",
+    "framework": "flask",
+    "description": "Flask REST API with JWT authentication and protected routes",
+    "tags": [
+      "rest",
+      "api",
+      "flask",
+      "jwt",
+      "auth"
+    ],
+    "quality_score": 70.0,
+    "security_score": 70.0,
+    "performance_score": 70.0,
+    "maintainability_score": 70.0,
+    "test_coverage": 0.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-03T22:04:37.854794",
+    "updated_at": "2025-10-03T22:04:37.854798",
+    "created_by": "seed_script",
+    "persona": "backend_developer"
+  },
+  "content": "from flask import Flask, request, jsonify\nfrom flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity\nfrom werkzeug.security import generate_password_hash, check_password_hash\n\napp = Flask(__name__)\napp.config['JWT_SECRET_KEY'] = 'your-secret-key'\njwt = JWTManager(app)\n\n@app.route('/register', methods=['POST'])\ndef register():\n    data = request.get_json()\n    username = data.get('username')\n    password = data.get('password')\n\n    # Hash password\n    hashed_password = generate_password_hash(password)\n\n    # Save user (pseudo-code)\n    # user = User(username=username, password=hashed_password)\n    # db.session.add(user)\n    # db.session.commit()\n\n    return jsonify({\"message\": \"User registered successfully\"}), 201\n\n@app.route('/login', methods=['POST'])\ndef login():\n    data = request.get_json()\n    username = data.get('username')\n    password = data.get('password')\n\n    # Get user (pseudo-code)\n    # user = User.query.filter_by(username=username).first()\n\n    # if not user or not check_password_hash(user.password, password):\n    #     return jsonify({\"message\": \"Invalid credentials\"}), 401\n\n    access_token = create_access_token(identity=username)\n    return jsonify(access_token=access_token), 200\n\n@app.route('/protected', methods=['GET'])\n@jwt_required()\ndef protected():\n    current_user = get_jwt_identity()\n    return jsonify(logged_in_as=current_user), 200\n\nif __name__ == '__main__':\n    app.run(debug=True)",
+  "variables": {},
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [],
+    "team_composition": [
+      "backend_developer"
+    ],
+    "estimated_time_minutes": 30
+  }
+}

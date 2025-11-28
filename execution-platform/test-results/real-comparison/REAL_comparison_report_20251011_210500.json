@@ -1,0 +1,112 @@
+{
+  "timestamp": "2025-10-11T21:05:00.316332",
+  "configurations": [
+    {
+      "config_name": "A_FullClaude_REAL",
+      "duration_ms": 0.212,
+      "phases_completed": [
+        "requirements",
+        "architecture",
+        "implementation",
+        "review"
+      ],
+      "phase_durations": {
+        "requirements": 0.09012222290039062,
+        "architecture": 0.024318695068359375,
+        "implementation": 0.025510787963867188,
+        "review": 0.031232833862304688
+      },
+      "providers_used": {
+        "requirements": "claude_agent",
+        "architecture": "claude_agent",
+        "implementation": "claude_agent",
+        "review": "claude_agent"
+      },
+      "total_tokens": 0,
+      "errors": [],
+      "success": true,
+      "outputs_preview": {
+        "requirements": "[claude_agent_stub] Analyze this requirement and create a detailed requirements document\n\nContext:\n\n...",
+        "architecture": "[claude_agent_stub] Design the system architecture\n\nContext:\n[claude_agent_stub] Analyze this requir...",
+        "implementation": "[claude_agent_stub] Create an implementation plan\n\nContext:\n[claude_agent_stub] Design the system ar...",
+        "review": "[claude_agent_stub] Review the implementation plan for quality\n\nContext:\n[claude_agent_stub] Create ..."
+      }
+    },
+    {
+      "config_name": "B_Mixed_REAL",
+      "duration_ms": 19957.868000000002,
+      "phases_completed": [
+        "requirements",
+        "architecture",
+        "implementation",
+        "review"
+      ],
+      "phase_durations": {
+        "requirements": 0.07557868957519531,
+        "architecture": 11493.501663208008,
+        "implementation": 0.0400543212890625,
+        "review": 8464.170932769775
+      },
+      "providers_used": {
+        "requirements": "claude_agent",
+        "architecture": "openai",
+        "implementation": "claude_agent",
+        "review": "openai"
+      },
+      "total_tokens": 0,
+      "errors": [],
+      "success": true,
+      "outputs_preview": {
+        "requirements": "[claude_agent_stub] Analyze requirement\n\nContext:\n\nCreate a RESTful API for a todo/task management s...",
+        "architecture": "Designing a RESTful API for a todo/task management system involves careful consideration of the arch...",
+        "implementation": "[claude_agent_stub] Implementation plan\n\nContext:\nDesigning a RESTful API for a todo/task management...",
+        "review": "### Review of the Implementation Plan for a Todo/Task Management System API\n\nThe implementation plan..."
+      }
+    },
+    {
+      "config_name": "C_FullOpenAI_REAL",
+      "duration_ms": 42519.512,
+      "phases_completed": [
+        "requirements",
+        "architecture",
+        "implementation",
+        "review"
+      ],
+      "phase_durations": {
+        "requirements": 11444.379329681396,
+        "architecture": 11529.696941375732,
+        "implementation": 8736.02294921875,
+        "review": 10809.319496154785
+      },
+      "providers_used": {
+        "requirements": "openai",
+        "architecture": "openai",
+        "implementation": "openai",
+        "review": "openai"
+      },
+      "total_tokens": 0,
+      "errors": [],
+      "success": true,
+      "outputs_preview": {
+        "requirements": "Creating a RESTful API for a todo/task management system involves several key components, including ...",
+        "architecture": "```json\n     \"date (ISO 8601)\",\n     \"reminder\": \"date (ISO 8601, optional)\",\n     \"completed\": \"boo...",
+        "implementation": "API endpoints to mitigate brute force attacks and abuse.\n3. **CORS Policy**: Set up a strict CORS po...",
+        "review": "developers can easily understand and utilize the API.\n    - Provide clear examples for each endpoint..."
+      }
+    }
+  ],
+  "comparison": {
+    "fastest": 0.212,
+    "slowest": 42519.512,
+    "average": 20825.864,
+    "min_tokens": 0,
+    "max_tokens": 0,
+    "avg_tokens": 0.0
+  },
+  "provider_usage": {
+    "unique_providers": [
+      "openai",
+      "claude_agent"
+    ]
+  }
+}

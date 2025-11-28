@@ -89,21 +89,55 @@ sys.path.insert(0, str(Path(__file__).parent))
 from config import CLAUDE_CONFIG, OUTPUT_CONFIG
 from session_manager import SessionManager, SDLCSession
 
+# DDE - Dependency-Driven Execution modules
+try:
+    from dde import (
+        get_performance_tracker,
+        get_agent_registry,
+        ExecutionOutcome,
+        ManifestBuilder
+    )
+    from dde.verdict_aggregator import get_verdict_aggregator
+    DDE_AVAILABLE = True
+    logging.info("✅ DDE modules loaded")
+except ImportError as e:
+    DDE_AVAILABLE = False
+    logging.warning(f"⚠️ DDE modules not available: {e}")
+
+# BDV - Behavior-Driven Validation modules
+try:
+    from bdv.integration_service import get_bdv_integration_service
+    BDV_AVAILABLE = True
+    logging.info("✅ BDV modules loaded")
+except ImportError as e:
+    BDV_AVAILABLE = False
+    logging.warning(f"⚠️ BDV modules not available: {e}")
+
+# ACC - Architectural Conformance Checking modules
+try:
+    from acc.integration_service import get_acc_integration_service
+    ACC_AVAILABLE = True
+    logging.info("✅ ACC modules loaded")
+except ImportError as e:
+    ACC_AVAILABLE = False
+    logging.warning(f"⚠️ ACC modules not available: {e}")
+
 # Try to import contracts from conductor
 try:
-    # Add conductor/contracts path directly (missing __init__.py in contracts)
+    # Add conductor path to allow importing contracts package with relative imports
     conductor_path = Path("/home/ec2-user/projects/conductor")
-    contracts_integration_path = conductor_path / "contracts" / "integration"
 
-    if str(contracts_integration_path) not in sys.path:
-        sys.path.insert(0, str(contracts_integration_path))
+    if str(conductor_path) not in sys.path:
+        sys.path.insert(0, str(conductor_path))
 
-    from contract_manager import ContractManager
+    from contracts.integration.contract_manager import ContractManager
     CONTRACT_MANAGER_AVAILABLE = True
+    logging.info("✅ Contract manager loaded from conductor")
 except ImportError as e:
     CONTRACT_MANAGER_AVAILABLE = False
     ContractManager = None
-    logging.warning(f"Contract manager not available: {e}")
+    logging.error(f"❌ Contract manager import failed: {e}")
+    logging.error("   Contract enforcement will not be available - this is critical!")
 
 # Try to import blueprint system from conductor (merged from synth)
 try:
@@ -1202,6 +1236,124 @@ class TeamExecutionEngineV2:
         logger.info(f"Quality: {execution_result.overall_quality_score:.0%}")
         logger.info(f"Parallelization: {execution_result.parallelization_achieved:.0%}")
         logger.info("="*80)
+
+        # Record performance metrics for each persona (DDE integration)
+        if DDE_AVAILABLE:
+            try:
+                tracker = get_performance_tracker()
+                registry = get_agent_registry()
+
+                # Initialize default agents if needed
+                if not registry.list_agents():
+                    registry.initialize_default_agents()
+
+                for persona_id, persona_result in execution_result.persona_results.items():
+                    # Determine outcome
+                    if persona_result.contract_fulfilled:
+                        outcome = ExecutionOutcome.SUCCESS
+                    elif persona_result.quality_score > 0.5:
+                        outcome = ExecutionOutcome.PARTIAL
+                    else:
+                        outcome = ExecutionOutcome.FAILURE
+
+                    # Record metric
+                    tracker.record_execution(
+                        execution_id=f"{session.session_id}_{persona_id}",
+                        agent_id=persona_id,
+                        task_type=classification.requirement_type,
+                        task_complexity=classification.complexity.value,
+                        started_at=start_time,
+                        completed_at=datetime.now(),
+                        outcome=outcome,
+                        quality_score=persona_result.quality_score,
+                        contract_fulfilled=persona_result.contract_fulfilled,
+                        files_generated=len(persona_result.files_created),
+                        error_count=len(persona_result.quality_issues),
+                        metadata={
+                            'blueprint': blueprint_rec.blueprint_name,
+                            'session_id': session.session_id
+                        }
+                    )
+
+                    # Update agent quality history
+                    registry.record_quality_score(persona_id, persona_result.quality_score)
+
+                logger.info(f"📊 Recorded {len(execution_result.persona_results)} performance metrics")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to record performance metrics: {e}")
+
+        # BDV - Behavior-Driven Validation
+        bdv_metrics = None
+        if BDV_AVAILABLE:
+            try:
+                bdv_service = get_bdv_integration_service()
+
+                # Convert contracts for BDV validation
+                contracts_for_bdv = []
+                for contract in result.get('contracts', []):
+                    contracts_for_bdv.append({
+                        'id': contract.get('id', 'unknown'),
+                        'name': contract.get('name', 'Unknown'),
+                        'description': contract.get('description', ''),
+                        'acceptance_criteria': contract.get('acceptance_criteria', []),
+                        'deliverables': contract.get('deliverables', [])
+                    })
+
+                if contracts_for_bdv:
+                    bdv_result = bdv_service.validate_contracts(
+                        execution_id=session.session_id,
+                        contracts=contracts_for_bdv,
+                        iteration_id=f"iter-{session.session_id}"
+                    )
+                    bdv_metrics = bdv_service.get_validation_metrics(session.session_id)
+                    logger.info(f"🧪 BDV validation: {bdv_result.contracts_fulfilled}/{bdv_result.total_contracts} contracts fulfilled")
+            except Exception as e:
+                logger.warning(f"⚠️ BDV validation failed: {e}")
+
+        # ACC - Architectural Conformance Checking
+        acc_metrics = None
+        if ACC_AVAILABLE:
+            try:
+                acc_service = get_acc_integration_service()
+
+                # Validate generated code architecture
+                output_path = str(session.output_dir)
+                acc_result = acc_service.validate_architecture(
+                    execution_id=session.session_id,
+                    project_path=output_path
+                )
+                acc_metrics = acc_service.get_validation_metrics(session.session_id)
+
+                status = "COMPLIANT" if acc_result.is_compliant else "NON-COMPLIANT"
+                logger.info(f"🏗️ ACC validation: {status} (score: {acc_result.conformance_score:.2f})")
+            except Exception as e:
+                logger.warning(f"⚠️ ACC validation failed: {e}")
+
+        # Generate Tri-Modal Verdict
+        if DDE_AVAILABLE:
+            try:
+                aggregator = get_verdict_aggregator()
+
+                # Prepare DDE metrics
+                dde_metrics = {
+                    'avg_quality_score': execution_result.overall_quality_score,
+                    'contract_fulfillment_rate': execution_result.contracts_fulfilled / execution_result.contracts_total if execution_result.contracts_total > 0 else 0,
+                    'error_rate': sum(len(pr.quality_issues) for pr in execution_result.persona_results.values()) / max(1, len(execution_result.persona_results))
+                }
+
+                verdict = aggregator.generate_verdict(
+                    execution_id=session.session_id,
+                    dde_metrics=dde_metrics,
+                    bdv_metrics=bdv_metrics,
+                    acc_metrics=acc_metrics
+                )
+
+                # Add verdict to result
+                result['verdict'] = verdict.to_dict()
+
+                logger.info(f"🔍 Quality Verdict: {verdict.grade.value} (score: {verdict.overall_score:.2f}, decision: {verdict.deployment_decision.value})")
+            except Exception as e:
+                logger.warning(f"⚠️ Verdict generation failed: {e}")
 
         return result
 

@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  microservices_platform_foundation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: microservices-platform-foundation-v1
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - API_GATEWAY_PORT=${API_GATEWAY_PORT}
+      - CONSUL_URL=${CONSUL_URL}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE}
+      - CIRCUIT_BREAKER_THRESHOLD=${CIRCUIT_BREAKER_THRESHOLD}
+      - ENABLE_TRACING=${ENABLE_TRACING}
+      - JAEGER_AGENT_HOST=${JAEGER_AGENT_HOST}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - app-data:/app/data
+      - app-logs:/app/logs
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+volumes:
+  app-data:
+  app-logs:
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "id": "use-case-specification-v1",
+    "name": "Use Case Specification Template (UML Standard)",
+    "category": "documentation",
+    "language": "markdown",
+    "framework": "requirements",
+    "description": "Detailed use case specification template following UML standards with actors, preconditions, postconditions, main flow, alternative flows, and exception handling",
+    "tags": [
+      "use-case",
+      "uml",
+      "requirements",
+      "scenarios",
+      "actors",
+      "workflow",
+      "specifications"
+    ],
+    "quality_score": 89.0,
+    "security_score": 72.0,
+    "performance_score": 70.0,
+    "maintainability_score": 91.0,
+    "test_coverage": 87.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T10:00:00.000000",
+    "updated_at": "2025-10-10T10:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "requirement_analyst"
+  },
+  "content": "# Use Case Specification\n\n## Use Case Information\n\n**Use Case ID:** {{USE_CASE_ID}}  \n**Use Case Name:** {{USE_CASE_NAME}}  \n**Module/Subsystem:** {{MODULE}}  \n**Version:** {{VERSION}}  \n**Author:** {{AUTHOR}}  \n**Date Created:** {{DATE_CREATED}}  \n**Last Updated:** {{DATE_UPDATED}}  \n**Status:** {{STATUS}}  \n\n---\n\n## 1. Brief Description\n\n{{BRIEF_DESCRIPTION}}\n\nThis use case describes how {{PRIMARY_ACTOR}} interacts with the system to {{GOAL}}.\n\n---\n\n## 2. Actors\n\n### Primary Actor\n**Name:** {{PRIMARY_ACTOR}}  \n**Type:** Human/System  \n**Description:** {{PRIMARY_ACTOR_DESC}}  \n**Goal:** {{PRIMARY_ACTOR_GOAL}}  \n\n### Secondary Actors\n\n| Actor | Type | Role | Interaction |\n|-------|------|------|-------------|\n| {{ACTOR_2}} | Human/System | {{ROLE_2}} | {{INTERACTION_2}} |\n| {{ACTOR_3}} | Human/System | {{ROLE_3}} | {{INTERACTION_3}} |\n\n---\n\n## 3. Preconditions\n\n1. {{PRECONDITION_1}}\n2. {{PRECONDITION_2}}\n3. {{PRECONDITION_3}}\n4. System is in {{SYSTEM_STATE}} state\n5. User has {{PERMISSION}} permission\n\n---\n\n## 4. Postconditions\n\n### Success Postconditions\n1. {{SUCCESS_POSTCOND_1}}\n2. {{SUCCESS_POSTCOND_2}}\n3. {{SUCCESS_POSTCOND_3}}\n4. System state changed to {{NEW_STATE}}\n\n### Failure Postconditions\n1. {{FAILURE_POSTCOND_1}}\n2. {{FAILURE_POSTCOND_2}}\n3. System remains in {{ORIGINAL_STATE}} state\n\n---\n\n## 5. Main Success Scenario (Basic Flow)\n\n| Step | Actor | Action | System Response |\n|------|-------|--------|----------------|\n| 1 | {{ACTOR_1}} | {{ACTION_1}} | {{RESPONSE_1}} |\n| 2 | {{ACTOR_2}} | {{ACTION_2}} | {{RESPONSE_2}} |\n| 3 | System | - | {{RESPONSE_3}} |\n| 4 | {{ACTOR_3}} | {{ACTION_4}} | {{RESPONSE_4}} |\n| 5 | System | - | {{RESPONSE_5}} |\n| 6 | {{ACTOR_4}} | {{ACTION_6}} | {{RESPONSE_6}} |\n\n**Use Case Ends:** {{END_STATE}}\n\n---\n\n## 6. Alternative Flows\n\n### Alternative Flow 6.1: {{ALT_FLOW_1_NAME}}\n**Condition:** {{ALT_CONDITION_1}}  \n**Branches from:** Step {{BRANCH_STEP_1}} of Main Flow  \n\n| Step | Actor | Action | System Response |\n|------|-------|--------|----------------|\n| 1a | {{ACTOR_A1}} | {{ACTION_A1}} | {{RESPONSE_A1}} |\n| 2a | System | - | {{RESPONSE_A2}} |\n| 3a | {{ACTOR_A3}} | {{ACTION_A3}} | {{RESPONSE_A3}} |\n\n**Rejoins Main Flow at:** Step {{REJOIN_STEP_1}}  \n**Or Ends:** {{ALT_END_1}}  \n\n### Alternative Flow 6.2: {{ALT_FLOW_2_NAME}}\n**Condition:** {{ALT_CONDITION_2}}  \n**Branches from:** Step {{BRANCH_STEP_2}} of Main Flow  \n\n| Step | Actor | Action | System Response |\n|------|-------|--------|----------------|\n| 1b | {{ACTOR_B1}} | {{ACTION_B1}} | {{RESPONSE_B1}} |\n| 2b | System | - | {{RESPONSE_B2}} |\n\n**Rejoins Main Flow at:** Step {{REJOIN_STEP_2}}  \n\n---\n\n## 7. Exception Flows (Error Handling)\n\n### Exception 7.1: {{EXCEPTION_1_NAME}}\n**Error Condition:** {{ERROR_COND_1}}  \n**Occurs at:** Step {{ERROR_STEP_1}} of Main Flow  \n**Severity:** Critical/High/Medium/Low  \n\n**Exception Handling:**\n1. System {{EXCEPTION_ACTION_1}}\n2. System displays error message: \"{{ERROR_MESSAGE_1}}\"\n3. System logs error with code {{ERROR_CODE_1}}\n4. {{RECOVERY_ACTION_1}}\n\n**Recovery:** Return to Step {{RECOVERY_STEP_1}} / End Use Case  \n\n### Exception 7.2: {{EXCEPTION_2_NAME}}\n**Error Condition:** {{ERROR_COND_2}}  \n**Occurs at:** Step {{ERROR_STEP_2}}  \n**Severity:** Critical/High/Medium/Low  \n\n**Exception Handling:**\n1. System {{EXCEPTION_ACTION_2}}\n2. System {{RECOVERY_ACTION_2}}\n\n**Recovery:** {{RECOVERY_STEP_2}}  \n\n---\n\n## 8. Special Requirements\n\n### Performance Requirements\n- Response time: < {{RESPONSE_TIME}}ms\n- Throughput: {{THROUGHPUT}} transactions/second\n- Concurrent users: {{CONCURRENT_USERS}}\n\n### Security Requirements\n- Authentication: {{AUTH_REQUIREMENT}}\n- Authorization: {{AUTHZ_REQUIREMENT}}\n- Data encryption: {{ENCRYPTION_REQUIREMENT}}\n- Audit logging: {{AUDIT_REQUIREMENT}}\n\n### Usability Requirements\n- {{USABILITY_REQ_1}}\n- {{USABILITY_REQ_2}}\n- Accessibility: {{ACCESSIBILITY_STANDARD}}\n\n### Business Rules\n1. {{BUSINESS_RULE_1}}\n2. {{BUSINESS_RULE_2}}\n3. {{BUSINESS_RULE_3}}\n\n---\n\n## 9. Technology & Implementation Constraints\n\n- Platform: {{PLATFORM}}\n- Browser support: {{BROWSERS}}\n- Database: {{DATABASE}}\n- Integration with: {{INTEGRATION_SYSTEMS}}\n- {{CONSTRAINT_1}}\n- {{CONSTRAINT_2}}\n\n---\n\n## 10. Frequency of Use\n\n**Expected Usage:**\n- Per user: {{FREQUENCY_PER_USER}}\n- System-wide: {{FREQUENCY_SYSTEM}}\n- Peak times: {{PEAK_TIMES}}\n- Concurrent sessions: {{CONCURRENT_SESSIONS}}\n\n---\n\n## 11. Open Issues\n\n| Issue ID | Description | Priority | Assigned To | Status |\n|----------|-------------|----------|-------------|--------|\n| {{ISSUE_ID_1}} | {{ISSUE_DESC_1}} | H/M/L | {{ASSIGNEE_1}} | Open/Resolved |\n| {{ISSUE_ID_2}} | {{ISSUE_DESC_2}} | H/M/L | {{ASSIGNEE_2}} | Open/Resolved |\n\n---\n\n## 12. Assumptions\n\n1. {{ASSUMPTION_1}}\n2. {{ASSUMPTION_2}}\n3. {{ASSUMPTION_3}}\n\n---\n\n## 13. Related Use Cases\n\n### Includes\n- {{INCLUDED_UC_1}} ({{UC_ID_1}})\n- {{INCLUDED_UC_2}} ({{UC_ID_2}})\n\n### Extends\n- {{EXTENDED_UC_1}} ({{UC_ID_3}})\n\n### Generalizes\n- {{GENERAL_UC_1}} ({{UC_ID_4}})\n\n---\n\n## 14. UI Mockups\n\n[Insert screenshots or mockup links]\n- Screen 1: {{MOCKUP_LINK_1}}\n- Screen 2: {{MOCKUP_LINK_2}}\n\n---\n\n## 15. Traceability\n\n### Requirements Mapping\n\n| Requirement ID | Description | Status |\n|----------------|-------------|--------|\n| {{REQ_ID_1}} | {{REQ_DESC_1}} | Implemented |\n| {{REQ_ID_2}} | {{REQ_DESC_2}} | Implemented |\n\n### Test Cases\n\n| Test Case ID | Description | Status |\n|--------------|-------------|--------|\n| {{TC_ID_1}} | {{TC_DESC_1}} | Pass/Fail |\n| {{TC_ID_2}} | {{TC_DESC_2}} | Pass/Fail |\n\n---\n\n## 16. Notes & Comments\n\n{{NOTES}}\n\n---\n\n## Approval\n\n| Role | Name | Signature | Date |\n|------|------|-----------|------|\n| Requirement Analyst | {{RA_NAME}} | | {{RA_DATE}} |\n| Product Owner | {{PO_NAME}} | | {{PO_DATE}} |\n| Technical Lead | {{TL_NAME}} | | {{TL_DATE}} |\n",
+  "variables": {
+    "USE_CASE_ID": "UC-001",
+    "USE_CASE_NAME": "User Login",
+    "MODULE": "Authentication",
+    "VERSION": "1.0",
+    "AUTHOR": "Analyst Name",
+    "STATUS": "Draft/Review/Approved",
+    "PRIMARY_ACTOR": "End User",
+    "GOAL": "authenticate and access system",
+    "RESPONSE_TIME": "200",
+    "CONCURRENT_USERS": "1000",
+    "PLATFORM": "Web/Mobile/Desktop"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Documenting user interactions with system",
+      "Defining functional requirements through scenarios",
+      "Creating test scenarios from use cases",
+      "Communicating system behavior to stakeholders",
+      "Supporting system design and architecture"
+    ],
+    "team_composition": [
+      "requirement_analyst",
+      "solution_architect",
+      "backend_developer",
+      "qa_engineer"
+    ],
+    "estimated_time_minutes": 60,
+    "prerequisites": [
+      "System actors identified",
+      "High-level requirements understood",
+      "User workflows documented",
+      "Stakeholder input gathered"
+    ],
+    "related_templates": [
+      "srs-document-template",
+      "user-story-template",
+      "requirements-validation-checklist"
+    ]
+  }
+}

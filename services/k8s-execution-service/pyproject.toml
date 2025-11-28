@@ -1,0 +1,56 @@
+[tool.poetry]
+name = "maestro-k8s-execution-service"
+version = "1.0.0"
+description = "Maestro Platform - Kubernetes Execution Service (Ephemeral Environments)"
+authors = ["Maestro Platform Team"]
+readme = "README.md"
+packages = [{include = "k8s_execution", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+# Web Framework
+fastapi = "^0.104.0"
+uvicorn = {extras = ["standard"], version = "^0.24.0"}
+pydantic = "^2.0.0"
+pydantic-settings = "^2.0.0"
+
+# Kubernetes Client
+kubernetes = "^28.0.0"
+pyyaml = "^6.0"
+
+# Async & Redis
+asyncio = "^3.4.3"
+redis = {extras = ["hiredis"], version = "^5.0.0"}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.0"
+pytest-cov = "^4.1.0"
+black = "^23.0.0"
+flake8 = "^6.1.0"
+mypy = "^1.5.0"
+
+[tool.poetry.scripts]
+k8s-execution = "k8s_execution.main:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

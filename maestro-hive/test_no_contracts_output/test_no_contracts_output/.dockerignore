@@ -1,0 +1,89 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci
+
+# Documentation
+*.md
+docs/
+README.md
+LICENSE
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn
+
+# Build outputs
+dist/
+build/
+coverage/
+.nyc_output/
+
+# Testing
+test/
+tests/
+*.test.js
+*.spec.js
+__tests__/
+.jest
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.test
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Development tools
+.editorconfig
+.eslintrc*
+.prettierrc*
+.stylelintrc*
+tsconfig.json
+jest.config.js
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Kubernetes
+k8s/
+kubernetes/
+*.yaml
+*.yml
+
+# Terraform
+terraform/
+*.tf
+*.tfstate
+*.tfvars
+
+# Other
+.cache/
+.parcel-cache/

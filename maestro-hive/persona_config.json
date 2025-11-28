@@ -1,0 +1,6 @@
+{
+  "default": { "provider": "auto", "tools": [], "fallback": ["openai", "gemini", "anthropic", "mock"], "requires": {"streaming": true} },
+  "backend_developer": { "provider": "openai", "tools": ["fs_read", "fs_write", "echo"], "fallback": ["gemini", "anthropic", "mock"], "requires": {"tool_calling": "native", "json_mode": true} },
+  "qa_engineer": { "provider": "gemini", "tools": ["fs_read", "echo"], "fallback": ["openai", "anthropic", "mock"], "requires": {"json_mode": true} },
+  "security_specialist": { "provider": "anthropic", "tools": ["fs_read"], "fallback": ["openai", "mock"], "requires": {"tool_calling": "limited"} }
+}

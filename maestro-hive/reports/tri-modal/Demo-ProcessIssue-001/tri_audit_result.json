@@ -1,0 +1,56 @@
+{
+  "iteration_id": "Demo-ProcessIssue-001",
+  "verdict": "process_issue",
+  "timestamp": "2025-10-13T19:04:29.345436Z",
+  "dde_passed": false,
+  "bdv_passed": true,
+  "acc_passed": true,
+  "can_deploy": false,
+  "diagnosis": "\u26a0\ufe0f PROCESS ISSUE DETECTED\n\nBDV and ACC passed, but DDE failed.\n\nThis indicates process or pipeline issues. The implementation meets user needs and is architecturally sound, but quality gates or execution compliance checks are failing.\n\nAction: Tune quality gates, fix pipeline configuration, or address missing artifacts/contracts.",
+  "recommendations": [
+    "Complete all DDE nodes in the execution manifest",
+    "Fix failed quality gates (coverage, lint, security scans)",
+    "Lock all interface contracts before dependent work begins"
+  ],
+  "dde_details": {
+    "iteration_id": "Demo-ProcessIssue-001",
+    "passed": false,
+    "score": 0.65,
+    "all_nodes_complete": false,
+    "blocking_gates_passed": false,
+    "artifacts_stamped": true,
+    "lineage_intact": true,
+    "contracts_locked": false,
+    "details": {
+      "issues": [
+        "3 nodes incomplete",
+        "Coverage gate failed: 62% < 70% threshold",
+        "SAST scan found 2 medium severity issues",
+        "2 interface contracts not locked"
+      ]
+    }
+  },
+  "bdv_details": {
+    "iteration_id": "Demo-ProcessIssue-001",
+    "passed": true,
+    "total_scenarios": 25,
+    "passed_scenarios": 25,
+    "failed_scenarios": 0,
+    "flake_rate": 0.05,
+    "contract_mismatches": [],
+    "critical_journeys_covered": true,
+    "details": {}
+  },
+  "acc_details": {
+    "iteration_id": "Demo-ProcessIssue-001",
+    "passed": true,
+    "blocking_violations": 0,
+    "warning_violations": 4,
+    "cycles": [],
+    "coupling_scores": {},
+    "suppressions_have_adrs": true,
+    "coupling_within_limits": true,
+    "no_new_cycles": true,
+    "details": {}
+  }
+}

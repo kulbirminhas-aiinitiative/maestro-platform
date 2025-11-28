@@ -1,0 +1,121 @@
+manifest_version: '1.0'
+name: opentelemetry-nodejs-instrumentation
+description: Comprehensive OpenTelemetry instrumentation for Node.js applications with auto and manual instrumentation, traces, metrics, logs, and exporter configuration.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: observability
+  sdlc_phase: operations
+  language: typescript
+  framework: opentelemetry
+  tags:
+    - opentelemetry
+    - observability
+    - tracing
+    - metrics
+    - nodejs
+    - instrumentation
+  complexity: intermediate
+  use_cases:
+    - distributed-tracing
+    - application-monitoring
+    - performance-analysis
+    - debugging
+  license: MIT
+
+placeholders:
+  - variable: SERVICE_NAME
+    description: Name of the service
+    type: string
+    required: true
+  - variable: SERVICE_VERSION
+    description: Service version
+    type: string
+    required: false
+    default: 1.0.0
+  - variable: ENABLE_AUTO_INSTRUMENTATION
+    description: Enable automatic instrumentation
+    type: boolean
+    required: false
+    default: true
+  - variable: EXPORTER_TYPE
+    description: Telemetry exporter type
+    type: string
+    required: true
+    default: otlp
+    choices: [otlp, jaeger, zipkin, prometheus]
+  - variable: COLLECTOR_ENDPOINT
+    description: OpenTelemetry Collector endpoint
+    type: string
+    required: false
+    default: http://localhost:4318
+
+dependencies:
+  runtime:
+    - '@opentelemetry/sdk-node@0.45.0'
+    - '@opentelemetry/auto-instrumentations-node@0.40.0'
+    - '@opentelemetry/exporter-trace-otlp-http@0.45.0'
+    - '@opentelemetry/exporter-metrics-otlp-http@0.45.0'
+    - '@opentelemetry/instrumentation@0.45.0'
+  build:
+    - typescript@5.0.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - .DS_Store
+
+features:
+  - "Automatic instrumentation for popular frameworks"
+  - "Manual span creation and attributes"
+  - "Distributed tracing with context propagation"
+  - "Metrics collection (counters, gauges, histograms)"
+  - "Log correlation with trace IDs"
+  - "Custom span attributes and events"
+  - "OTLP exporter for traces and metrics"
+  - "Semantic conventions adherence"
+  - "Resource detection (service, host, process)"
+  - "Sampling configuration"
+  - "Batch span processor"
+  - "Performance optimization"
+  - "Environment-specific configuration"
+  - "Health check instrumentation"
+
+configuration:
+  opentelemetry_version: 0.45.0
+  instrumentation:
+    auto: true
+    frameworks:
+      - http
+      - express
+      - fastify
+      - nest
+      - prisma
+      - pg
+      - mongodb
+  exporters:
+    traces: otlp-http
+    metrics: otlp-http
+    logs: otlp-http
+  sampling:
+    type: probabilistic
+    rate: 1.0
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  custom_instrumentation: docs/CUSTOM_INSTRUMENTATION.md
+  examples:
+    - examples/express-app
+    - examples/nestjs-app
+    - examples/custom-spans

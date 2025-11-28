@@ -1,0 +1,31 @@
+{
+  "config_name": "A_FullClaude_REAL",
+  "duration_ms": 0.212,
+  "phases_completed": [
+    "requirements",
+    "architecture",
+    "implementation",
+    "review"
+  ],
+  "phase_durations": {
+    "requirements": 0.09012222290039062,
+    "architecture": 0.024318695068359375,
+    "implementation": 0.025510787963867188,
+    "review": 0.031232833862304688
+  },
+  "providers_used": {
+    "requirements": "claude_agent",
+    "architecture": "claude_agent",
+    "implementation": "claude_agent",
+    "review": "claude_agent"
+  },
+  "total_tokens": 0,
+  "errors": [],
+  "success": true,
+  "outputs_preview": {
+    "requirements": "[claude_agent_stub] Analyze this requirement and create a detailed requirements document\n\nContext:\n\n...",
+    "architecture": "[claude_agent_stub] Design the system architecture\n\nContext:\n[claude_agent_stub] Analyze this requir...",
+    "implementation": "[claude_agent_stub] Create an implementation plan\n\nContext:\n[claude_agent_stub] Design the system ar...",
+    "review": "[claude_agent_stub] Review the implementation plan for quality\n\nContext:\n[claude_agent_stub] Create ..."
+  }
+}

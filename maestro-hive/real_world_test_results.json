@@ -1,27 +1,44 @@
 {
-  "test_date": "2025-10-11T11:02:48.853251",
+  "test_date": "2025-11-28T17:30:09.550523",
   "total_scenarios": 12,
-  "overall_coverage_score": 32.004551587301584,
+  "overall_coverage_score": 0.0,
   "scenarios_well_covered": 0,
-  "scenarios_poorly_covered": 11,
+  "scenarios_poorly_covered": 12,
   "personas_with_no_templates": [
+    "requirement_analyst",
+    "solution_architect",
     "frontend_developer",
     "backend_developer",
     "database_specialist",
-    "qa_engineer"
+    "security_specialist",
+    "qa_engineer",
+    "devops_engineer"
   ],
   "persona_coverage": {
     "requirement_analyst": {
       "scenarios_used": 2,
-      "total_templates": 10,
+      "total_templates": 0,
       "total_high_relevance": 0,
-      "scenarios_with_no_templates": []
+      "scenarios_with_no_templates": [
+        "E-Commerce Platform",
+        "Multi-Tenant SaaS Application"
+      ]
     },
     "solution_architect": {
       "scenarios_used": 9,
-      "total_templates": 45,
+      "total_templates": 0,
       "total_high_relevance": 0,
-      "scenarios_with_no_templates": []
+      "scenarios_with_no_templates": [
+        "E-Commerce Platform",
+        "Multi-Tenant SaaS Application",
+        "Real-Time Chat/Messaging System",
+        "IoT Data Pipeline",
+        "API Gateway with BFF Pattern",
+        "Machine Learning Pipeline",
+        "Event-Driven Microservices",
+        "GDPR/HIPAA Compliance System",
+        "GraphQL API Platform"
+      ]
     },
     "frontend_developer": {
       "scenarios_used": 5,
@@ -70,9 +87,17 @@
     },
     "security_specialist": {
       "scenarios_used": 7,
-      "total_templates": 14,
+      "total_templates": 0,
       "total_high_relevance": 0,
-      "scenarios_with_no_templates": []
+      "scenarios_with_no_templates": [
+        "E-Commerce Platform",
+        "Multi-Tenant SaaS Application",
+        "Real-Time Chat/Messaging System",
+        "API Gateway with BFF Pattern",
+        "Mobile Backend as a Service",
+        "GDPR/HIPAA Compliance System",
+        "Headless CMS"
+      ]
     },
     "qa_engineer": {
       "scenarios_used": 8,
@@ -91,58 +116,77 @@
     },
     "devops_engineer": {
       "scenarios_used": 11,
-      "total_templates": 22,
+      "total_templates": 0,
       "total_high_relevance": 0,
-      "scenarios_with_no_templates": []
+      "scenarios_with_no_templates": [
+        "E-Commerce Platform",
+        "Multi-Tenant SaaS Application",
+        "Real-Time Chat/Messaging System",
+        "IoT Data Pipeline",
+        "API Gateway with BFF Pattern",
+        "Machine Learning Pipeline",
+        "Mobile Backend as a Service",
+        "Event-Driven Microservices",
+        "Serverless API Application",
+        "GraphQL API Platform",
+        "Headless CMS"
+      ]
     }
   },
-  "category_usage": {
-    "documentation": 3,
-    "api": 9,
-    "backend": 9,
-    "authentication": 7,
-    "authorization": 7,
-    "infrastructure": 11,
-    "security": 11
-  },
+  "category_usage": {},
   "missing_categories": [
-    "database",
-    "iot",
-    "architecture",
-    "integration",
-    "testing",
-    "logging",
-    "background-processing",
+    "security",
+    "authorization",
     "error-handling",
+    "real_time",
+    "architecture",
+    "background-processing",
+    "authentication",
+    "testing",
+    "integration",
+    "iot",
     "frontend",
-    "real_time"
+    "api",
+    "infrastructure",
+    "logging",
+    "database"
   ],
   "critical_gaps": [
-    "Personas with ZERO templates: frontend_developer, backend_developer, database_specialist, qa_engineer",
+    "Personas with ZERO templates: requirement_analyst, solution_architect, frontend_developer, backend_developer, database_specialist, security_specialist, qa_engineer, devops_engineer",
+    "solution_architect: Used in 9 scenarios but only 0 total templates (0.0 avg per scenario)",
     "frontend_developer: Used in 5 scenarios but only 0 total templates (0.0 avg per scenario)",
     "backend_developer: Used in 12 scenarios but only 0 total templates (0.0 avg per scenario)",
     "database_specialist: Used in 7 scenarios but only 0 total templates (0.0 avg per scenario)",
+    "security_specialist: Used in 7 scenarios but only 0 total templates (0.0 avg per scenario)",
     "qa_engineer: Used in 8 scenarios but only 0 total templates (0.0 avg per scenario)",
-    "Expected categories with NO templates: architecture, background-processing, database, error-handling, frontend, integration, iot, logging, real_time, testing"
+    "devops_engineer: Used in 11 scenarios but only 0 total templates (0.0 avg per scenario)",
+    "Expected categories with NO templates: api, architecture, authentication, authorization, background-processing, database, error-handling, frontend, infrastructure, integration, iot, logging, real_time, security, testing"
   ],
   "recommendations": [
+    "CRITICAL: Create templates for requirement_analyst (currently has ZERO)",
+    "CRITICAL: Create templates for solution_architect (currently has ZERO)",
     "CRITICAL: Create templates for frontend_developer (currently has ZERO)",
     "CRITICAL: Create templates for backend_developer (currently has ZERO)",
     "CRITICAL: Create templates for database_specialist (currently has ZERO)",
+    "CRITICAL: Create templates for security_specialist (currently has ZERO)",
     "CRITICAL: Create templates for qa_engineer (currently has ZERO)",
-    "HIGH: Expand security_specialist templates (only 2.0 per scenario)",
-    "HIGH: Expand devops_engineer templates (only 2.0 per scenario)",
+    "CRITICAL: Create templates for devops_engineer (currently has ZERO)",
+    "MEDIUM: Create templates for 'api' category",
     "MEDIUM: Create templates for 'architecture' category",
+    "MEDIUM: Create templates for 'authentication' category",
+    "MEDIUM: Create templates for 'authorization' category",
     "MEDIUM: Create templates for 'background-processing' category",
     "MEDIUM: Create templates for 'database' category",
     "MEDIUM: Create templates for 'error-handling' category",
     "MEDIUM: Create templates for 'frontend' category",
+    "MEDIUM: Create templates for 'infrastructure' category",
     "MEDIUM: Create templates for 'integration' category",
     "MEDIUM: Create templates for 'iot' category",
     "MEDIUM: Create templates for 'logging' category",
     "MEDIUM: Create templates for 'real_time' category",
+    "MEDIUM: Create templates for 'security' category",
     "MEDIUM: Create templates for 'testing' category",
-    "REVIEW: 11 scenarios have <40% coverage"
+    "REVIEW: 12 scenarios have <40% coverage"
   ],
   "scenario_results": [
     {
@@ -152,79 +196,40 @@
       "package_recommended": true,
       "package_name": "User Authentication System",
       "package_confidence": 0.6034285714285715,
-      "total_templates_found": 14,
+      "total_templates_found": 0,
       "total_high_relevance": 0,
-      "personas_with_templates": 4,
+      "personas_with_templates": 0,
       "personas_with_high_relevance": 0,
-      "average_relevance": 0.413025,
-      "coverage_score": 33.2605,
+      "average_relevance": 0.0,
+      "coverage_score": 0.0,
       "missing_personas": [
+        "requirement_analyst",
+        "solution_architect",
         "frontend_developer",
         "backend_developer",
         "database_specialist",
-        "qa_engineer"
+        "security_specialist",
+        "qa_engineer",
+        "devops_engineer"
       ],
       "persona_results": {
         "requirement_analyst": {
-          "templates_found": 5,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 5,
-          "average_relevance": 0.39160000000000006,
-          "categories_covered": [
-            "documentation"
-          ],
-          "top_templates": [
-            {
-              "name": "Acceptance Criteria Template (Gherkin BDD Format)",
-              "category": "documentation",
-              "relevance": 0.404,
-              "quality": 91.0
-            },
-            {
-              "name": "Agile Epic Template with Story Mapping",
-              "category": "documentation",
-              "relevance": 0.4,
-              "quality": 88.0
-            },
-            {
-              "name": "Stakeholder Analysis Matrix with Power-Interest Grid",
-              "category": "documentation",
-              "relevance": 0.39,
-              "quality": 88.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "solution_architect": {
-          "templates_found": 5,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 5,
-          "average_relevance": 0.41899999999999993,
-          "categories_covered": [
-            "api",
-            "backend"
-          ],
-          "top_templates": [
-            {
-              "name": "API Gateway with Backend-for-Frontend (BFF) Pattern",
-              "category": "api",
-              "relevance": 0.449,
-              "quality": 90.0
-            },
-            {
-              "name": "Event-Driven Architecture with Event Sourcing & CQRS",
-              "category": "backend",
-              "relevance": 0.417,
-              "quality": 91.0
-            },
-            {
-              "name": "Multi-Tenant SaaS Architecture (Silo/Bridge/Pool Models)",
-              "category": "backend",
-              "relevance": 0.414,
-              "quality": 93.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "frontend_developer": {
           "templates_found": 0,
@@ -254,29 +259,13 @@
           "top_templates": []
         },
         "security_specialist": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.4195,
-          "categories_covered": [
-            "authentication",
-            "authorization"
-          ],
-          "top_templates": [
-            {
-              "name": "JWT Authentication with Refresh Tokens & Token Rotation",
-              "category": "authentication",
-              "relevance": 0.432,
-              "quality": 94.0
-            },
-            {
-              "name": "Role-Based Access Control (RBAC) Implementation",
-              "category": "authorization",
-              "relevance": 0.407,
-              "quality": 93.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "qa_engineer": {
           "templates_found": 0,
@@ -288,29 +277,13 @@
           "top_templates": []
         },
         "devops_engineer": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.422,
-          "categories_covered": [
-            "infrastructure",
-            "security"
-          ],
-          "top_templates": [
-            {
-              "name": "Docker Compose Full Stack Multi-Service Setup",
-              "category": "infrastructure",
-              "relevance": 0.426,
-              "quality": 93.0
-            },
-            {
-              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
-              "category": "security",
-              "relevance": 0.418,
-              "quality": 94.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         }
       }
     },
@@ -321,78 +294,39 @@
       "package_recommended": true,
       "package_name": "E-Commerce Platform",
       "package_confidence": 0.6665974025974027,
-      "total_templates_found": 14,
+      "total_templates_found": 0,
       "total_high_relevance": 0,
-      "personas_with_templates": 4,
+      "personas_with_templates": 0,
       "personas_with_high_relevance": 0,
-      "average_relevance": 0.415225,
-      "coverage_score": 37.41164285714285,
+      "average_relevance": 0.0,
+      "coverage_score": 0.0,
       "missing_personas": [
+        "requirement_analyst",
+        "solution_architect",
         "backend_developer",
         "frontend_developer",
-        "database_specialist"
+        "database_specialist",
+        "security_specialist",
+        "devops_engineer"
       ],
       "persona_results": {
         "requirement_analyst": {
-          "templates_found": 5,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 5,
-          "average_relevance": 0.3896,
-          "categories_covered": [
-            "documentation"
-          ],
-          "top_templates": [
-            {
-              "name": "Acceptance Criteria Template (Gherkin BDD Format)",
-              "category": "documentation",
-              "relevance": 0.399,
-              "quality": 91.0
-            },
-            {
-              "name": "Agile Epic Template with Story Mapping",
-              "category": "documentation",
-              "relevance": 0.395,
-              "quality": 88.0
-            },
-            {
-              "name": "Stakeholder Analysis Matrix with Power-Interest Grid",
-              "category": "documentation",
-              "relevance": 0.395,
-              "quality": 88.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "solution_architect": {
-          "templates_found": 5,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 5,
-          "average_relevance": 0.4258,
-          "categories_covered": [
-            "backend",
-            "api"
-          ],
-          "top_templates": [
-            {
-              "name": "Multi-Tenant SaaS Architecture (Silo/Bridge/Pool Models)",
-              "category": "backend",
-              "relevance": 0.494,
-              "quality": 93.0
-            },
-            {
-              "name": "API Gateway with Backend-for-Frontend (BFF) Pattern",
-              "category": "api",
-              "relevance": 0.425,
-              "quality": 90.0
-            },
-            {
-              "name": "Microservices Circuit Breaker Pattern (Resilience4j/Hystrix)",
-              "category": "backend",
-              "relevance": 0.404,
-              "quality": 92.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "backend_developer": {
           "templates_found": 0,
@@ -422,54 +356,22 @@
           "top_templates": []
         },
         "security_specialist": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.4325,
-          "categories_covered": [
-            "authorization",
-            "authentication"
-          ],
-          "top_templates": [
-            {
-              "name": "Role-Based Access Control (RBAC) Implementation",
-              "category": "authorization",
-              "relevance": 0.442,
-              "quality": 93.0
-            },
-            {
-              "name": "JWT Authentication with Refresh Tokens & Token Rotation",
-              "category": "authentication",
-              "relevance": 0.423,
-              "quality": 94.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "devops_engineer": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.413,
-          "categories_covered": [
-            "security",
-            "infrastructure"
-          ],
-          "top_templates": [
-            {
-              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
-              "category": "security",
-              "relevance": 0.414,
-              "quality": 94.0
-            },
-            {
-              "name": "Docker Compose Full Stack Multi-Service Setup",
-              "category": "infrastructure",
-              "relevance": 0.412,
-              "quality": 93.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         }
       }
     },
@@ -480,49 +382,30 @@
       "package_recommended": true,
       "package_name": "Social Media Application",
       "package_confidence": 0.6053333333333334,
-      "total_templates_found": 9,
+      "total_templates_found": 0,
       "total_high_relevance": 0,
-      "personas_with_templates": 3,
+      "personas_with_templates": 0,
       "personas_with_high_relevance": 0,
-      "average_relevance": 0.41473333333333334,
-      "coverage_score": 31.151809523809526,
+      "average_relevance": 0.0,
+      "coverage_score": 0.0,
       "missing_personas": [
+        "solution_architect",
         "backend_developer",
         "frontend_developer",
         "database_specialist",
-        "qa_engineer"
+        "security_specialist",
+        "qa_engineer",
+        "devops_engineer"
       ],
       "persona_results": {
         "solution_architect": {
-          "templates_found": 5,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 5,
-          "average_relevance": 0.4082,
-          "categories_covered": [
-            "backend",
-            "api"
-          ],
-          "top_templates": [
-            {
-              "name": "Microservices Circuit Breaker Pattern (Resilience4j/Hystrix)",
-              "category": "backend",
-              "relevance": 0.411,
-              "quality": 92.0
-            },
-            {
-              "name": "CQRS (Command Query Responsibility Segregation) Pattern",
-              "category": "backend",
-              "relevance": 0.411,
-              "quality": 90.0
-            },
-            {
-              "name": "Event-Driven Architecture with Event Sourcing & CQRS",
-              "category": "backend",
-              "relevance": 0.41,
-              "quality": 91.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "backend_developer": {
           "templates_found": 0,
@@ -552,29 +435,13 @@
           "top_templates": []
         },
         "security_specialist": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.421,
-          "categories_covered": [
-            "authorization",
-            "authentication"
-          ],
-          "top_templates": [
-            {
-              "name": "Role-Based Access Control (RBAC) Implementation",
-              "category": "authorization",
-              "relevance": 0.421,
-              "quality": 93.0
-            },
-            {
-              "name": "JWT Authentication with Refresh Tokens & Token Rotation",
-              "category": "authentication",
-              "relevance": 0.421,
-              "quality": 94.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "qa_engineer": {
           "templates_found": 0,
@@ -586,29 +453,13 @@
           "top_templates": []
         },
         "devops_engineer": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.415,
-          "categories_covered": [
-            "infrastructure",
-            "security"
-          ],
-          "top_templates": [
-            {
-              "name": "Docker Compose Full Stack Multi-Service Setup",
-              "category": "infrastructure",
-              "relevance": 0.42,
-              "quality": 93.0
-            },
-            {
-              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
-              "category": "security",
-              "relevance": 0.41,
-              "quality": 94.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         }
       }
     },
@@ -619,48 +470,28 @@
       "package_recommended": true,
       "package_name": "User Authentication System",
       "package_confidence": 0.6354285714285716,
-      "total_templates_found": 7,
+      "total_templates_found": 0,
       "total_high_relevance": 0,
-      "personas_with_templates": 2,
+      "personas_with_templates": 0,
       "personas_with_high_relevance": 0,
-      "average_relevance": 0.4183,
-      "coverage_score": 27.699333333333332,
+      "average_relevance": 0.0,
+      "coverage_score": 0.0,
       "missing_personas": [
+        "solution_architect",
         "backend_developer",
         "database_specialist",
+        "devops_engineer",
         "qa_engineer"
       ],
       "persona_results": {
         "solution_architect": {
-          "templates_found": 5,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 5,
-          "average_relevance": 0.41859999999999997,
-          "categories_covered": [
-            "api",
-            "backend"
-          ],
-          "top_templates": [
-            {
-              "name": "API Gateway with Backend-for-Frontend (BFF) Pattern",
-              "category": "api",
-              "relevance": 0.451,
-              "quality": 90.0
-            },
-            {
-              "name": "Microservices Circuit Breaker Pattern (Resilience4j/Hystrix)",
-              "category": "backend",
-              "relevance": 0.419,
-              "quality": 92.0
-            },
-            {
-              "name": "CQRS (Command Query Responsibility Segregation) Pattern",
-              "category": "backend",
-              "relevance": 0.408,
-              "quality": 90.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "backend_developer": {
           "templates_found": 0,
@@ -681,29 +512,13 @@
           "top_templates": []
         },
         "devops_engineer": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.418,
-          "categories_covered": [
-            "security",
-            "infrastructure"
-          ],
-          "top_templates": [
-            {
-              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
-              "category": "security",
-              "relevance": 0.419,
-              "quality": 94.0
-            },
-            {
-              "name": "Docker Compose Full Stack Multi-Service Setup",
-              "category": "infrastructure",
-              "relevance": 0.417,
-              "quality": 93.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "qa_engineer": {
           "templates_found": 0,
@@ -723,46 +538,27 @@
       "package_recommended": true,
       "package_name": "E-Commerce Platform",
       "package_confidence": 0.6388571428571429,
-      "total_templates_found": 9,
+      "total_templates_found": 0,
       "total_high_relevance": 0,
-      "personas_with_templates": 3,
+      "personas_with_templates": 0,
       "personas_with_high_relevance": 0,
-      "average_relevance": 0.4321333333333333,
-      "coverage_score": 45.309333333333335,
+      "average_relevance": 0.0,
+      "coverage_score": 0.0,
       "missing_personas": [
-        "backend_developer"
+        "solution_architect",
+        "backend_developer",
+        "security_specialist",
+        "devops_engineer"
       ],
       "persona_results": {
         "solution_architect": {
-          "templates_found": 5,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 5,
-          "average_relevance": 0.4364,
-          "categories_covered": [
-            "api",
-            "backend"
-          ],
-          "top_templates": [
-            {
-              "name": "API Gateway with Backend-for-Frontend (BFF) Pattern",
-              "category": "api",
-              "relevance": 0.543,
-              "quality": 90.0
-            },
-            {
-              "name": "Microservices Circuit Breaker Pattern (Resilience4j/Hystrix)",
-              "category": "backend",
-              "relevance": 0.425,
-              "quality": 92.0
-            },
-            {
-              "name": "CQRS (Command Query Responsibility Segregation) Pattern",
-              "category": "backend",
-              "relevance": 0.405,
-              "quality": 90.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "backend_developer": {
           "templates_found": 0,
@@ -774,54 +570,22 @@
           "top_templates": []
         },
         "security_specialist": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.44999999999999996,
-          "categories_covered": [
-            "authentication",
-            "authorization"
-          ],
-          "top_templates": [
-            {
-              "name": "JWT Authentication with Refresh Tokens & Token Rotation",
-              "category": "authentication",
-              "relevance": 0.485,
-              "quality": 94.0
-            },
-            {
-              "name": "Role-Based Access Control (RBAC) Implementation",
-              "category": "authorization",
-              "relevance": 0.415,
-              "quality": 93.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "devops_engineer": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.41000000000000003,
-          "categories_covered": [
-            "infrastructure",
-            "security"
-          ],
-          "top_templates": [
-            {
-              "name": "Docker Compose Full Stack Multi-Service Setup",
-              "category": "infrastructure",
-              "relevance": 0.414,
-              "quality": 93.0
-            },
-            {
-              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
-              "category": "security",
-              "relevance": 0.406,
-              "quality": 94.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         }
       }
     },
@@ -832,47 +596,27 @@
       "package_recommended": true,
       "package_name": "E-Commerce Platform",
       "package_confidence": 0.6377142857142858,
-      "total_templates_found": 7,
+      "total_templates_found": 0,
       "total_high_relevance": 0,
-      "personas_with_templates": 2,
+      "personas_with_templates": 0,
       "personas_with_high_relevance": 0,
-      "average_relevance": 0.41935,
-      "coverage_score": 32.387,
+      "average_relevance": 0.0,
+      "coverage_score": 0.0,
       "missing_personas": [
+        "solution_architect",
         "backend_developer",
+        "devops_engineer",
         "qa_engineer"
       ],
       "persona_results": {
         "solution_architect": {
-          "templates_found": 5,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 5,
-          "average_relevance": 0.41419999999999996,
-          "categories_covered": [
-            "backend",
-            "api"
-          ],
-          "top_templates": [
-            {
-              "name": "CQRS (Command Query Responsibility Segregation) Pattern",
-              "category": "backend",
-              "relevance": 0.42,
-              "quality": 90.0
-            },
-            {
-              "name": "Event-Driven Architecture with Event Sourcing & CQRS",
-              "category": "backend",
-              "relevance": 0.42,
-              "quality": 91.0
-            },
-            {
-              "name": "API Gateway with Backend-for-Frontend (BFF) Pattern",
-              "category": "api",
-              "relevance": 0.413,
-              "quality": 90.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "backend_developer": {
           "templates_found": 0,
@@ -884,29 +628,13 @@
           "top_templates": []
         },
         "devops_engineer": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.4245,
-          "categories_covered": [
-            "infrastructure",
-            "security"
-          ],
-          "top_templates": [
-            {
-              "name": "Docker Compose Full Stack Multi-Service Setup",
-              "category": "infrastructure",
-              "relevance": 0.429,
-              "quality": 93.0
-            },
-            {
-              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
-              "category": "security",
-              "relevance": 0.42,
-              "quality": 94.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "qa_engineer": {
           "templates_found": 0,
@@ -926,14 +654,16 @@
       "package_recommended": true,
       "package_name": "User Authentication System",
       "package_confidence": 0.6171428571428572,
-      "total_templates_found": 4,
+      "total_templates_found": 0,
       "total_high_relevance": 0,
-      "personas_with_templates": 2,
+      "personas_with_templates": 0,
       "personas_with_high_relevance": 0,
-      "average_relevance": 0.41725,
-      "coverage_score": 33.345,
+      "average_relevance": 0.0,
+      "coverage_score": 0.0,
       "missing_personas": [
         "backend_developer",
+        "security_specialist",
+        "devops_engineer",
         "qa_engineer"
       ],
       "persona_results": {
@@ -947,54 +677,22 @@
           "top_templates": []
         },
         "security_specialist": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.4265,
-          "categories_covered": [
-            "authentication",
-            "authorization"
-          ],
-          "top_templates": [
-            {
-              "name": "JWT Authentication with Refresh Tokens & Token Rotation",
-              "category": "authentication",
-              "relevance": 0.445,
-              "quality": 94.0
-            },
-            {
-              "name": "Role-Based Access Control (RBAC) Implementation",
-              "category": "authorization",
-              "relevance": 0.408,
-              "quality": 93.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "devops_engineer": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.408,
-          "categories_covered": [
-            "security",
-            "infrastructure"
-          ],
-          "top_templates": [
-            {
-              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
-              "category": "security",
-              "relevance": 0.409,
-              "quality": 94.0
-            },
-            {
-              "name": "Docker Compose Full Stack Multi-Service Setup",
-              "category": "infrastructure",
-              "relevance": 0.407,
-              "quality": 93.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "qa_engineer": {
           "templates_found": 0,
@@ -1014,48 +712,28 @@
       "package_recommended": true,
       "package_name": "E-Commerce Platform",
       "package_confidence": 0.5885714285714285,
-      "total_templates_found": 7,
+      "total_templates_found": 0,
       "total_high_relevance": 0,
-      "personas_with_templates": 2,
+      "personas_with_templates": 0,
       "personas_with_high_relevance": 0,
-      "average_relevance": 0.4757,
-      "coverage_score": 28.84733333333333,
+      "average_relevance": 0.0,
+      "coverage_score": 0.0,
       "missing_personas": [
+        "solution_architect",
         "backend_developer",
         "database_specialist",
+        "devops_engineer",
         "qa_engineer"
       ],
       "persona_results": {
         "solution_architect": {
-          "templates_found": 5,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 5,
-          "average_relevance": 0.5134,
-          "categories_covered": [
-            "backend",
-            "api"
-          ],
-          "top_templates": [
-            {
-              "name": "Saga Pattern for Distributed Transactions (Orchestration)",
-              "category": "backend",
-              "relevance": 0.57,
-              "quality": 91.0
-            },
-            {
-              "name": "Event-Driven Architecture with Event Sourcing & CQRS",
-              "category": "backend",
-              "relevance": 0.57,
-              "quality": 91.0
-            },
-            {
-              "name": "CQRS (Command Query Responsibility Segregation) Pattern",
-              "category": "backend",
-              "relevance": 0.478,
-              "quality": 90.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "backend_developer": {
           "templates_found": 0,
@@ -1076,29 +754,13 @@
           "top_templates": []
         },
         "devops_engineer": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.438,
-          "categories_covered": [
-            "infrastructure",
-            "security"
-          ],
-          "top_templates": [
-            {
-              "name": "Docker Compose Full Stack Multi-Service Setup",
-              "category": "infrastructure",
-              "relevance": 0.462,
-              "quality": 93.0
-            },
-            {
-              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
-              "category": "security",
-              "relevance": 0.414,
-              "quality": 94.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "qa_engineer": {
           "templates_found": 0,
@@ -1118,74 +780,37 @@
       "package_recommended": true,
       "package_name": "User Authentication System",
       "package_confidence": 0.5931428571428572,
-      "total_templates_found": 7,
+      "total_templates_found": 0,
       "total_high_relevance": 0,
-      "personas_with_templates": 2,
+      "personas_with_templates": 0,
       "personas_with_high_relevance": 0,
-      "average_relevance": 0.4286,
-      "coverage_score": 29.572,
+      "average_relevance": 0.0,
+      "coverage_score": 0.0,
       "missing_personas": [
+        "solution_architect",
+        "security_specialist",
         "backend_developer",
         "database_specialist",
         "qa_engineer"
       ],
       "persona_results": {
         "solution_architect": {
-          "templates_found": 5,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 5,
-          "average_relevance": 0.4152,
-          "categories_covered": [
-            "documentation",
-            "backend",
-            "api"
-          ],
-          "top_templates": [
-            {
-              "name": "Security Architecture & Threat Modeling Template",
-              "category": "documentation",
-              "relevance": 0.455,
-              "quality": 92.0
-            },
-            {
-              "name": "Multi-Tenant SaaS Architecture (Silo/Bridge/Pool Models)",
-              "category": "backend",
-              "relevance": 0.416,
-              "quality": 93.0
-            },
-            {
-              "name": "Scalability Planning & Capacity Assessment Template",
-              "category": "documentation",
-              "relevance": 0.404,
-              "quality": 88.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "security_specialist": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.442,
-          "categories_covered": [
-            "authorization",
-            "authentication"
-          ],
-          "top_templates": [
-            {
-              "name": "Role-Based Access Control (RBAC) Implementation",
-              "category": "authorization",
-              "relevance": 0.464,
-              "quality": 93.0
-            },
-            {
-              "name": "JWT Authentication with Refresh Tokens & Token Rotation",
-              "category": "authentication",
-              "relevance": 0.42,
-              "quality": 94.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "backend_developer": {
           "templates_found": 0,
@@ -1223,14 +848,15 @@
       "package_recommended": true,
       "package_name": "Social Media Application",
       "package_confidence": 0.3653333333333334,
-      "total_templates_found": 2,
+      "total_templates_found": 0,
       "total_high_relevance": 0,
-      "personas_with_templates": 1,
+      "personas_with_templates": 0,
       "personas_with_high_relevance": 0,
-      "average_relevance": 0.419,
-      "coverage_score": 23.71333333333333,
+      "average_relevance": 0.0,
+      "coverage_score": 0.0,
       "missing_personas": [
         "backend_developer",
+        "devops_engineer",
         "qa_engineer"
       ],
       "persona_results": {
@@ -1244,29 +870,13 @@
           "top_templates": []
         },
         "devops_engineer": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.419,
-          "categories_covered": [
-            "security",
-            "infrastructure"
-          ],
-          "top_templates": [
-            {
-              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
-              "category": "security",
-              "relevance": 0.42,
-              "quality": 94.0
-            },
-            {
-              "name": "Docker Compose Full Stack Multi-Service Setup",
-              "category": "infrastructure",
-              "relevance": 0.418,
-              "quality": 93.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "qa_engineer": {
           "templates_found": 0,
@@ -1286,47 +896,27 @@
       "package_recommended": true,
       "package_name": "E-Commerce Platform",
       "package_confidence": 0.6068571428571429,
-      "total_templates_found": 7,
+      "total_templates_found": 0,
       "total_high_relevance": 0,
-      "personas_with_templates": 2,
+      "personas_with_templates": 0,
       "personas_with_high_relevance": 0,
-      "average_relevance": 0.43245,
-      "coverage_score": 31.982333333333333,
+      "average_relevance": 0.0,
+      "coverage_score": 0.0,
       "missing_personas": [
+        "solution_architect",
         "backend_developer",
-        "frontend_developer"
+        "frontend_developer",
+        "devops_engineer"
       ],
       "persona_results": {
         "solution_architect": {
-          "templates_found": 5,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 5,
-          "average_relevance": 0.4384,
-          "categories_covered": [
-            "api",
-            "backend"
-          ],
-          "top_templates": [
-            {
-              "name": "API Gateway with Backend-for-Frontend (BFF) Pattern",
-              "category": "api",
-              "relevance": 0.473,
-              "quality": 90.0
-            },
-            {
-              "name": "Saga Pattern for Distributed Transactions (Orchestration)",
-              "category": "backend",
-              "relevance": 0.444,
-              "quality": 91.0
-            },
-            {
-              "name": "Microservices Circuit Breaker Pattern (Resilience4j/Hystrix)",
-              "category": "backend",
-              "relevance": 0.429,
-              "quality": 92.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "backend_developer": {
           "templates_found": 0,
@@ -1347,29 +937,13 @@
           "top_templates": []
         },
         "devops_engineer": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.4265,
-          "categories_covered": [
-            "infrastructure",
-            "security"
-          ],
-          "top_templates": [
-            {
-              "name": "Docker Compose Full Stack Multi-Service Setup",
-              "category": "infrastructure",
-              "relevance": 0.443,
-              "quality": 93.0
-            },
-            {
-              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
-              "category": "security",
-              "relevance": 0.41,
-              "quality": 94.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         }
       }
     },
@@ -1380,16 +954,18 @@
       "package_recommended": true,
       "package_name": "E-Commerce Platform",
       "package_confidence": 0.8771428571428572,
-      "total_templates_found": 4,
+      "total_templates_found": 0,
       "total_high_relevance": 0,
-      "personas_with_templates": 2,
+      "personas_with_templates": 0,
       "personas_with_high_relevance": 0,
-      "average_relevance": 0.41874999999999996,
-      "coverage_score": 29.375,
+      "average_relevance": 0.0,
+      "coverage_score": 0.0,
       "missing_personas": [
         "backend_developer",
         "frontend_developer",
-        "database_specialist"
+        "database_specialist",
+        "security_specialist",
+        "devops_engineer"
       ],
       "persona_results": {
         "backend_developer": {
@@ -1420,54 +996,22 @@
           "top_templates": []
         },
         "security_specialist": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.4125,
-          "categories_covered": [
-            "authentication",
-            "authorization"
-          ],
-          "top_templates": [
-            {
-              "name": "JWT Authentication with Refresh Tokens & Token Rotation",
-              "category": "authentication",
-              "relevance": 0.413,
-              "quality": 94.0
-            },
-            {
-              "name": "Role-Based Access Control (RBAC) Implementation",
-              "category": "authorization",
-              "relevance": 0.412,
-              "quality": 93.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         },
         "devops_engineer": {
-          "templates_found": 2,
+          "templates_found": 0,
           "templates_high_relevance": 0,
           "templates_medium_relevance": 0,
-          "templates_low_relevance": 2,
-          "average_relevance": 0.425,
-          "categories_covered": [
-            "security",
-            "infrastructure"
-          ],
-          "top_templates": [
-            {
-              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
-              "category": "security",
-              "relevance": 0.426,
-              "quality": 94.0
-            },
-            {
-              "name": "Docker Compose Full Stack Multi-Service Setup",
-              "category": "infrastructure",
-              "relevance": 0.424,
-              "quality": 93.0
-            }
-          ]
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
         }
       }
     }

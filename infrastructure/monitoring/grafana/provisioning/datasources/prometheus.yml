@@ -1,0 +1,58 @@
+# Grafana Datasources - Auto-provisioned
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://maestro-prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: "15s"
+      queryTimeout: "60s"
+      httpMethod: POST
+
+  - name: PostgreSQL - Quality Fabric
+    type: postgres
+    access: proxy
+    url: maestro-postgres:5432
+    database: quality_fabric
+    user: quality_fabric
+    secureJsonData:
+      password: qf_db_secure_2025
+    jsonData:
+      sslmode: "disable"
+      maxOpenConns: 10
+      maxIdleConns: 10
+      connMaxLifetime: 14400
+
+  - name: PostgreSQL - Maestro V2
+    type: postgres
+    access: proxy
+    url: maestro-postgres:5432
+    database: maestro_v2
+    user: maestro_v2
+    secureJsonData:
+      password: mv2_db_secure_2025
+    jsonData:
+      sslmode: "disable"
+
+  - name: PostgreSQL - Maestro Frontend
+    type: postgres
+    access: proxy
+    url: maestro-postgres:5432
+    database: maestro_frontend
+    user: maestro_frontend
+    secureJsonData:
+      password: mfe_db_secure_2025
+    jsonData:
+      sslmode: "disable"
+
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://maestro-jaeger:16686
+    jsonData:
+      tracesToLogs:
+        datasourceUid: 'loki'

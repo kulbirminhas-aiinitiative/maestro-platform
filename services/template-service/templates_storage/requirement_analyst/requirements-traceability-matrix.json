@@ -1,0 +1,77 @@
+{
+  "metadata": {
+    "id": "requirements-traceability-matrix-v1",
+    "name": "Requirements Traceability Matrix (RTM)",
+    "category": "documentation",
+    "language": "markdown",
+    "framework": "requirements",
+    "description": "Comprehensive Requirements Traceability Matrix for tracking requirements from inception through design, development, testing, and deployment with bidirectional traceability",
+    "tags": [
+      "traceability",
+      "requirements",
+      "rtm",
+      "testing",
+      "verification",
+      "coverage",
+      "quality-assurance"
+    ],
+    "quality_score": 90.0,
+    "security_score": 73.0,
+    "performance_score": 70.0,
+    "maintainability_score": 94.0,
+    "test_coverage": 92.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T10:00:00.000000",
+    "updated_at": "2025-10-10T10:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "requirement_analyst"
+  },
+  "content": "# Requirements Traceability Matrix (RTM)\n\n## Document Information\n\n**Project:** {{PROJECT_NAME}}  \n**Version:** {{VERSION}}  \n**Date:** {{DATE}}  \n**Owner:** {{OWNER}}  \n**Status:** {{STATUS}}  \n\n---\n\n## 1. Executive Summary\n\n### Coverage Statistics\n\n| Metric | Count | Percentage |\n|--------|-------|------------|\n| Total Requirements | {{TOTAL_REQS}} | 100% |\n| Requirements with Design Trace | {{DESIGN_TRACE}} | {{DESIGN_PCT}}% |\n| Requirements with Code Trace | {{CODE_TRACE}} | {{CODE_PCT}}% |\n| Requirements with Test Trace | {{TEST_TRACE}} | {{TEST_PCT}}% |\n| Fully Traced Requirements | {{FULL_TRACE}} | {{FULL_PCT}}% |\n| Orphaned Requirements | {{ORPHANED}} | {{ORPHAN_PCT}}% |\n\n### Status Distribution\n\n| Status | Count | Percentage |\n|--------|-------|------------|\n| Implemented & Tested | {{IMPL_TESTED}} | {{IT_PCT}}% |\n| Implemented (Not Tested) | {{IMPL_NOT_TESTED}} | {{INT_PCT}}% |\n| In Development | {{IN_DEV}} | {{DEV_PCT}}% |\n| Not Started | {{NOT_STARTED}} | {{NS_PCT}}% |\n| Deferred | {{DEFERRED}} | {{DEF_PCT}}% |\n| Cancelled | {{CANCELLED}} | {{CANC_PCT}}% |\n\n---\n\n## 2. Traceability Matrix\n\n### Functional Requirements\n\n| Req ID | Requirement | Priority | Source | Design Doc | Code Module | Test Case(s) | Status | Owner | Notes |\n|--------|-------------|----------|--------|------------|-------------|--------------|--------|-------|-------|\n| FR-001 | {{REQ_1}} | High | {{SOURCE_1}} | {{DESIGN_1}} | {{CODE_1}} | {{TEST_1}} | {{STATUS_1}} | {{OWNER_1}} | {{NOTES_1}} |\n| FR-002 | {{REQ_2}} | High | {{SOURCE_2}} | {{DESIGN_2}} | {{CODE_2}} | {{TEST_2}} | {{STATUS_2}} | {{OWNER_2}} | {{NOTES_2}} |\n| FR-003 | {{REQ_3}} | Medium | {{SOURCE_3}} | {{DESIGN_3}} | {{CODE_3}} | {{TEST_3}} | {{STATUS_3}} | {{OWNER_3}} | {{NOTES_3}} |\n| FR-004 | {{REQ_4}} | Medium | {{SOURCE_4}} | {{DESIGN_4}} | {{CODE_4}} | {{TEST_4}} | {{STATUS_4}} | {{OWNER_4}} | {{NOTES_4}} |\n| FR-005 | {{REQ_5}} | Low | {{SOURCE_5}} | {{DESIGN_5}} | {{CODE_5}} | {{TEST_5}} | {{STATUS_5}} | {{OWNER_5}} | {{NOTES_5}} |\n\n### Non-Functional Requirements\n\n| Req ID | Requirement | Priority | Source | Design Doc | Implementation | Test Case(s) | Verification Method | Status | Notes |\n|--------|-------------|----------|--------|------------|----------------|--------------|---------------------|--------|-------|\n| NFR-P-001 | Response time < {{RESP_TIME}}ms | High | {{SOURCE_P1}} | {{DESIGN_P1}} | {{CODE_P1}} | {{TEST_P1}} | Performance Test | {{STATUS_P1}} | {{NOTES_P1}} |\n| NFR-S-001 | Data encryption at rest | High | {{SOURCE_S1}} | {{DESIGN_S1}} | {{CODE_S1}} | {{TEST_S1}} | Security Audit | {{STATUS_S1}} | {{NOTES_S1}} |\n| NFR-R-001 | {{UPTIME}}% uptime | High | {{SOURCE_R1}} | {{DESIGN_R1}} | {{CODE_R1}} | {{TEST_R1}} | Monitoring | {{STATUS_R1}} | {{NOTES_R1}} |\n| NFR-SC-001 | Scale to {{USERS}} users | Medium | {{SOURCE_SC1}} | {{DESIGN_SC1}} | {{CODE_SC1}} | {{TEST_SC1}} | Load Test | {{STATUS_SC1}} | {{NOTES_SC1}} |\n| NFR-U-001 | WCAG 2.1 AA compliance | Medium | {{SOURCE_U1}} | {{DESIGN_U1}} | {{CODE_U1}} | {{TEST_U1}} | Accessibility Audit | {{STATUS_U1}} | {{NOTES_U1}} |\n\n---\n\n## 3. Forward Traceability\n\n### Business Requirement → Functional Requirement\n\n| Business Req | Description | Functional Req(s) | Status |\n|--------------|-------------|-------------------|--------|\n| BR-001 | {{BR_1}} | FR-001, FR-002, FR-003 | {{BR1_STATUS}} |\n| BR-002 | {{BR_2}} | FR-004, FR-005 | {{BR2_STATUS}} |\n| BR-003 | {{BR_3}} | FR-006, FR-007, FR-008, FR-009 | {{BR3_STATUS}} |\n\n### Functional Requirement → Design Element\n\n| Func Req | Design Document | Section | Architecture Component | Status |\n|----------|-----------------|---------|------------------------|--------|\n| FR-001 | {{DESIGN_DOC_1}} | {{SECTION_1}} | {{COMPONENT_1}} | {{FD1_STATUS}} |\n| FR-002 | {{DESIGN_DOC_2}} | {{SECTION_2}} | {{COMPONENT_2}} | {{FD2_STATUS}} |\n| FR-003 | {{DESIGN_DOC_3}} | {{SECTION_3}} | {{COMPONENT_3}} | {{FD3_STATUS}} |\n\n### Design Element → Code Module\n\n| Design Element | Code Module/File | Line Range | Repository | Branch | Commit |\n|----------------|------------------|------------|------------|--------|--------|\n| {{DESIGN_ELEM_1}} | {{FILE_1}} | {{LINES_1}} | {{REPO_1}} | {{BRANCH_1}} | {{COMMIT_1}} |\n| {{DESIGN_ELEM_2}} | {{FILE_2}} | {{LINES_2}} | {{REPO_2}} | {{BRANCH_2}} | {{COMMIT_2}} |\n| {{DESIGN_ELEM_3}} | {{FILE_3}} | {{LINES_3}} | {{REPO_3}} | {{BRANCH_3}} | {{COMMIT_3}} |\n\n### Code Module → Test Case\n\n| Code Module | Unit Test(s) | Integration Test(s) | E2E Test(s) | Coverage % | Status |\n|-------------|--------------|---------------------|-------------|------------|--------|\n| {{MODULE_1}} | {{UNIT_1}} | {{INTEG_1}} | {{E2E_1}} | {{COV_1}}% | {{MOD1_STATUS}} |\n| {{MODULE_2}} | {{UNIT_2}} | {{INTEG_2}} | {{E2E_2}} | {{COV_2}}% | {{MOD2_STATUS}} |\n| {{MODULE_3}} | {{UNIT_3}} | {{INTEG_3}} | {{E2E_3}} | {{COV_3}}% | {{MOD3_STATUS}} |\n\n---\n\n## 4. Backward Traceability\n\n### Test Case → Requirement\n\n| Test Case ID | Test Type | Requirement(s) Validated | Result | Last Executed |\n|--------------|-----------|--------------------------|--------|---------------|\n| TC-001 | Unit | FR-001 | Pass | {{EXEC_DATE_1}} |\n| TC-002 | Unit | FR-002, FR-003 | Pass | {{EXEC_DATE_2}} |\n| TC-003 | Integration | FR-001, FR-002, FR-004 | Pass | {{EXEC_DATE_3}} |\n| TC-004 | E2E | FR-001, FR-002, FR-003, FR-004 | Fail | {{EXEC_DATE_4}} |\n| TC-005 | Performance | NFR-P-001 | Pass | {{EXEC_DATE_5}} |\n| TC-006 | Security | NFR-S-001, NFR-S-002 | Pass | {{EXEC_DATE_6}} |\n\n---\n\n## 5. Gap Analysis\n\n### Requirements Without Design\n\n| Req ID | Requirement | Priority | Reason | Action Required |\n|--------|-------------|----------|--------|------------------|\n| {{GAP_REQ_1}} | {{GAP_DESC_1}} | {{GAP_PRI_1}} | {{GAP_REASON_1}} | {{GAP_ACTION_1}} |\n| {{GAP_REQ_2}} | {{GAP_DESC_2}} | {{GAP_PRI_2}} | {{GAP_REASON_2}} | {{GAP_ACTION_2}} |\n\n### Requirements Without Implementation\n\n| Req ID | Requirement | Priority | Planned Sprint | Owner |\n|--------|-------------|----------|----------------|-------|\n| {{IMPL_GAP_1}} | {{IMPL_DESC_1}} | {{IMPL_PRI_1}} | {{SPRINT_1}} | {{IMPL_OWNER_1}} |\n| {{IMPL_GAP_2}} | {{IMPL_DESC_2}} | {{IMPL_PRI_2}} | {{SPRINT_2}} | {{IMPL_OWNER_2}} |\n\n### Requirements Without Test Coverage\n\n| Req ID | Requirement | Priority | Risk Level | Test Plan Status |\n|--------|-------------|----------|------------|------------------|\n| {{TEST_GAP_1}} | {{TEST_DESC_1}} | {{TEST_PRI_1}} | High/Med/Low | {{TEST_PLAN_1}} |\n| {{TEST_GAP_2}} | {{TEST_DESC_2}} | {{TEST_PRI_2}} | High/Med/Low | {{TEST_PLAN_2}} |\n\n### Orphaned Artifacts (No Requirement)\n\n| Artifact Type | Artifact ID | Description | Action |\n|---------------|-------------|-------------|--------|\n| Code Module | {{ORPHAN_1}} | {{ORPHAN_DESC_1}} | {{ORPHAN_ACTION_1}} |\n| Test Case | {{ORPHAN_2}} | {{ORPHAN_DESC_2}} | {{ORPHAN_ACTION_2}} |\n\n---\n\n## 6. Requirement Status Tracking\n\n### By Priority\n\n| Priority | Total | Implemented | Tested | Pending | Completion % |\n|----------|-------|-------------|--------|---------|-------------|\n| High | {{HIGH_TOTAL}} | {{HIGH_IMPL}} | {{HIGH_TEST}} | {{HIGH_PEND}} | {{HIGH_PCT}}% |\n| Medium | {{MED_TOTAL}} | {{MED_IMPL}} | {{MED_TEST}} | {{MED_PEND}} | {{MED_PCT}}% |\n| Low | {{LOW_TOTAL}} | {{LOW_IMPL}} | {{LOW_TEST}} | {{LOW_PEND}} | {{LOW_PCT}}% |\n\n### By Module\n\n| Module | Total Reqs | Implemented | Tested | Completion % |\n|--------|-----------|-------------|--------|-------------|\n| {{MOD_1}} | {{MOD1_TOTAL}} | {{MOD1_IMPL}} | {{MOD1_TEST}} | {{MOD1_PCT}}% |\n| {{MOD_2}} | {{MOD2_TOTAL}} | {{MOD2_IMPL}} | {{MOD2_TEST}} | {{MOD2_PCT}}% |\n| {{MOD_3}} | {{MOD3_TOTAL}} | {{MOD3_IMPL}} | {{MOD3_TEST}} | {{MOD3_PCT}}% |\n\n---\n\n## 7. Change Impact Analysis\n\n### Recent Changes\n\n| Change ID | Affected Req | Change Type | Impact | Design Updated | Code Updated | Tests Updated | Status |\n|-----------|--------------|-------------|--------|----------------|--------------|---------------|--------|\n| {{CHG_1}} | {{CHG_REQ_1}} | {{CHG_TYPE_1}} | {{CHG_IMPACT_1}} | Yes/No | Yes/No | Yes/No | {{CHG_STATUS_1}} |\n| {{CHG_2}} | {{CHG_REQ_2}} | {{CHG_TYPE_2}} | {{CHG_IMPACT_2}} | Yes/No | Yes/No | Yes/No | {{CHG_STATUS_2}} |\n\n---\n\n## 8. Compliance Mapping\n\n### Regulatory Requirements\n\n| Regulation | Requirement | System Req(s) | Verification Method | Status |\n|------------|-------------|---------------|---------------------|--------|\n| {{REG_1}} | {{REG_REQ_1}} | {{SYS_REQ_1}} | {{VERIFY_1}} | Compliant/Non-Compliant |\n| {{REG_2}} | {{REG_REQ_2}} | {{SYS_REQ_2}} | {{VERIFY_2}} | Compliant/Non-Compliant |\n| {{REG_3}} | {{REG_REQ_3}} | {{SYS_REQ_3}} | {{VERIFY_3}} | Compliant/Non-Compliant |\n\n---\n\n## 9. Risk Traceability\n\n| Risk ID | Risk Description | Related Req(s) | Mitigation Req(s) | Status |\n|---------|------------------|----------------|-------------------|--------|\n| {{RISK_1}} | {{RISK_DESC_1}} | {{RISK_REQ_1}} | {{MIT_REQ_1}} | {{RISK_STATUS_1}} |\n| {{RISK_2}} | {{RISK_DESC_2}} | {{RISK_REQ_2}} | {{MIT_REQ_2}} | {{RISK_STATUS_2}} |\n\n---\n\n## 10. Recommendations\n\n### Critical Actions\n1. {{CRITICAL_ACTION_1}}\n2. {{CRITICAL_ACTION_2}}\n3. {{CRITICAL_ACTION_3}}\n\n### Process Improvements\n1. {{IMPROVEMENT_1}}\n2. {{IMPROVEMENT_2}}\n3. {{IMPROVEMENT_3}}\n\n---\n\n## 11. Approval\n\n| Role | Name | Signature | Date |\n|------|------|-----------|------|\n| Requirement Analyst | | | |\n| QA Lead | | | |\n| Technical Lead | | | |\n| Project Manager | | | |\n\n---\n\n## Revision History\n\n| Version | Date | Author | Changes |\n|---------|------|--------|----------|\n| {{VER_1}} | {{DATE_1}} | {{AUTH_1}} | {{CHANGES_1}} |\n| {{VER_2}} | {{DATE_2}} | {{AUTH_2}} | {{CHANGES_2}} |\n",
+  "variables": {
+    "PROJECT_NAME": "Your Project",
+    "VERSION": "1.0",
+    "DATE": "YYYY-MM-DD",
+    "OWNER": "Owner Name",
+    "STATUS": "Active/Under Review",
+    "TOTAL_REQS": "50",
+    "DESIGN_TRACE": "45",
+    "DESIGN_PCT": "90",
+    "CODE_TRACE": "40",
+    "CODE_PCT": "80",
+    "TEST_TRACE": "38",
+    "TEST_PCT": "76",
+    "RESP_TIME": "200",
+    "UPTIME": "99.9",
+    "USERS": "10000"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Tracking requirements through SDLC",
+      "Ensuring complete test coverage",
+      "Managing requirements changes",
+      "Compliance verification",
+      "Quality assurance and audits"
+    ],
+    "team_composition": [
+      "requirement_analyst",
+      "qa_engineer",
+      "solution_architect",
+      "backend_developer"
+    ],
+    "estimated_time_minutes": 180,
+    "prerequisites": [
+      "Requirements documented",
+      "Design documents available",
+      "Code repository access",
+      "Test management system access"
+    ],
+    "related_templates": [
+      "srs-document-template",
+      "requirements-validation-checklist",
+      "use-case-specification"
+    ]
+  }
+}

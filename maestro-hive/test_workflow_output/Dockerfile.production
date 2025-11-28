@@ -1,0 +1,70 @@
+# Production Dockerfile for User Management REST API
+# Multi-stage build for optimized image size and security
+
+# Build stage
+FROM node:18-alpine AS builder
+
+LABEL maintainer="devops@company.com"
+LABEL version="1.0.0"
+LABEL description="User Management REST API - Production Build"
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies (including devDependencies for build)
+RUN npm ci --only=production && \
+    npm cache clean --force
+
+# Copy source code
+COPY . .
+
+# Build application (if using TypeScript)
+# RUN npm run build
+
+# Production stage
+FROM node:18-alpine
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S appuser && \
+    adduser -u 1001 -S appuser -G appuser
+
+# Install production dependencies only
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies
+RUN npm ci --only=production && \
+    npm cache clean --force
+
+# Copy built application from builder
+COPY --from=builder --chown=appuser:appuser /app/src ./src
+# If using TypeScript build output:
+# COPY --from=builder --chown=appuser:appuser /app/dist ./dist
+
+# Copy necessary configuration files
+COPY --chown=appuser:appuser .env.example ./.env.example
+
+# Set environment variables
+ENV NODE_ENV=production \
+    PORT=3000 \
+    LOG_LEVEL=info
+
+# Switch to non-root user
+USER appuser
+
+# Expose application port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# Start application
+CMD ["node", "src/index.js"]
+# If using TypeScript build:
+# CMD ["node", "dist/index.js"]

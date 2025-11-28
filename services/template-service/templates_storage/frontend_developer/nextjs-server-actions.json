@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "id": "nextjs-server-actions-v1",
+    "name": "Next.js 14 Server Actions with Type Safety",
+    "category": "server-actions",
+    "language": "typescript",
+    "framework": "nextjs",
+    "description": "Production-ready Next.js 14 Server Actions with Zod validation, optimistic updates, error handling, and progressive enhancement",
+    "tags": ["nextjs", "server-actions", "react-server-components", "zod", "progressive-enhancement"],
+    "quality_score": 92.0,
+    "security_score": 90.0,
+    "performance_score": 91.0,
+    "maintainability_score": 91.0,
+    "test_coverage": 85.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-04T20:00:00.000000",
+    "updated_at": "2025-10-04T20:00:00.000000",
+    "created_by": "template_enhancement_phase1",
+    "persona": "frontend_developer"
+  },
+  "content": "// app/actions/posts.ts\n'use server';\n\nimport { revalidatePath, revalidateTag } from 'next/cache';\nimport { redirect } from 'next/navigation';\nimport { z } from 'zod';\nimport { db } from '@/lib/db';\nimport { auth } from '@/lib/auth';\n\n// Validation schemas\nconst createPostSchema = z.object({\n  title: z.string().min(1).max(200),\n  content: z.string().min(1),\n  published: z.boolean().default(false),\n});\n\nconst updatePostSchema = createPostSchema.partial();\n\n// Type-safe action result\ntype ActionResult<T> = \n  | { success: true; data: T }\n  | { success: false; error: string; fieldErrors?: Record<string, string[]> };\n\n// Server Action: Create Post\nexport async function createPost(\n  prevState: unknown,\n  formData: FormData\n): Promise<ActionResult<{ id: number }>> {\n  try {\n    // Authentication check\n    const session = await auth();\n    if (!session?.user) {\n      return { success: false, error: 'Unauthorized' };\n    }\n\n    // Parse and validate form data\n    const rawData = {\n      title: formData.get('title'),\n      content: formData.get('content'),\n      published: formData.get('published') === 'on',\n    };\n\n    const result = createPostSchema.safeParse(rawData);\n    \n    if (!result.success) {\n      return {\n        success: false,\n        error: 'Validation failed',\n        fieldErrors: result.error.flatten().fieldErrors,\n      };\n    }\n\n    // Database operation\n    const post = await db.post.create({\n      data: {\n        ...result.data,\n        authorId: session.user.id,\n      },\n    });\n\n    // Revalidate cache\n    revalidatePath('/posts');\n    revalidateTag('posts');\n\n    return { success: true, data: { id: post.id } };\n  } catch (error) {\n    console.error('Create post error:', error);\n    return { success: false, error: 'Failed to create post' };\n  }\n}\n\n// Server Action: Update Post\nexport async function updatePost(\n  id: number,\n  prevState: unknown,\n  formData: FormData\n): Promise<ActionResult<{ id: number }>> {\n  try {\n    const session = await auth();\n    if (!session?.user) {\n      return { success: false, error: 'Unauthorized' };\n    }\n\n    // Check ownership\n    const existingPost = await db.post.findUnique({\n      where: { id },\n      select: { authorId: true },\n    });\n\n    if (!existingPost || existingPost.authorId !== session.user.id) {\n      return { success: false, error: 'Post not found or unauthorized' };\n    }\n\n    const rawData = Object.fromEntries(\n      Array.from(formData.entries())\n        .filter(([_, value]) => value !== '')\n    );\n\n    const result = updatePostSchema.safeParse(rawData);\n    \n    if (!result.success) {\n      return {\n        success: false,\n        error: 'Validation failed',\n        fieldErrors: result.error.flatten().fieldErrors,\n      };\n    }\n\n    await db.post.update({\n      where: { id },\n      data: result.data,\n    });\n\n    revalidatePath(`/posts/${id}`);\n    revalidateTag(`post-${id}`);\n\n    return { success: true, data: { id } };\n  } catch (error) {\n    console.error('Update post error:', error);\n    return { success: false, error: 'Failed to update post' };\n  }\n}\n\n// Server Action: Delete Post\nexport async function deletePost(id: number): Promise<ActionResult<void>> {\n  try {\n    const session = await auth();\n    if (!session?.user) {\n      return { success: false, error: 'Unauthorized' };\n    }\n\n    const post = await db.post.findUnique({\n      where: { id },\n      select: { authorId: true },\n    });\n\n    if (!post || post.authorId !== session.user.id) {\n      return { success: false, error: 'Post not found or unauthorized' };\n    }\n\n    await db.post.delete({ where: { id } });\n\n    revalidatePath('/posts');\n    redirect('/posts');\n  } catch (error) {\n    console.error('Delete post error:', error);\n    return { success: false, error: 'Failed to delete post' };\n  }\n}\n\n// Server Action: Toggle Like (Optimistic)\nexport async function toggleLike(\n  postId: number,\n  isLiked: boolean\n): Promise<ActionResult<{ liked: boolean; count: number }>> {\n  try {\n    const session = await auth();\n    if (!session?.user) {\n      return { success: false, error: 'Unauthorized' };\n    }\n\n    if (isLiked) {\n      await db.like.delete({\n        where: {\n          userId_postId: {\n            userId: session.user.id,\n            postId,\n          },\n        },\n      });\n    } else {\n      await db.like.create({\n        data: {\n          userId: session.user.id,\n          postId,\n        },\n      });\n    }\n\n    const count = await db.like.count({ where: { postId } });\n\n    revalidateTag(`post-${postId}`);\n\n    return { success: true, data: { liked: !isLiked, count } };\n  } catch (error) {\n    console.error('Toggle like error:', error);\n    return { success: false, error: 'Failed to toggle like' };\n  }\n}\n\n// app/components/CreatePostForm.tsx\n'use client';\n\nimport { useFormState, useFormStatus } from 'react-dom';\nimport { useEffect, useRef } from 'react';\nimport { createPost } from '@/app/actions/posts';\nimport { toast } from 'react-hot-toast';\n\nfunction SubmitButton() {\n  const { pending } = useFormStatus();\n  \n  return (\n    <button\n      type=\"submit\"\n      disabled={pending}\n      className=\"px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50\"\n    >\n      {pending ? 'Creating...' : 'Create Post'}\n    </button>\n  );\n}\n\nexport function CreatePostForm() {\n  const [state, formAction] = useFormState(createPost, null);\n  const formRef = useRef<HTMLFormElement>(null);\n\n  useEffect(() => {\n    if (state?.success) {\n      toast.success('Post created successfully!');\n      formRef.current?.reset();\n    } else if (state?.error) {\n      toast.error(state.error);\n    }\n  }, [state]);\n\n  return (\n    <form ref={formRef} action={formAction} className=\"space-y-4\">\n      <div>\n        <label htmlFor=\"title\" className=\"block text-sm font-medium\">\n          Title\n        </label>\n        <input\n          type=\"text\"\n          id=\"title\"\n          name=\"title\"\n          required\n          className=\"mt-1 block w-full rounded-md border-gray-300\"\n        />\n        {state?.fieldErrors?.title && (\n          <p className=\"mt-1 text-sm text-red-600\">{state.fieldErrors.title[0]}</p>\n        )}\n      </div>\n\n      <div>\n        <label htmlFor=\"content\" className=\"block text-sm font-medium\">\n          Content\n        </label>\n        <textarea\n          id=\"content\"\n          name=\"content\"\n          required\n          rows={5}\n          className=\"mt-1 block w-full rounded-md border-gray-300\"\n        />\n        {state?.fieldErrors?.content && (\n          <p className=\"mt-1 text-sm text-red-600\">{state.fieldErrors.content[0]}</p>\n        )}\n      </div>\n\n      <div className=\"flex items-center\">\n        <input\n          type=\"checkbox\"\n          id=\"published\"\n          name=\"published\"\n          className=\"rounded border-gray-300\"\n        />\n        <label htmlFor=\"published\" className=\"ml-2 text-sm\">\n          Publish immediately\n        </label>\n      </div>\n\n      <SubmitButton />\n    </form>\n  );\n}\n\n// app/components/LikeButton.tsx\n'use client';\n\nimport { useOptimistic, useTransition } from 'react';\nimport { toggleLike } from '@/app/actions/posts';\nimport { HeartIcon } from '@heroicons/react/24/outline';\nimport { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';\n\ninterface LikeButtonProps {\n  postId: number;\n  initialLiked: boolean;\n  initialCount: number;\n}\n\nexport function LikeButton({ postId, initialLiked, initialCount }: LikeButtonProps) {\n  const [isPending, startTransition] = useTransition();\n  const [optimisticState, setOptimisticState] = useOptimistic(\n    { liked: initialLiked, count: initialCount },\n    (state, newLiked: boolean) => ({\n      liked: newLiked,\n      count: state.count + (newLiked ? 1 : -1),\n    })\n  );\n\n  const handleLike = () => {\n    startTransition(async () => {\n      setOptimisticState(!optimisticState.liked);\n      \n      const result = await toggleLike(postId, optimisticState.liked);\n      \n      if (!result.success) {\n        // Revert on error\n        setOptimisticState(optimisticState.liked);\n      }\n    });\n  };\n\n  return (\n    <button\n      onClick={handleLike}\n      disabled={isPending}\n      className=\"flex items-center gap-2 text-gray-600 hover:text-red-500\"\n    >\n      {optimisticState.liked ? (\n        <HeartSolidIcon className=\"w-6 h-6 text-red-500\" />\n      ) : (\n        <HeartIcon className=\"w-6 h-6\" />\n      )}\n      <span>{optimisticState.count}</span>\n    </button>\n  );\n}",
+  "variables": {},
+  "dependencies": [
+    "next@^14.0.4",
+    "react@^18.2.0",
+    "zod@^3.22.4",
+    "@heroicons/react@^2.1.1",
+    "react-hot-toast@^2.4.1"
+  ],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Form submissions without JavaScript",
+      "Optimistic UI updates",
+      "Progressive enhancement",
+      "Server-side validation",
+      "Database mutations from client"
+    ],
+    "team_composition": ["frontend_developer", "backend_developer"],
+    "estimated_time_minutes": 55,
+    "prerequisites": [
+      "Next.js 14+ with App Router",
+      "React Server Components",
+      "Database setup (Prisma/Drizzle)",
+      "Authentication system"
+    ],
+    "related_templates": [
+      "nextjs-app-router",
+      "react-server-components",
+      "progressive-enhancement"
+    ]
+  }
+}

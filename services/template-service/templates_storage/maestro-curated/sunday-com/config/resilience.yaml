@@ -1,0 +1,224 @@
+# Resilience Patterns Configuration
+# ADR-006 Compliant: Production-Grade Resilience
+#
+# Defines circuit breaker, retry, timeout, and fallback configurations
+# for all services and operations
+
+# Circuit Breaker Configurations
+circuit_breakers:
+  database:
+    failure_threshold: 5
+    success_threshold: 2
+    timeout: 60000  # 60 seconds before attempting half-open
+
+  cache:
+    failure_threshold: 3
+    success_threshold: 2
+    timeout: 30000  # 30 seconds
+
+  external_api:
+    failure_threshold: 3
+    success_threshold: 2
+    timeout: 30000
+
+  auth_service:
+    failure_threshold: 5
+    success_threshold: 2
+    timeout: 45000
+
+  ai_service:
+    failure_threshold: 3
+    success_threshold: 2
+    timeout: 120000  # 2 minutes
+
+  email_service:
+    failure_threshold: 3
+    success_threshold: 2
+    timeout: 60000
+
+# Retry Configurations
+retries:
+  database:
+    max_retries: 3
+    initial_delay: 1000    # 1 second
+    max_delay: 10000       # 10 seconds
+    backoff_multiplier: 2
+    retryable_errors:
+      - ECONNREFUSED
+      - ETIMEDOUT
+      - ECONNRESET
+      - EPIPE
+
+  cache:
+    max_retries: 2
+    initial_delay: 500     # 0.5 seconds
+    max_delay: 5000        # 5 seconds
+    backoff_multiplier: 2
+    retryable_errors:
+      - ECONNREFUSED
+      - ETIMEDOUT
+
+  external_api:
+    max_retries: 3
+    initial_delay: 2000    # 2 seconds
+    max_delay: 30000       # 30 seconds
+    backoff_multiplier: 2
+    retryable_errors:
+      - ECONNREFUSED
+      - ETIMEDOUT
+      - ENOTFOUND
+      - "429"  # Too Many Requests
+      - "503"  # Service Unavailable
+      - "504"  # Gateway Timeout
+
+  file_operation:
+    max_retries: 2
+    initial_delay: 1000
+    max_delay: 5000
+    backoff_multiplier: 2
+    retryable_errors:
+      - EBUSY
+      - EMFILE
+      - ENFILE
+
+  ai_service:
+    max_retries: 2
+    initial_delay: 5000    # 5 seconds
+    max_delay: 60000       # 60 seconds
+    backoff_multiplier: 2
+    retryable_errors:
+      - ETIMEDOUT
+      - "429"
+      - "503"
+
+# Timeout Configurations (in milliseconds)
+timeouts:
+  database:
+    query: 5000            # 5 seconds
+    transaction: 30000     # 30 seconds
+
+  cache:
+    get: 2000              # 2 seconds
+    set: 3000              # 3 seconds
+
+  external_api:
+    default: 10000         # 10 seconds
+    auth0: 15000           # 15 seconds
+    openai: 60000          # 60 seconds
+    aws_sagemaker: 120000  # 2 minutes
+
+  file:
+    upload: 300000         # 5 minutes
+    download: 180000       # 3 minutes
+
+  websocket:
+    message: 5000          # 5 seconds
+
+  background_job:
+    default: 300000        # 5 minutes
+    export: 600000         # 10 minutes
+    import: 900000         # 15 minutes
+
+  http:
+    api_request: 30000     # 30 seconds
+    graphql_query: 15000   # 15 seconds
+
+# Fallback Configurations
+fallbacks:
+  user_profile:
+    cache_max_age: 300000  # 5 minutes
+    default_value:
+      name: "Unknown User"
+      avatar: "/default-avatar.png"
+
+  board_data:
+    cache_max_age: 60000   # 1 minute
+    default_value:
+      items: []
+      columns: []
+
+  analytics:
+    cache_max_age: 600000  # 10 minutes
+    default_value:
+      metrics: []
+      charts: []
+
+  notifications:
+    cache_max_age: 30000   # 30 seconds
+    default_value:
+      notifications: []
+      unread_count: 0
+
+  ai_suggestions:
+    cache_max_age: 300000  # 5 minutes
+    default_value:
+      suggestions: []
+      confidence: 0
+
+# Rate Limiting
+rate_limiting:
+  api:
+    window: 60000          # 1 minute
+    max_requests: 100
+
+  ai_requests:
+    window: 60000          # 1 minute
+    max_requests: 10
+
+  file_uploads:
+    window: 60000          # 1 minute
+    max_requests: 20
+
+  websocket_messages:
+    window: 1000           # 1 second
+    max_requests: 50
+
+# Bulkhead Pattern (Resource Isolation)
+bulkheads:
+  database_pool:
+    max_connections: 20
+    min_connections: 5
+    queue_limit: 50
+
+  ai_service_pool:
+    max_concurrent: 5
+    queue_limit: 20
+
+  file_upload_pool:
+    max_concurrent: 10
+    queue_limit: 50
+
+# Health Check Thresholds
+health_checks:
+  database:
+    max_response_time: 1000  # 1 second
+    failure_threshold: 3
+
+  cache:
+    max_response_time: 500   # 0.5 seconds
+    failure_threshold: 3
+
+  external_api:
+    max_response_time: 5000  # 5 seconds
+    failure_threshold: 5
+
+# Monitoring & Alerting Thresholds
+monitoring:
+  error_rate_threshold: 0.05      # 5%
+  latency_p95_threshold: 2000     # 2 seconds
+  latency_p99_threshold: 5000     # 5 seconds
+  circuit_breaker_open_alert: true
+  retry_exhaustion_alert: true
+
+# Metadata
+metadata:
+  version: "1.0.0"
+  adr_compliant: true
+  adr_version: "ADR-006"
+  patterns:
+    - circuit_breaker
+    - retry_exponential_backoff
+    - timeout
+    - fallback
+    - rate_limiting
+    - bulkhead

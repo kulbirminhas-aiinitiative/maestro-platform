@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: maestro-platform
+
+resources:
+  - ../../base
+
+commonLabels:
+  environment: production
+
+# Production-specific patches
+patchesStrategicMerge:
+  - patches/ha-config.yaml
+
+# Production replicas (HA)
+replicas:
+  - name: maestro-postgres
+    count: 3  # PostgreSQL HA with replication
+  - name: maestro-redis
+    count: 3  # Redis cluster
+  - name: maestro-prometheus
+    count: 2  # Prometheus HA
+  - name: maestro-grafana
+    count: 2  # Grafana HA

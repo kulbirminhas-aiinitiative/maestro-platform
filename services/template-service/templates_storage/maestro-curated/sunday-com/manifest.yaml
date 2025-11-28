@@ -1,0 +1,73 @@
+manifest_version: '1.0'
+name: sunday-com
+description: Production-ready work management platform (monday.com clone) with AI-powered
+  automation, real-time collaboration, and enterprise-grade infrastructure.
+version: 1.0.0
+engine: jinja2
+metadata:
+  category: fullstack
+  language: typescript
+  framework: react
+  tags:
+  - work-management
+  - collaboration
+  - real-time
+  - typescript
+  - react
+  - node
+  - fastapi
+  - kubernetes
+  - postgres
+  - redis
+  - graphql
+  - socket-io
+  - ai-automation
+  - multi-tenant
+  architecture: fullstack-microservices
+  file_count: 162
+  total_lines: 12500
+  auto_classified: false
+  classification_confidence: 1.0
+  generated_at: '2025-10-04T15:15:00Z'
+  detected_languages:
+    typescript: 58
+    javascript: 7
+    yaml: 12
+    markdown: 40
+  detected_frameworks:
+  - react
+  - fastapi
+  - node
+  - kubernetes
+  - terraform
+  - docker
+  features:
+  - 'Multi-tenant Work Management**: Complete board and task management system'
+  - 'Real-time Collaboration**: Socket.IO powered live updates and user presence'
+  - 'AI-Powered Automation**: GPT-4 integration for intelligent workflow automation'
+  - 'Hybrid API**: GraphQL and REST endpoints for flexible integration'
+  - 'Enterprise Infrastructure**: Kubernetes, Terraform, AWS EKS deployment ready'
+  - 'Advanced Analytics**: ClickHouse and Elasticsearch for powerful insights'
+  - 'Mobile Support**: React Native with offline-first WatermelonDB'
+  - 'Security**: Auth0 integration, JWT, OWASP best practices'
+  - 'Monitoring**: Datadog APM, Sentry error tracking, ELK stack'
+  - 'DevOps**: Complete CI/CD with GitHub Actions, Docker, docker-compose'
+  license: MIT
+placeholders: []
+hooks:
+  pre_generation: []
+  post_generation: []
+files:
+  include:
+  - '**/*'
+  exclude:
+  - .git/**
+  - __pycache__/**
+  - node_modules/**
+  - .pytest_cache/**
+  - '*.pyc'
+  - .DS_Store
+  - dist/**
+  - build/**
+  - coverage/**
+author: MAESTRO SDLC Team

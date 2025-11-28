@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  template-service:
+    build: .
+    container_name: maestro-template-service
+    ports:
+      - "8005:8005"
+    environment:
+      SERVICE_NAME: template-service
+      SERVICE_PORT: 8005
+      DATABASE_URL: postgresql://maestro:change_me@maestro-postgres:5432/maestro_templates
+      REDIS_URL: redis://maestro-redis:6379/0
+      TEMPLATES_STORAGE_PATH: /app/templates_storage
+      LOG_LEVEL: INFO
+    volumes:
+      - ./templates_storage:/app/templates_storage
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - maestro-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: maestro-postgres
+    environment:
+      POSTGRES_DB: maestro_templates
+      POSTGRES_USER: maestro
+      POSTGRES_PASSWORD: change_me
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - maestro-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: maestro-redis
+    volumes:
+      - redis-data:/data
+    networks:
+      - maestro-network
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  maestro-network:
+    driver: bridge

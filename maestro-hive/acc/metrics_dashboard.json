@@ -1,0 +1,1012 @@
+{
+  "summary": {
+    "total_functions": 89,
+    "total_classes": 34,
+    "total_modules": 5,
+    "high_complexity_functions": 8,
+    "god_classes": 0,
+    "top_hotspots": 5
+  },
+  "complexity": [
+    {
+      "name": "all_dependencies",
+      "complexity": 1,
+      "loc": 3,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "__init__",
+      "complexity": 1,
+      "loc": 3,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "add_module",
+      "complexity": 1,
+      "loc": 9,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "add_dependency",
+      "complexity": 3,
+      "loc": 14,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "get_dependencies",
+      "complexity": 2,
+      "loc": 13,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "get_dependents",
+      "complexity": 2,
+      "loc": 13,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "has_cycle",
+      "complexity": 2,
+      "loc": 12,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "find_cycles",
+      "complexity": 2,
+      "loc": 12,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "calculate_coupling",
+      "complexity": 2,
+      "loc": 21,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "get_module_info",
+      "complexity": 1,
+      "loc": 11,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "to_dict",
+      "complexity": 2,
+      "loc": 22,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "__init__",
+      "complexity": 2,
+      "loc": 19,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "build_graph",
+      "complexity": 8,
+      "loc": 30,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "_find_python_files",
+      "complexity": 3,
+      "loc": 17,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "_parse_file",
+      "complexity": 3,
+      "loc": 43,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "_get_module_name",
+      "complexity": 3,
+      "loc": 23,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "_extract_imports",
+      "complexity": 6,
+      "loc": 22,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "_extract_classes",
+      "complexity": 3,
+      "loc": 17,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "_extract_functions",
+      "complexity": 3,
+      "loc": 17,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "_resolve_import",
+      "complexity": 5,
+      "loc": 25,
+      "file": "acc/import_graph_builder.py",
+      "classification": "Low"
+    },
+    {
+      "name": "load_architectural_manifest",
+      "complexity": 5,
+      "loc": 33,
+      "file": "acc/api.py",
+      "classification": "Low"
+    },
+    {
+      "name": "build_import_graph",
+      "complexity": 3,
+      "loc": 11,
+      "file": "acc/api.py",
+      "classification": "Low"
+    },
+    {
+      "name": "detect_violations",
+      "complexity": 9,
+      "loc": 37,
+      "file": "acc/api.py",
+      "classification": "Low"
+    },
+    {
+      "name": "check_dependency_rule",
+      "complexity": 9,
+      "loc": 49,
+      "file": "acc/api.py",
+      "classification": "Low"
+    },
+    {
+      "name": "check_coupling_rule",
+      "complexity": 5,
+      "loc": 32,
+      "file": "acc/api.py",
+      "classification": "Low"
+    },
+    {
+      "name": "check_size_rule",
+      "complexity": 5,
+      "loc": 29,
+      "file": "acc/api.py",
+      "classification": "Low"
+    },
+    {
+      "name": "check_naming_rule",
+      "complexity": 1,
+      "loc": 8,
+      "file": "acc/api.py",
+      "classification": "Low"
+    },
+    {
+      "name": "detect_cycles",
+      "complexity": 4,
+      "loc": 26,
+      "file": "acc/api.py",
+      "classification": "Low"
+    },
+    {
+      "name": "calculate_graph_layout",
+      "complexity": 14,
+      "loc": 58,
+      "file": "acc/api.py",
+      "classification": "Medium"
+    },
+    {
+      "name": "load_acc_report",
+      "complexity": 5,
+      "loc": 15,
+      "file": "acc/api.py",
+      "classification": "Low"
+    },
+    {
+      "name": "__init__",
+      "complexity": 1,
+      "loc": 2,
+      "file": "acc/api.py",
+      "classification": "Low"
+    },
+    {
+      "name": "disconnect",
+      "complexity": 3,
+      "loc": 6,
+      "file": "acc/api.py",
+      "classification": "Low"
+    },
+    {
+      "name": "parse_rule_from_string",
+      "complexity": 5,
+      "loc": 66,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "validate_rule_definition",
+      "complexity": 10,
+      "loc": 40,
+      "file": "acc/rule_engine.py",
+      "classification": "Medium"
+    },
+    {
+      "name": "to_dict",
+      "complexity": 1,
+      "loc": 13,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "applies_to",
+      "complexity": 6,
+      "loc": 16,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "from_dict",
+      "complexity": 1,
+      "loc": 15,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "to_dict",
+      "complexity": 1,
+      "loc": 15,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "matches_file",
+      "complexity": 5,
+      "loc": 11,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "blocking_violations",
+      "complexity": 2,
+      "loc": 3,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "warning_violations",
+      "complexity": 2,
+      "loc": 3,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "info_violations",
+      "complexity": 2,
+      "loc": 3,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "has_blocking_violations",
+      "complexity": 1,
+      "loc": 3,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "to_dict",
+      "complexity": 2,
+      "loc": 17,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "__init__",
+      "complexity": 2,
+      "loc": 16,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "add_rule",
+      "complexity": 1,
+      "loc": 4,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "add_rules",
+      "complexity": 2,
+      "loc": 4,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "load_rules_from_yaml",
+      "complexity": 16,
+      "loc": 65,
+      "file": "acc/rule_engine.py",
+      "classification": "Medium"
+    },
+    {
+      "name": "get_component_for_file",
+      "complexity": 4,
+      "loc": 24,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "evaluate_rule",
+      "complexity": 8,
+      "loc": 39,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "_evaluate_can_call",
+      "complexity": 11,
+      "loc": 44,
+      "file": "acc/rule_engine.py",
+      "classification": "Medium"
+    },
+    {
+      "name": "_evaluate_must_not_call",
+      "complexity": 9,
+      "loc": 40,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "_evaluate_coupling",
+      "complexity": 8,
+      "loc": 37,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "_evaluate_no_cycles",
+      "complexity": 7,
+      "loc": 35,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "evaluate_all",
+      "complexity": 4,
+      "loc": 55,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "clear_cache",
+      "complexity": 1,
+      "loc": 6,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "get_rules_for_component",
+      "complexity": 2,
+      "loc": 3,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "get_enabled_rules",
+      "complexity": 2,
+      "loc": 3,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "disable_rule",
+      "complexity": 3,
+      "loc": 7,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "enable_rule",
+      "complexity": 3,
+      "loc": 7,
+      "file": "acc/rule_engine.py",
+      "classification": "Low"
+    },
+    {
+      "name": "is_expired",
+      "complexity": 3,
+      "loc": 5,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "expires_soon",
+      "complexity": 3,
+      "loc": 6,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "matches_pattern",
+      "complexity": 5,
+      "loc": 13,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "to_dict",
+      "complexity": 1,
+      "loc": 18,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "from_dict",
+      "complexity": 1,
+      "loc": 18,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "__init__",
+      "complexity": 1,
+      "loc": 5,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "add_pattern",
+      "complexity": 6,
+      "loc": 14,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "matches",
+      "complexity": 5,
+      "loc": 12,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "clear",
+      "complexity": 1,
+      "loc": 5,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "__init__",
+      "complexity": 1,
+      "loc": 6,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "add_suppression",
+      "complexity": 2,
+      "loc": 10,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "remove_suppression",
+      "complexity": 3,
+      "loc": 9,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "load_from_yaml",
+      "complexity": 8,
+      "loc": 40,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "save_to_yaml",
+      "complexity": 3,
+      "loc": 12,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "is_suppressed",
+      "complexity": 14,
+      "loc": 60,
+      "file": "acc/suppression_system.py",
+      "classification": "Medium"
+    },
+    {
+      "name": "_check_violation_level",
+      "complexity": 5,
+      "loc": 16,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "_check_file_level",
+      "complexity": 12,
+      "loc": 34,
+      "file": "acc/suppression_system.py",
+      "classification": "Medium"
+    },
+    {
+      "name": "_check_directory_level",
+      "complexity": 13,
+      "loc": 36,
+      "file": "acc/suppression_system.py",
+      "classification": "Medium"
+    },
+    {
+      "name": "_check_rule_level",
+      "complexity": 9,
+      "loc": 28,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "filter_violations",
+      "complexity": 3,
+      "loc": 22,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "remove_expired_suppressions",
+      "complexity": 3,
+      "loc": 11,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "get_expiring_suppressions",
+      "complexity": 2,
+      "loc": 3,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "get_unused_suppressions",
+      "complexity": 3,
+      "loc": 7,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "get_metrics",
+      "complexity": 7,
+      "loc": 36,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "validate_suppression",
+      "complexity": 11,
+      "loc": 35,
+      "file": "acc/suppression_system.py",
+      "classification": "Medium"
+    },
+    {
+      "name": "_build_cache_key",
+      "complexity": 2,
+      "loc": 3,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "_update_metrics",
+      "complexity": 2,
+      "loc": 5,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "_clear_cache",
+      "complexity": 1,
+      "loc": 4,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    },
+    {
+      "name": "clear_all",
+      "complexity": 1,
+      "loc": 5,
+      "file": "acc/suppression_system.py",
+      "classification": "Low"
+    }
+  ],
+  "coupling": [
+    {
+      "module": "",
+      "ca": 0,
+      "ce": 0,
+      "instability": 0.0
+    },
+    {
+      "module": "api",
+      "ca": 0,
+      "ce": 0,
+      "instability": 0.0
+    },
+    {
+      "module": "import_graph_builder",
+      "ca": 0,
+      "ce": 0,
+      "instability": 0.0
+    },
+    {
+      "module": "rule_engine",
+      "ca": 0,
+      "ce": 0,
+      "instability": 0.0
+    },
+    {
+      "module": "suppression_system",
+      "ca": 0,
+      "ce": 0,
+      "instability": 0.0
+    }
+  ],
+  "cohesion": [
+    {
+      "class": "ModuleInfo",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 1,
+      "loc": 13,
+      "is_god_class": false,
+      "file": "acc/import_graph_builder.py"
+    },
+    {
+      "class": "ImportGraph",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 10,
+      "loc": 146,
+      "is_god_class": false,
+      "file": "acc/import_graph_builder.py"
+    },
+    {
+      "class": "ImportGraphBuilder",
+      "lcom": 0.8,
+      "cohesion_score": 0.19999999999999996,
+      "methods": 9,
+      "loc": 228,
+      "is_god_class": false,
+      "file": "acc/import_graph_builder.py"
+    },
+    {
+      "class": "ACCNodeType",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 6,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "ACCNodeStatus",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 6,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "ViolationType",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 8,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "RuleSeverity",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 5,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "GraphPosition",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 4,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "CouplingMetrics",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 7,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "ViolationInfo",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 14,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "ACCGraphNode",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 33,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "ACCGraphEdge",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 10,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "CycleInfo",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 8,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "ACCGraph",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 27,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "ArchitecturalRule",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 8,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "ArchitecturalManifest",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 6,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "ACCAnalysisEvent",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 23,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "ACCConnectionManager",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 2,
+      "loc": 35,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "Config",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 4,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "Config",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 4,
+      "is_god_class": false,
+      "file": "acc/api.py"
+    },
+    {
+      "class": "RuleType",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 6,
+      "is_god_class": false,
+      "file": "acc/rule_engine.py"
+    },
+    {
+      "class": "Severity",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 5,
+      "is_god_class": false,
+      "file": "acc/rule_engine.py"
+    },
+    {
+      "class": "Violation",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 1,
+      "loc": 25,
+      "is_god_class": false,
+      "file": "acc/rule_engine.py"
+    },
+    {
+      "class": "Rule",
+      "lcom": 0.5,
+      "cohesion_score": 0.5,
+      "methods": 3,
+      "loc": 63,
+      "is_god_class": false,
+      "file": "acc/rule_engine.py"
+    },
+    {
+      "class": "Component",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 1,
+      "loc": 17,
+      "is_god_class": false,
+      "file": "acc/rule_engine.py"
+    },
+    {
+      "class": "EvaluationResult",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 5,
+      "loc": 47,
+      "is_god_class": false,
+      "file": "acc/rule_engine.py"
+    },
+    {
+      "class": "RuleEngine",
+      "lcom": 0.44155844155844154,
+      "cohesion_score": 0.5584415584415585,
+      "methods": 16,
+      "loc": 418,
+      "is_god_class": false,
+      "file": "acc/rule_engine.py"
+    },
+    {
+      "class": "SuppressionLevel",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 6,
+      "is_god_class": false,
+      "file": "acc/suppression_system.py"
+    },
+    {
+      "class": "PatternType",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 5,
+      "is_god_class": false,
+      "file": "acc/suppression_system.py"
+    },
+    {
+      "class": "SuppressionEntry",
+      "lcom": 0.3333333333333333,
+      "cohesion_score": 0.6666666666666667,
+      "methods": 5,
+      "loc": 82,
+      "is_god_class": false,
+      "file": "acc/suppression_system.py"
+    },
+    {
+      "class": "SuppressionMatch",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 5,
+      "is_god_class": false,
+      "file": "acc/suppression_system.py"
+    },
+    {
+      "class": "SuppressionMetrics",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 0,
+      "loc": 12,
+      "is_god_class": false,
+      "file": "acc/suppression_system.py"
+    },
+    {
+      "class": "PatternMatcher",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 4,
+      "loc": 42,
+      "is_god_class": false,
+      "file": "acc/suppression_system.py"
+    },
+    {
+      "class": "SuppressionManager",
+      "lcom": 0.0,
+      "cohesion_score": 1.0,
+      "methods": 20,
+      "loc": 414,
+      "is_god_class": false,
+      "file": "acc/suppression_system.py"
+    }
+  ],
+  "hotspots": [
+    {
+      "module": "suppression_system",
+      "complexity": 131,
+      "coupling": 0,
+      "risk_score": 131.0,
+      "file": "acc/suppression_system.py"
+    },
+    {
+      "module": "rule_engine",
+      "complexity": 121,
+      "coupling": 0,
+      "risk_score": 121.0,
+      "file": "acc/rule_engine.py"
+    },
+    {
+      "module": "api",
+      "complexity": 64,
+      "coupling": 0,
+      "risk_score": 64.0,
+      "file": "acc/api.py"
+    },
+    {
+      "module": "import_graph_builder",
+      "complexity": 55,
+      "coupling": 0,
+      "risk_score": 55.0,
+      "file": "acc/import_graph_builder.py"
+    },
+    {
+      "module": "",
+      "complexity": 0,
+      "coupling": 0,
+      "risk_score": 0.0,
+      "file": "acc/__init__.py"
+    }
+  ]
+}

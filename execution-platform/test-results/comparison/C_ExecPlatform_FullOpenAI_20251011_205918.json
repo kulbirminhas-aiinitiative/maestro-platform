@@ -1,0 +1,25 @@
+{
+  "config_name": "C_ExecPlatform_FullOpenAI",
+  "duration_ms": 0.17,
+  "phases_completed": [
+    "requirements",
+    "architecture",
+    "implementation",
+    "review"
+  ],
+  "phase_durations": {
+    "requirements": 0.06890296936035156,
+    "architecture": 0.025987625122070312,
+    "implementation": 0.029802322387695312,
+    "review": 0.027179718017578125
+  },
+  "providers_used": {
+    "requirements": "claude_agent",
+    "architecture": "claude_agent",
+    "implementation": "claude_agent",
+    "review": "claude_agent"
+  },
+  "total_tokens": 0,
+  "errors": [],
+  "success": true
+}

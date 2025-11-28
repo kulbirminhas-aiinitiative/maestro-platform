@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ACC Metrics Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .summary { background: #f0f0f0; padding: 20px; border-radius: 5px; }
+        .metric-section { margin-top: 30px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #4CAF50; color: white; }
+        .high { color: red; font-weight: bold; }
+        .medium { color: orange; }
+        .low { color: green; }
+    </style>
+</head>
+<body>
+    <h1>ACC Metrics Dashboard</h1>
+
+    <div class="summary">
+        <h2>Summary</h2>
+        <p>Total Functions: 89</p>
+        <p>Total Classes: 34</p>
+        <p>Total Modules: 5</p>
+        <p>High Complexity Functions: 8</p>
+        <p>God Classes: 0</p>
+    </div>
+
+    <div class="metric-section">
+        <h2>Top Hotspots</h2>
+        <table>
+            <tr>
+                <th>Module</th>
+                <th>Complexity</th>
+                <th>Coupling</th>
+                <th>Risk Score</th>
+            </tr>
+
+            <tr>
+                <td>suppression_system</td>
+                <td>131</td>
+                <td>0</td>
+                <td class="high">131.00</td>
+            </tr>
+
+            <tr>
+                <td>rule_engine</td>
+                <td>121</td>
+                <td>0</td>
+                <td class="high">121.00</td>
+            </tr>
+
+            <tr>
+                <td>api</td>
+                <td>64</td>
+                <td>0</td>
+                <td class="high">64.00</td>
+            </tr>
+
+            <tr>
+                <td>import_graph_builder</td>
+                <td>55</td>
+                <td>0</td>
+                <td class="high">55.00</td>
+            </tr>
+
+            <tr>
+                <td></td>
+                <td>0</td>
+                <td>0</td>
+                <td class="high">0.00</td>
+            </tr>
+
+        </table>
+    </div>
+</body>
+</html>

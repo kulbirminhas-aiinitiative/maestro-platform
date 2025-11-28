@@ -1,0 +1,113 @@
+# Maestro Platform - Prometheus Configuration
+# Centralized metrics collection for all services
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'maestro-platform'
+    environment: 'demo'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  # - "alerting-rules.yml"
+  # - "recording-rules.yml"
+
+# Scrape configurations for all Maestro services
+scrape_configs:
+  # ============================================================================
+  # INFRASTRUCTURE MONITORING
+  # ============================================================================
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+          team: 'platform'
+          layer: 'infrastructure'
+
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['maestro-postgres:9187']
+        labels:
+          service: 'postgresql'
+          team: 'platform'
+          layer: 'infrastructure'
+
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['maestro-redis:9121']
+        labels:
+          service: 'redis'
+          team: 'platform'
+          layer: 'infrastructure'
+
+  # ============================================================================
+  # QUALITY FABRIC SERVICE
+  # ============================================================================
+
+  - job_name: 'quality-fabric'
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['quality-fabric:8000']
+        labels:
+          service: 'quality-fabric'
+          team: 'quality'
+          layer: 'application'
+          version: '1.0.0'
+
+  # ============================================================================
+  # MAESTRO V2 SERVICE
+  # ============================================================================
+
+  - job_name: 'maestro-v2'
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['maestro-v2:3000']
+        labels:
+          service: 'maestro-v2'
+          team: 'backend'
+          layer: 'application'
+
+  # ============================================================================
+  # MAESTRO FRONTEND SERVICE
+  # ============================================================================
+
+  - job_name: 'maestro-frontend'
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['maestro-frontend:3001']
+        labels:
+          service: 'maestro-frontend'
+          team: 'frontend'
+          layer: 'application'
+
+  # ============================================================================
+  # SERVICE DISCOVERY (for dynamic environments)
+  # ============================================================================
+
+  # Kubernetes service discovery (for production)
+  # - job_name: 'kubernetes-pods'
+  #   kubernetes_sd_configs:
+  #     - role: pod
+  #   relabel_configs:
+  #     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+  #       action: keep
+  #       regex: true
+
+  # Docker Swarm service discovery
+  # - job_name: 'dockerswarm'
+  #   dockerswarm_sd_configs:
+  #     - host: unix:///var/run/docker.sock
+  #       role: tasks

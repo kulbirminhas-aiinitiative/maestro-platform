@@ -1,0 +1,20 @@
+# Pytest cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+
+# Test reports
+reports/
+test-results/
+*.xml
+
+# Keep example test files
+!test_*.py
+!*_test.py
+!conftest.py

@@ -1,0 +1,146 @@
+{
+  "project": {
+    "name": "quality-fabric",
+    "description": "Quality Fabric - Comprehensive Testing as a Service Platform",
+    "version": "1.0.0",
+    "repository": "https://github.com/your-org/quality-fabric",
+    "language": "python",
+    "framework": "fastapi",
+    "dependency_manager": "poetry"
+  },
+  "services": [
+    {
+      "name": "testing_api",
+      "description": "Main testing service API",
+      "port": 8000,
+      "health_check": "/health",
+      "entry_point": "main.py",
+      "capabilities": ["testing", "api", "orchestration"],
+      "dependencies": ["redis"],
+      "environment_variables": {
+        "SERVICE_NAME": "testing_api",
+        "HOST": "0.0.0.0",
+        "PORT": "8000",
+        "ENVIRONMENT": "production"
+      }
+    },
+    {
+      "name": "kubernetes_execution",
+      "description": "Kubernetes execution service for ephemeral testing environments",
+      "port": 8001,
+      "health_check": "/health",
+      "entry_point": "services/api/kubernetes_execution_api.py",
+      "capabilities": ["kubernetes", "execution", "ephemeral-environments"],
+      "dependencies": ["kubernetes-cluster"],
+      "environment_variables": {
+        "SERVICE_NAME": "kubernetes_execution",
+        "HOST": "0.0.0.0",
+        "PORT": "8001",
+        "ENVIRONMENT": "production"
+      }
+    }
+  ],
+  "ci_cd": {
+    "pipeline": ".github/workflows/ci.yml",
+    "test_commands": {
+      "unit": "poetry run pytest tests/unit/ -v --cov=services",
+      "integration": "poetry run pytest tests/integration/ -v",
+      "e2e": "poetry run pytest tests/e2e/ -v",
+      "performance": "poetry run pytest tests/ -m performance"
+    },
+    "quality_gates": {
+      "code_coverage": 80,
+      "pylint_score": 8.0,
+      "security_scan": "required",
+      "performance_threshold": "p95 < 200ms"
+    },
+    "deployment": {
+      "staging": {
+        "enabled": true,
+        "trigger": "push to main",
+        "auto_deploy": true
+      },
+      "production": {
+        "enabled": true,
+        "trigger": "manual approval",
+        "auto_deploy": false
+      }
+    },
+    "notifications": {
+      "channels": ["github", "slack"],
+      "on_failure": true,
+      "on_success": false
+    }
+  },
+  "environments": {
+    "development": {
+      "base_url": "http://localhost:8000",
+      "redis_url": "redis://localhost:6379",
+      "log_level": "DEBUG"
+    },
+    "testing": {
+      "base_url": "http://localhost:8005",
+      "redis_url": "redis://localhost:6379",
+      "log_level": "INFO"
+    },
+    "staging": {
+      "base_url": "https://staging.quality-fabric.io",
+      "redis_url": "redis://staging-redis:6379",
+      "log_level": "INFO"
+    },
+    "production": {
+      "base_url": "https://quality-fabric.io",
+      "redis_url": "redis://prod-redis:6379",
+      "log_level": "WARNING"
+    }
+  },
+  "infrastructure": {
+    "docker": {
+      "enabled": true,
+      "dockerfile": "Dockerfile",
+      "image_registry": "dockerhub",
+      "image_name": "qualityfabric/platform"
+    },
+    "kubernetes": {
+      "enabled": true,
+      "manifests": "infrastructure/k8s/",
+      "namespace": "quality-fabric",
+      "ingress": true
+    },
+    "monitoring": {
+      "prometheus": true,
+      "grafana": true,
+      "jaeger": true,
+      "log_aggregation": "elasticsearch"
+    }
+  },
+  "dependencies": {
+    "runtime": {
+      "python": "^3.9",
+      "poetry": "^1.0.0"
+    },
+    "external_services": {
+      "redis": {
+        "version": "7.0",
+        "required": true
+      },
+      "postgresql": {
+        "version": "15.0",
+        "required": false,
+        "purpose": "test results storage"
+      },
+      "kubernetes": {
+        "version": "1.27+",
+        "required": false,
+        "purpose": "ephemeral test environments"
+      }
+    }
+  },
+  "metadata": {
+    "created_at": "2025-09-29T17:00:00Z",
+    "last_updated": "2025-09-29T18:00:00Z",
+    "maintainers": ["quality-fabric-team"],
+    "tags": ["testing", "quality-assurance", "ci-cd", "automation"],
+    "license": "MIT"
+  }
+}

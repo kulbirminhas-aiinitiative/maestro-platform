@@ -1,0 +1,111 @@
+manifest_version: '1.0'
+name: github-actions-nodejs-cicd
+description: Production-ready GitHub Actions CI/CD pipeline for Node.js applications with linting, testing, building, Docker image creation, and deployment automation.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: cicd
+  sdlc_phase: deployment
+  language: yaml
+  framework: github-actions
+  tags:
+    - github-actions
+    - ci-cd
+    - nodejs
+    - typescript
+    - docker
+    - automation
+  complexity: intermediate
+  use_cases:
+    - continuous-integration
+    - continuous-deployment
+    - automated-testing
+    - docker-builds
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the Node.js project
+    type: string
+    required: true
+  - variable: NODE_VERSION
+    description: Node.js version
+    type: string
+    required: true
+    default: "20.x"
+  - variable: PACKAGE_MANAGER
+    description: Package manager
+    type: string
+    required: true
+    default: npm
+    choices: [npm, yarn, pnpm]
+  - variable: DEPLOY_TARGET
+    description: Deployment target
+    type: string
+    required: false
+    default: vercel
+    choices: [vercel, netlify, aws, gcp, azure]
+
+dependencies:
+  runtime: []
+  build: []
+
+hooks:
+  pre_generation: []
+  post_generation: []
+
+files:
+  include:
+    - .github/workflows/**
+  exclude:
+    - .git/**
+
+features:
+  - "Multi-stage CI/CD pipeline"
+  - "Code linting with ESLint/Prettier"
+  - "Type checking with TypeScript"
+  - "Unit and integration testing"
+  - "Code coverage reporting"
+  - "Dependency caching for faster builds"
+  - "Docker image building and pushing"
+  - "Semantic versioning and releases"
+  - "Environment-specific deployments"
+  - "Security scanning (npm audit, Snyk)"
+  - "Matrix testing across Node versions"
+  - "Pull request checks"
+  - "Auto-deployment to staging/production"
+  - "Slack/Discord notifications"
+  - "Rollback mechanisms"
+
+configuration:
+  workflows:
+    ci:
+      name: Continuous Integration
+      triggers: [push, pull_request]
+      jobs:
+        - lint
+        - test
+        - build
+    cd:
+      name: Continuous Deployment
+      triggers: [push_to_main]
+      jobs:
+        - docker_build
+        - deploy_staging
+        - deploy_production
+  caching:
+    enabled: true
+    paths: [node_modules, .npm]
+  notifications:
+    on_failure: true
+    channels: [slack, discord]
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  examples:
+    - examples/basic-ci.yml
+    - examples/docker-build.yml
+    - examples/deploy-vercel.yml

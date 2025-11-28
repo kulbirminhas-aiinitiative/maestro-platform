@@ -1,0 +1,13 @@
+{
+  "iteration_id": "test-timeout-124",
+  "total_scenarios": 0,
+  "passed": 0,
+  "failed": 0,
+  "skipped": 0,
+  "duration": 0.000275,
+  "timestamp": "2025-10-13T21:01:12.795896Z",
+  "scenarios": [],
+  "summary": {
+    "error": "Execution timed out after 1 hour"
+  }
+}

@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  automation-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PYPI_INDEX_URL: http://maestro-nexus:8081/repository/pypi-group/simple
+        PYPI_TRUSTED_HOST: maestro-nexus
+    container_name: maestro-automation-service
+    ports:
+      - "8003:8003"
+    environment:
+      # Service Configuration
+      SERVICE_NAME: automation-service
+      SERVICE_PORT: 8003
+      ENVIRONMENT: development
+
+      # Redis Configuration
+      REDIS_HOST: maestro-redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+
+      # Redis Streams
+      STREAM_AUTOMATION_JOBS: "maestro:streams:automation:jobs"
+      STREAM_TEST_HEALING: "maestro:streams:automation:healing"
+      STREAM_ERROR_MONITORING: "maestro:streams:automation:errors"
+      STREAM_VALIDATION: "maestro:streams:automation:validation"
+      STREAM_RESULTS: "maestro:streams:automation:results"
+
+      # Consumer Groups
+      CONSUMER_GROUP_AUTOMATION: "maestro-automation-workers"
+      CONSUMER_GROUP_HEALING: "maestro-healing-workers"
+      CONSUMER_GROUP_MONITORING: "maestro-monitoring-workers"
+      CONSUMER_NAME: "worker-1"
+
+      # PostgreSQL Configuration (optional)
+      POSTGRES_HOST: maestro-postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: maestro_automation
+      POSTGRES_USER: maestro
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+
+      # Healing Configuration
+      DEFAULT_CONFIDENCE_THRESHOLD: 0.75
+      MAX_CONCURRENT_REPAIRS: 3
+      HEALING_TIMEOUT: 300
+      MAX_HEALING_ATTEMPTS: 3
+
+      # Monitoring
+      ERROR_MONITOR_INTERVAL: 30
+      HEALTH_CHECK_INTERVAL: 60
+
+      # Logging
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
+
+      # PyPI
+      PYPI_INDEX_URL: http://maestro-nexus:8081/repository/pypi-group/simple
+      PYPI_TRUSTED_HOST: maestro-nexus
+
+    volumes:
+      - ./logs:/app/logs
+      - /var/run/docker.sock:/var/run/docker.sock  # For Docker-based testing
+      - ./src:/app/src  # Mount source for development
+
+    depends_on:
+      - redis
+      - postgres
+
+    networks:
+      - maestro-network
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis (if not already running)
+  redis:
+    image: redis:7-alpine
+    container_name: maestro-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - maestro-network
+    restart: unless-stopped
+
+  # PostgreSQL (if not already running)
+  postgres:
+    image: postgres:15-alpine
+    container_name: maestro-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: maestro_automation
+      POSTGRES_USER: maestro
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - maestro-network
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+  postgres-data:
+
+networks:
+  maestro-network:
+    driver: bridge

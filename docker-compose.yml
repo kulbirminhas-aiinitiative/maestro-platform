@@ -1,0 +1,79 @@
+services:
+  # Redis - Caching and message broker
+  redis:
+    image: redis:7-alpine
+    container_name: maestro-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - maestro-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Execution Platform - Code execution service
+  execution-platform:
+    build:
+      context: ./execution-platform
+      dockerfile: Dockerfile
+    container_name: maestro-execution-platform
+    ports:
+      - "8000:8080"
+    env_file:
+      - ./execution-platform/.env
+    networks:
+      - maestro-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Discussion Orchestrator - Multi-agent discussion service
+  discussion-orchestrator:
+    build:
+      context: ./discussion-orchestrator
+      dockerfile: Dockerfile
+    container_name: maestro-discussion-orchestrator
+    ports:
+      - "5000:5000"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - REDIS_DB=0
+      - EXECUTION_PLATFORM_URL=http://execution-platform:8080
+      - SERVICE_PORT=5000
+      - LOG_LEVEL=INFO
+      - CORS_ORIGINS=http://localhost:4300,http://localhost:3000
+      - AUTOGEN_MAX_ROUNDS=20
+      - AUTOGEN_TIMEOUT=300
+    env_file:
+      - ./discussion-orchestrator/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+      execution-platform:
+        condition: service_started
+    networks:
+      - maestro-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  maestro-network:
+    driver: bridge
+    name: maestro-network
+
+volumes:
+  redis-data:
+    name: maestro-redis-data

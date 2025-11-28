@@ -1,0 +1,359 @@
+{
+  "timestamp": "2025-10-11T21:42:53.894474",
+  "configurations": [
+    {
+      "config_id": "A",
+      "name": "Existing Setup",
+      "description": "Original default persona configuration",
+      "duration_ms": 26811.727000000003,
+      "total_tokens": 744,
+      "success_rate": 100.0,
+      "phases": [
+        {
+          "name": "requirements",
+          "persona": "code_writer",
+          "provider": "claude_agent",
+          "duration_ms": 2291.625738143921,
+          "tokens": 121,
+          "success": true,
+          "error": null,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n"
+        },
+        {
+          "name": "architecture",
+          "persona": "code_writer",
+          "provider": "claude_agent",
+          "duration_ms": 2224.308729171753,
+          "tokens": 18,
+          "success": true,
+          "error": null,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n"
+        },
+        {
+          "name": "implementation",
+          "persona": "code_writer",
+          "provider": "claude_agent",
+          "duration_ms": 2183.858871459961,
+          "tokens": 18,
+          "success": true,
+          "error": null,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n"
+        },
+        {
+          "name": "code_generation",
+          "persona": "code_writer",
+          "provider": "claude_agent",
+          "duration_ms": 2162.1766090393066,
+          "tokens": 19,
+          "success": true,
+          "error": null,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n"
+        },
+        {
+          "name": "testing",
+          "persona": "qa_engineer",
+          "provider": "openai",
+          "duration_ms": 16007.61866569519,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "To design a comprehensive testing strategy for the error you encountered (`Process exited with code 1: Error: When using --print, --output-format=stre"
+        },
+        {
+          "name": "review",
+          "persona": "code_writer",
+          "provider": "claude_agent",
+          "duration_ms": 1941.8511390686035,
+          "tokens": 568,
+          "success": true,
+          "error": null,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n"
+        }
+      ]
+    },
+    {
+      "config_id": "B",
+      "name": "Full Claude",
+      "description": "All phases using Claude Code SDK from maestro-hive",
+      "duration_ms": 12202.193,
+      "total_tokens": 215,
+      "success_rate": 100.0,
+      "phases": [
+        {
+          "name": "requirements",
+          "persona": "architect",
+          "provider": "claude_agent",
+          "duration_ms": 1888.737678527832,
+          "tokens": 121,
+          "success": true,
+          "error": null,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n"
+        },
+        {
+          "name": "architecture",
+          "persona": "architect",
+          "provider": "claude_agent",
+          "duration_ms": 1975.2142429351807,
+          "tokens": 18,
+          "success": true,
+          "error": null,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n"
+        },
+        {
+          "name": "implementation",
+          "persona": "code_writer",
+          "provider": "claude_agent",
+          "duration_ms": 2013.2412910461426,
+          "tokens": 18,
+          "success": true,
+          "error": null,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n"
+        },
+        {
+          "name": "code_generation",
+          "persona": "code_writer",
+          "provider": "claude_agent",
+          "duration_ms": 2051.118850708008,
+          "tokens": 19,
+          "success": true,
+          "error": null,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n"
+        },
+        {
+          "name": "testing",
+          "persona": "code_writer",
+          "provider": "claude_agent",
+          "duration_ms": 2200.181722640991,
+          "tokens": 18,
+          "success": true,
+          "error": null,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n"
+        },
+        {
+          "name": "review",
+          "persona": "reviewer",
+          "provider": "claude_agent",
+          "duration_ms": 2073.385715484619,
+          "tokens": 21,
+          "success": true,
+          "error": null,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n"
+        }
+      ]
+    },
+    {
+      "config_id": "C",
+      "name": "Mixed Providers",
+      "description": "Strategic mix: Claude for speed, OpenAI for quality, Gemini for specific tasks",
+      "duration_ms": 50890.983,
+      "total_tokens": 1176,
+      "success_rate": 100.0,
+      "phases": [
+        {
+          "name": "requirements",
+          "persona": "architect",
+          "provider": "claude_agent",
+          "duration_ms": 1978.1713485717773,
+          "tokens": 120,
+          "success": true,
+          "error": null,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n"
+        },
+        {
+          "name": "architecture",
+          "persona": "architect_openai",
+          "provider": "openai",
+          "duration_ms": 14850.243330001831,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "To address the error message you're encountering, we need to design a solution that accommodates the requirements of the command-line tool you're usin"
+        },
+        {
+          "name": "implementation",
+          "persona": "code_writer",
+          "provider": "claude_agent",
+          "duration_ms": 1907.6409339904785,
+          "tokens": 476,
+          "success": true,
+          "error": null,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n"
+        },
+        {
+          "name": "code_generation",
+          "persona": "code_writer_openai",
+          "provider": "openai",
+          "duration_ms": 8486.440658569336,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "The error message you're encountering indicates that when using the `--print` option with `--output-format=stream-json`, you must also include the `--"
+        },
+        {
+          "name": "testing",
+          "persona": "qa_engineer",
+          "provider": "openai",
+          "duration_ms": 21533.883094787598,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "### Testing Strategy for Command-Line Tool\n\nWhen developing and testing a command-line tool that processes JSON data and requires specific flags to be"
+        },
+        {
+          "name": "review",
+          "persona": "reviewer",
+          "provider": "claude_agent",
+          "duration_ms": 2134.394645690918,
+          "tokens": 580,
+          "success": true,
+          "error": null,
+          "output_preview": "[error] Process exited with code 1: Error: When using --print, --output-format=stream-json requires --verbose\n"
+        }
+      ]
+    },
+    {
+      "config_id": "D",
+      "name": "OpenAI Only",
+      "description": "All phases using OpenAI API exclusively",
+      "duration_ms": 136008.198,
+      "total_tokens": 0,
+      "success_rate": 100.0,
+      "phases": [
+        {
+          "name": "requirements",
+          "persona": "architect_openai",
+          "provider": "openai",
+          "duration_ms": 24694.265842437744,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "## Detailed Specification for Real-Time Collaborative Document Editing Platform\n\n### 1. Project Overview\nThe goal of this project is to develop a real"
+        },
+        {
+          "name": "architecture",
+          "persona": "architect_openai",
+          "provider": "openai",
+          "duration_ms": 29476.97401046753,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "## Comprehensive System Architecture for Real-Time Collaborative Document Editing Platform\n\n### 1. Overview of System Architecture\nThe architecture of"
+        },
+        {
+          "name": "implementation",
+          "persona": "code_writer_openai",
+          "provider": "openai",
+          "duration_ms": 15553.911924362183,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "# Implementation Plan for Real-Time Collaborative Document Editing Platform\n\n## 1. Project Timeline and Milestones\n\n### Phase 1: Requirements Gatherin"
+        },
+        {
+          "name": "code_generation",
+          "persona": "code_writer_openai",
+          "provider": "openai",
+          "duration_ms": 21288.93733024597,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "Based on the implementation plan you've provided for a real-time collaborative document editing platform, here is a suggested core application code st"
+        },
+        {
+          "name": "testing",
+          "persona": "qa_engineer",
+          "provider": "openai",
+          "duration_ms": 24528.920888900757,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "### Comprehensive Testing Strategy for Real-Time Collaborative Document Editing Platform\n\nA comprehensive testing strategy is essential to ensure the "
+        },
+        {
+          "name": "review",
+          "persona": "reviewer_openai",
+          "provider": "openai",
+          "duration_ms": 20464.95246887207,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "The provided comprehensive testing strategy for a real-time collaborative document editing platform is well-structured and covers a broad range of tes"
+        }
+      ]
+    },
+    {
+      "config_id": "E",
+      "name": "OpenAI + Gemini Mix",
+      "description": "Alternating between OpenAI and Gemini (no Claude)",
+      "duration_ms": 103809.90400000001,
+      "total_tokens": 0,
+      "success_rate": 100.0,
+      "phases": [
+        {
+          "name": "requirements",
+          "persona": "architect_openai",
+          "provider": "openai",
+          "duration_ms": 17903.127908706665,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "To analyze the requirements for the real-time collaborative document editing platform, we can break down the project into various components: core fea"
+        },
+        {
+          "name": "architecture",
+          "persona": "architect_openai",
+          "provider": "openai",
+          "duration_ms": 18111.828088760376,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "Based on your comprehensive analysis of the requirements for a real-time collaborative document editing platform, here is an architecture design that "
+        },
+        {
+          "name": "implementation",
+          "persona": "code_writer_openai",
+          "provider": "openai",
+          "duration_ms": 16842.36168861389,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "### Implementation Plan for Real-Time Collaborative Document Editing Platform\n\n#### 1. Project Initialization\n\n**1.1 Team Formation**\n- Assemble a cro"
+        },
+        {
+          "name": "code_generation",
+          "persona": "code_writer_openai",
+          "provider": "openai",
+          "duration_ms": 15499.419927597046,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "Based on the implementation plan you've provided for a real-time collaborative document editing platform, I can help you generate sample code snippets"
+        },
+        {
+          "name": "testing",
+          "persona": "qa_engineer",
+          "provider": "openai",
+          "duration_ms": 23507.336378097534,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "### Testing Strategy for the Real-Time Collaborative Document Editing Platform\n\nIn order to ensure the reliability and performance of the collaborativ"
+        },
+        {
+          "name": "review",
+          "persona": "reviewer_openai",
+          "provider": "openai",
+          "duration_ms": 11945.579767227173,
+          "tokens": 0,
+          "success": true,
+          "error": null,
+          "output_preview": "### Final Review of the Testing Strategy for the Real-Time Collaborative Document Editing Platform\n\nThe outlined testing strategy for the collaborativ"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "fastest": "B",
+    "slowest": "D"
+  }
+}

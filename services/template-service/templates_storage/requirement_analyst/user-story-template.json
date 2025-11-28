@@ -1,0 +1,80 @@
+{
+  "metadata": {
+    "id": "user-story-template-v1",
+    "name": "Agile User Story Template with INVEST Criteria",
+    "category": "documentation",
+    "language": "markdown",
+    "framework": "agile",
+    "description": "Comprehensive user story template following INVEST principles (Independent, Negotiable, Valuable, Estimable, Small, Testable) with acceptance criteria, story points, and personas",
+    "tags": [
+      "agile",
+      "user-story",
+      "scrum",
+      "requirements",
+      "invest",
+      "acceptance-criteria",
+      "story-points",
+      "personas"
+    ],
+    "quality_score": 90.0,
+    "security_score": 70.0,
+    "performance_score": 70.0,
+    "maintainability_score": 92.0,
+    "test_coverage": 88.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T10:00:00.000000",
+    "updated_at": "2025-10-10T10:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "requirement_analyst"
+  },
+  "content": "# User Story: {{STORY_TITLE}}\n\n## Story ID\n**ID:** {{STORY_ID}}  \n**Epic:** {{EPIC_NAME}}  \n**Sprint:** {{SPRINT_NUMBER}}  \n**Status:** {{STATUS}}  \n**Priority:** {{PRIORITY}}  \n**Story Points:** {{STORY_POINTS}}  \n\n---\n\n## User Story\n\n**As a** {{USER_ROLE}}  \n**I want to** {{GOAL}}  \n**So that** {{BENEFIT}}  \n\n### Story Context\n{{STORY_CONTEXT}}\n\n### User Persona\n- **Name:** {{PERSONA_NAME}}\n- **Role:** {{PERSONA_ROLE}}\n- **Experience Level:** {{EXPERIENCE_LEVEL}}\n- **Goals:** {{PERSONA_GOALS}}\n- **Pain Points:** {{PERSONA_PAIN_POINTS}}\n\n---\n\n## Acceptance Criteria\n\n### Scenario 1: {{SCENARIO_1_NAME}}\n**Given** {{GIVEN_1}}  \n**When** {{WHEN_1}}  \n**Then** {{THEN_1}}  \n**And** {{AND_1}}  \n\n### Scenario 2: {{SCENARIO_2_NAME}}\n**Given** {{GIVEN_2}}  \n**When** {{WHEN_2}}  \n**Then** {{THEN_2}}  \n**And** {{AND_2}}  \n\n### Scenario 3: {{SCENARIO_3_NAME}} (Edge Case)\n**Given** {{GIVEN_3}}  \n**When** {{WHEN_3}}  \n**Then** {{THEN_3}}  \n\n---\n\n## Definition of Done (DoD)\n\n- [ ] Code implemented and peer-reviewed\n- [ ] Unit tests written with {{COVERAGE_THRESHOLD}}% coverage\n- [ ] Integration tests passing\n- [ ] Documentation updated\n- [ ] Acceptance criteria validated by Product Owner\n- [ ] Code merged to {{BRANCH_NAME}} branch\n- [ ] Deployed to {{ENVIRONMENT}} environment\n- [ ] No critical or high-severity bugs\n- [ ] {{CUSTOM_DOD_1}}\n- [ ] {{CUSTOM_DOD_2}}\n\n---\n\n## Technical Details\n\n### Affected Components\n- {{COMPONENT_1}}\n- {{COMPONENT_2}}\n- {{COMPONENT_3}}\n\n### API Endpoints (if applicable)\n```\nGET    {{ENDPOINT_1}}\nPOST   {{ENDPOINT_2}}\nPUT    {{ENDPOINT_3}}\nDELETE {{ENDPOINT_4}}\n```\n\n### Data Models\n```json\n{\n  \"{{MODEL_NAME}}\": {\n    \"{{FIELD_1}}\": \"{{TYPE_1}}\",\n    \"{{FIELD_2}}\": \"{{TYPE_2}}\",\n    \"{{FIELD_3}}\": \"{{TYPE_3}}\"\n  }\n}\n```\n\n### UI/UX Requirements\n- {{UI_REQUIREMENT_1}}\n- {{UI_REQUIREMENT_2}}\n- Responsive design for mobile/tablet/desktop\n- Accessibility: {{ACCESSIBILITY_REQUIREMENT}}\n\n---\n\n## Dependencies\n\n### Blocking Stories\n- {{BLOCKING_STORY_1}} ({{STORY_ID_1}})\n- {{BLOCKING_STORY_2}} ({{STORY_ID_2}})\n\n### Related Stories\n- {{RELATED_STORY_1}} ({{STORY_ID_3}})\n- {{RELATED_STORY_2}} ({{STORY_ID_4}})\n\n### External Dependencies\n- {{EXTERNAL_DEP_1}}\n- {{EXTERNAL_DEP_2}}\n\n---\n\n## INVEST Criteria Checklist\n\n- [x] **Independent:** Can be developed independently of other stories\n- [x] **Negotiable:** Details can be discussed and refined\n- [x] **Valuable:** Delivers clear value to the user/business\n- [x] **Estimable:** Team can estimate effort required\n- [x] **Small:** Can be completed within one sprint\n- [x] **Testable:** Clear acceptance criteria for validation\n\n---\n\n## Non-Functional Requirements\n\n### Performance\n- Response time: < {{RESPONSE_TIME}}ms\n- Load time: < {{LOAD_TIME}}s\n- Concurrent users: {{CONCURRENT_USERS}}\n\n### Security\n- Authentication: {{AUTH_METHOD}}\n- Authorization: {{AUTHZ_REQUIREMENT}}\n- Data encryption: {{ENCRYPTION_REQUIREMENT}}\n- Compliance: {{COMPLIANCE_STANDARD}}\n\n### Reliability\n- Availability: {{AVAILABILITY}}%\n- Error handling: {{ERROR_HANDLING_REQUIREMENT}}\n- Fallback behavior: {{FALLBACK_BEHAVIOR}}\n\n---\n\n## Test Cases\n\n### Test Case 1: {{TEST_CASE_1_NAME}}\n- **Test Steps:** {{TEST_STEPS_1}}\n- **Expected Result:** {{EXPECTED_RESULT_1}}\n- **Priority:** High/Medium/Low\n\n### Test Case 2: {{TEST_CASE_2_NAME}}\n- **Test Steps:** {{TEST_STEPS_2}}\n- **Expected Result:** {{EXPECTED_RESULT_2}}\n- **Priority:** High/Medium/Low\n\n### Test Case 3: {{TEST_CASE_3_NAME}} (Negative Test)\n- **Test Steps:** {{TEST_STEPS_3}}\n- **Expected Result:** {{EXPECTED_RESULT_3}}\n- **Priority:** High/Medium/Low\n\n---\n\n## Mockups/Wireframes\n\n[Attach mockups or link to design files]\n- Desktop: {{MOCKUP_LINK_DESKTOP}}\n- Mobile: {{MOCKUP_LINK_MOBILE}}\n- Prototype: {{PROTOTYPE_LINK}}\n\n---\n\n## Estimation Breakdown\n\n| Task | Estimated Hours | Assignee | Status |\n|------|----------------|----------|--------|\n| {{TASK_1}} | {{HOURS_1}} | {{ASSIGNEE_1}} | {{STATUS_1}} |\n| {{TASK_2}} | {{HOURS_2}} | {{ASSIGNEE_2}} | {{STATUS_2}} |\n| {{TASK_3}} | {{HOURS_3}} | {{ASSIGNEE_3}} | {{STATUS_3}} |\n| **Total** | **{{TOTAL_HOURS}}** | | |\n\n---\n\n## Notes & Comments\n\n### Product Owner Notes\n{{PO_NOTES}}\n\n### Technical Notes\n{{TECH_NOTES}}\n\n### QA Notes\n{{QA_NOTES}}\n\n### Risk Factors\n- {{RISK_1}}: {{MITIGATION_1}}\n- {{RISK_2}}: {{MITIGATION_2}}\n\n---\n\n## Changelog\n\n| Date | Author | Change Description |\n|------|--------|--------------------|\n| {{DATE_1}} | {{AUTHOR_1}} | Initial draft |\n| {{DATE_2}} | {{AUTHOR_2}} | {{CHANGE_2}} |\n\n---\n\n## Sign-off\n\n| Role | Name | Date | Signature |\n|------|------|------|----------|\n| Product Owner | {{PO_NAME}} | | |\n| Scrum Master | {{SM_NAME}} | | |\n| Tech Lead | {{TL_NAME}} | | |\n",
+  "variables": {
+    "STORY_ID": "US-001",
+    "EPIC_NAME": "Epic Name",
+    "SPRINT_NUMBER": "Sprint 1",
+    "STATUS": "Draft/Ready/In Progress/Done",
+    "PRIORITY": "High/Medium/Low",
+    "STORY_POINTS": "3/5/8/13",
+    "STORY_TITLE": "Story Title",
+    "USER_ROLE": "Customer/Admin/Developer",
+    "GOAL": "Achieve specific objective",
+    "BENEFIT": "Realize this value",
+    "COVERAGE_THRESHOLD": "80",
+    "BRANCH_NAME": "main/develop",
+    "ENVIRONMENT": "staging/production",
+    "RESPONSE_TIME": "200",
+    "COMPLIANCE_STANDARD": "GDPR/HIPAA"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Defining user requirements in Agile/Scrum projects",
+      "Creating backlog items with clear acceptance criteria",
+      "Facilitating sprint planning sessions",
+      "Communicating user needs to development teams",
+      "Tracking feature development progress"
+    ],
+    "team_composition": [
+      "requirement_analyst",
+      "backend_developer",
+      "frontend_developer",
+      "qa_engineer",
+      "solution_architect"
+    ],
+    "estimated_time_minutes": 45,
+    "prerequisites": [
+      "User persona defined",
+      "Epic context understood",
+      "Product backlog prioritized",
+      "Team velocity established"
+    ],
+    "related_templates": [
+      "srs-document-template",
+      "acceptance-criteria-template",
+      "requirements-validation-checklist",
+      "epic-template"
+    ]
+  }
+}

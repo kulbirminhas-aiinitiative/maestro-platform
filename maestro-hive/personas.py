@@ -23,18 +23,54 @@ logger = logging.getLogger(__name__)
 # Try to import maestro-engine persona system
 MAESTRO_ENGINE_AVAILABLE = False
 try:
-    # Add maestro-engine/src to path to access centralized personas
-    MAESTRO_ENGINE_PATH = Path("/home/ec2-user/projects/maestro-engine")
+    # Add maestro-engine-new/src to path to access centralized personas
+    # Import as a package with unique name to avoid conflict with local personas.py
+    import importlib.util
+    import importlib
+
+    MAESTRO_ENGINE_PATH = Path("/home/ec2-user/projects/maestro-engine-new")
     MAESTRO_ENGINE_SRC = MAESTRO_ENGINE_PATH / "src"
 
+    # Add to path so relative imports in adapter work
     if str(MAESTRO_ENGINE_SRC) not in sys.path:
         sys.path.insert(0, str(MAESTRO_ENGINE_SRC))
 
-    # Import maestro-engine persona system (from src directory)
-    from personas import get_adapter, MaestroPersonaAdapter
+    # First load the personas package's submodules directly
+    # This avoids the name conflict with our local personas.py
+    models_path = MAESTRO_ENGINE_SRC / "personas" / "models.py"
+    registry_path = MAESTRO_ENGINE_SRC / "personas" / "registry.py"
+    adapter_path = MAESTRO_ENGINE_SRC / "personas" / "adapter.py"
+
+    # Load models
+    spec = importlib.util.spec_from_file_location("maestro_personas.models", models_path)
+    models_module = importlib.util.module_from_spec(spec)
+    sys.modules["maestro_personas.models"] = models_module
+    spec.loader.exec_module(models_module)
+
+    # Load registry
+    spec = importlib.util.spec_from_file_location("maestro_personas.registry", registry_path)
+    registry_module = importlib.util.module_from_spec(spec)
+    sys.modules["maestro_personas.registry"] = registry_module
+    # Patch the relative imports
+    registry_module.PersonaDefinition = models_module.PersonaDefinition
+    registry_module.PersonaCategory = models_module.PersonaCategory
+    spec.loader.exec_module(registry_module)
+
+    # Load adapter with patched dependencies
+    spec = importlib.util.spec_from_file_location("maestro_personas.adapter", adapter_path)
+    adapter_module = importlib.util.module_from_spec(spec)
+    # Inject dependencies to avoid relative import issues
+    adapter_module.PersonaCategory = models_module.PersonaCategory
+    adapter_module.PersonaDefinition = models_module.PersonaDefinition
+    adapter_module.PersonaRegistry = registry_module.PersonaRegistry
+    sys.modules["maestro_personas.adapter"] = adapter_module
+    spec.loader.exec_module(adapter_module)
+
+    MaestroPersonaAdapter = adapter_module.MaestroPersonaAdapter
+    get_adapter = adapter_module.get_adapter
     MAESTRO_ENGINE_AVAILABLE = True
     logger.info("✅ Using maestro-engine personas")
-except ImportError as e:
+except Exception as e:
     logger.warning(f"⚠️  maestro-engine not available, using fallback personas: {e}")
     from personas_fallback import SDLCPersonasFallback
     MAESTRO_ENGINE_AVAILABLE = False

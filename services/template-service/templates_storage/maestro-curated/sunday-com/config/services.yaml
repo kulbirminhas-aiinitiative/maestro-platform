@@ -1,0 +1,108 @@
+# Service Discovery Configuration
+# ADR-001 Compliant: Zero Hardcoded URLs
+#
+# All service URLs use environment variable pattern: ${ENV_VAR:default_value}
+# This ensures proper service discovery in all environments (dev, staging, prod)
+
+services:
+  # Backend API
+  backend:
+    url: ${BACKEND_URL:http://localhost:3000}
+    health_endpoint: /health
+    metrics_endpoint: /metrics
+    timeout: 30000
+
+  # Frontend Application
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:5173}
+    timeout: 10000
+
+  # Database Services
+  database:
+    postgres:
+      url: ${POSTGRES_URL:postgresql://postgres:postgres@localhost:5432/sunday_db}
+      pool_size: ${POSTGRES_POOL_SIZE:20}
+      timeout: 5000
+      ssl: ${POSTGRES_SSL:false}
+
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+      db: ${REDIS_DB:0}
+      timeout: 2000
+
+    clickhouse:
+      url: ${CLICKHOUSE_URL:http://localhost:8123}
+      database: ${CLICKHOUSE_DB:analytics}
+      timeout: 10000
+
+    elasticsearch:
+      url: ${ELASTICSEARCH_URL:http://localhost:9200}
+      index_prefix: ${ELASTICSEARCH_INDEX_PREFIX:sunday}
+      timeout: 5000
+
+  # External Services
+  external:
+    auth0:
+      domain: ${AUTH0_DOMAIN:your-tenant.auth0.com}
+      audience: ${AUTH0_AUDIENCE:https://api.sunday.com}
+      timeout: 10000
+
+    openai:
+      url: ${OPENAI_API_URL:https://api.openai.com/v1}
+      model: ${OPENAI_MODEL:gpt-4}
+      timeout: 60000
+
+    aws:
+      sagemaker:
+        endpoint: ${SAGEMAKER_ENDPOINT:your-endpoint}
+        region: ${AWS_REGION:us-east-1}
+        timeout: 30000
+
+      s3:
+        bucket: ${S3_BUCKET:sunday-uploads}
+        region: ${AWS_REGION:us-east-1}
+        timeout: 30000
+
+    email:
+      smtp:
+        host: ${SMTP_HOST:smtp.gmail.com}
+        port: ${SMTP_PORT:587}
+        secure: ${SMTP_SECURE:true}
+        timeout: 10000
+
+  # Monitoring Services
+  monitoring:
+    datadog:
+      api_key: ${DATADOG_API_KEY}
+      app_key: ${DATADOG_APP_KEY}
+      site: ${DATADOG_SITE:datadoghq.com}
+
+    sentry:
+      dsn: ${SENTRY_DSN}
+      environment: ${ENVIRONMENT:development}
+      traces_sample_rate: ${SENTRY_TRACES_SAMPLE_RATE:0.1}
+
+    prometheus:
+      url: ${PROMETHEUS_URL:http://localhost:9090}
+      pushgateway: ${PROMETHEUS_PUSHGATEWAY_URL:http://localhost:9091}
+
+  # Message Queue / Event Streaming
+  messaging:
+    kafka:
+      brokers: ${KAFKA_BROKERS:localhost:9092}
+      client_id: ${KAFKA_CLIENT_ID:sunday-backend}
+      timeout: 10000
+
+# Health Check Configuration
+health_checks:
+  interval: 30000  # 30 seconds
+  timeout: 5000    # 5 seconds
+  retries: 3
+
+# Service Registry Metadata
+metadata:
+  version: "1.0.0"
+  environment: ${ENVIRONMENT:development}
+  cluster: ${CLUSTER_NAME:local}
+  adr_compliant: true
+  adr_version: "ADR-001"

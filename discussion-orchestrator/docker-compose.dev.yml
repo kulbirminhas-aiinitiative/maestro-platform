@@ -1,0 +1,35 @@
+version: '3.8'
+
+# Development-specific overrides for discussion-orchestrator
+# Usage: docker-compose -f docker-compose.yml -f discussion-orchestrator/docker-compose.dev.yml up
+
+services:
+  discussion-orchestrator:
+    build:
+      context: ./discussion-orchestrator
+      dockerfile: Dockerfile
+      target: development
+    volumes:
+      # Mount source code for live reloading
+      - ./discussion-orchestrator/src:/app/src:ro
+      # Mount for development logs
+      - ./discussion-orchestrator/logs:/app/logs
+    environment:
+      # Development-specific environment variables
+      - LOG_LEVEL=DEBUG
+      - RELOAD=true
+      - AUTOGEN_MAX_ROUNDS=10
+      - AUTOGEN_TIMEOUT=120
+    command: >
+      uvicorn src.main:app
+      --host 0.0.0.0
+      --port 5000
+      --reload
+      --log-level debug
+    ports:
+      - "5000:5000"
+      # Debugging port (optional)
+      - "5678:5678"
+    # Remove healthcheck in dev for faster startup
+    healthcheck:
+      disable: true

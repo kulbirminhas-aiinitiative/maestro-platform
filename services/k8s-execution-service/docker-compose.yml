@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  k8s-execution-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: maestro-k8s-execution
+    ports:
+      - "8004:8004"
+    environment:
+      # Service Configuration
+      SERVICE_NAME: k8s-execution-service
+      SERVICE_PORT: 8004
+      ENVIRONMENT: development
+
+      # Kubernetes
+      K8S_IN_CLUSTER: "false"
+      K8S_NAMESPACE_PREFIX: quality-fabric
+      K8S_TTL_MINUTES: 60
+      K8S_CLEANUP_INTERVAL_MINUTES: 10
+
+      # Resource Limits
+      DEFAULT_CPU_LIMIT: "1000m"
+      DEFAULT_MEMORY_LIMIT: "1Gi"
+      DEFAULT_CPU_REQUEST: "100m"
+      DEFAULT_MEMORY_REQUEST: "256Mi"
+
+      # Execution
+      DEFAULT_TIMEOUT_MINUTES: 30
+      MAX_CONCURRENT_ENVIRONMENTS: 10
+      MAX_RETRIES: 3
+
+      # Redis
+      REDIS_HOST: maestro-redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+
+      # Redis Streams
+      STREAM_K8S_JOBS: "maestro:streams:k8s:jobs"
+      STREAM_K8S_RESULTS: "maestro:streams:k8s:results"
+      STREAM_K8S_STATUS: "maestro:streams:k8s:status"
+
+      # Consumer Groups
+      CONSUMER_GROUP_K8S: "maestro-k8s-workers"
+      CONSUMER_NAME: "worker-1"
+
+      # PostgreSQL (optional)
+      POSTGRES_HOST: maestro-postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: maestro_k8s
+      POSTGRES_USER: maestro
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+
+      # Database Images
+      POSTGRES_IMAGE: postgres:15-alpine
+      MYSQL_IMAGE: mysql:8.0
+      REDIS_IMAGE: redis:7-alpine
+      MONGODB_IMAGE: mongo:7
+
+      # Logging
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
+
+    volumes:
+      - ~/.kube:/root/.kube:ro  # Mount kubeconfig for K8s access
+      - ./logs:/app/logs
+      - ./src:/app/src  # Mount source for development
+      - ./templates:/app/templates
+
+    depends_on:
+      - redis
+
+    networks:
+      - maestro-network
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis (if not already running)
+  redis:
+    image: redis:7-alpine
+    container_name: maestro-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - maestro-network
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+
+networks:
+  maestro-network:
+    driver: bridge

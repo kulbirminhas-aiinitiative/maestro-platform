@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "id": "nestjs-repository-pattern-v1",
+    "name": "NestJS Repository Pattern with TypeORM",
+    "category": "architecture",
+    "language": "typescript",
+    "framework": "nestjs",
+    "description": "Production-ready repository pattern implementation with TypeORM, dependency injection, error handling, and transaction support",
+    "tags": [
+      "repository",
+      "typeorm",
+      "dependency-injection",
+      "clean-architecture",
+      "transactions",
+      "error-handling"
+    ],
+    "quality_score": 88.0,
+    "security_score": 85.0,
+    "performance_score": 85.0,
+    "maintainability_score": 90.0,
+    "test_coverage": 80.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-04T20:00:00.000000",
+    "updated_at": "2025-10-04T20:00:00.000000",
+    "created_by": "template_enhancement_phase1",
+    "persona": "backend_developer"
+  },
+  "content": "// src/users/entities/user.entity.ts\nimport { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';\n\n@Entity('users')\nexport class User {\n  @PrimaryGeneratedColumn('uuid')\n  id: string;\n\n  @Column({ unique: true })\n  email: string;\n\n  @Column()\n  name: string;\n\n  @Column({ default: true })\n  isActive: boolean;\n\n  @CreateDateColumn()\n  createdAt: Date;\n\n  @UpdateDateColumn()\n  updatedAt: Date;\n}\n\n// src/users/dto/create-user.dto.ts\nimport { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';\n\nexport class CreateUserDto {\n  @IsEmail({}, { message: 'Invalid email format' })\n  @IsNotEmpty()\n  email: string;\n\n  @IsString()\n  @IsNotEmpty()\n  @MinLength(2, { message: 'Name must be at least 2 characters' })\n  name: string;\n}\n\n// src/users/dto/update-user.dto.ts\nimport { PartialType } from '@nestjs/mapped-types';\nimport { IsBoolean, IsOptional } from 'class-validator';\nimport { CreateUserDto } from './create-user.dto';\n\nexport class UpdateUserDto extends PartialType(CreateUserDto) {\n  @IsBoolean()\n  @IsOptional()\n  isActive?: boolean;\n}\n\n// src/users/repositories/user.repository.interface.ts\nimport { User } from '../entities/user.entity';\nimport { CreateUserDto } from '../dto/create-user.dto';\nimport { UpdateUserDto } from '../dto/update-user.dto';\n\nexport interface IUserRepository {\n  create(createUserDto: CreateUserDto): Promise<User>;\n  findAll(page?: number, limit?: number): Promise<{ users: User[]; total: number }>;\n  findById(id: string): Promise<User | null>;\n  findByEmail(email: string): Promise<User | null>;\n  update(id: string, updateUserDto: UpdateUserDto): Promise<User>;\n  delete(id: string): Promise<void>;\n  existsById(id: string): Promise<boolean>;\n}\n\n// src/users/repositories/user.repository.ts\nimport { Injectable, NotFoundException, ConflictException, InternalServerErrorException } from '@nestjs/common';\nimport { InjectRepository } from '@nestjs/typeorm';\nimport { Repository, EntityManager } from 'typeorm';\nimport { User } from '../entities/user.entity';\nimport { CreateUserDto } from '../dto/create-user.dto';\nimport { UpdateUserDto } from '../dto/update-user.dto';\nimport { IUserRepository } from './user.repository.interface';\nimport { Logger } from '@nestjs/common';\n\n@Injectable()\nexport class UserRepository implements IUserRepository {\n  private readonly logger = new Logger(UserRepository.name);\n\n  constructor(\n    @InjectRepository(User)\n    private readonly repository: Repository<User>,\n  ) {}\n\n  async create(createUserDto: CreateUserDto): Promise<User> {\n    try {\n      // Check for existing email\n      const existingUser = await this.findByEmail(createUserDto.email);\n      if (existingUser) {\n        throw new ConflictException(`User with email ${createUserDto.email} already exists`);\n      }\n\n      const user = this.repository.create(createUserDto);\n      const savedUser = await this.repository.save(user);\n      this.logger.log(`Created user with id=${savedUser.id}`);\n      return savedUser;\n    } catch (error) {\n      if (error instanceof ConflictException) {\n        throw error;\n      }\n      this.logger.error(`Failed to create user: ${error.message}`, error.stack);\n      throw new InternalServerErrorException('Failed to create user');\n    }\n  }\n\n  async findAll(page: number = 1, limit: number = 10): Promise<{ users: User[]; total: number }> {\n    try {\n      const [users, total] = await this.repository.findAndCount({\n        skip: (page - 1) * limit,\n        take: limit,\n        order: { createdAt: 'DESC' },\n      });\n\n      return { users, total };\n    } catch (error) {\n      this.logger.error(`Failed to fetch users: ${error.message}`, error.stack);\n      throw new InternalServerErrorException('Failed to fetch users');\n    }\n  }\n\n  async findById(id: string): Promise<User | null> {\n    try {\n      return await this.repository.findOne({ where: { id } });\n    } catch (error) {\n      this.logger.error(`Failed to find user by id=${id}: ${error.message}`, error.stack);\n      throw new InternalServerErrorException('Failed to find user');\n    }\n  }\n\n  async findByEmail(email: string): Promise<User | null> {\n    try {\n      return await this.repository.findOne({ where: { email } });\n    } catch (error) {\n      this.logger.error(`Failed to find user by email: ${error.message}`, error.stack);\n      throw new InternalServerErrorException('Failed to find user');\n    }\n  }\n\n  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {\n    try {\n      const user = await this.findById(id);\n      if (!user) {\n        throw new NotFoundException(`User with id=${id} not found`);\n      }\n\n      // Check email uniqueness if email is being updated\n      if (updateUserDto.email && updateUserDto.email !== user.email) {\n        const existingUser = await this.findByEmail(updateUserDto.email);\n        if (existingUser) {\n          throw new ConflictException(`User with email ${updateUserDto.email} already exists`);\n        }\n      }\n\n      Object.assign(user, updateUserDto);\n      const updatedUser = await this.repository.save(user);\n      this.logger.log(`Updated user with id=${id}`);\n      return updatedUser;\n    } catch (error) {\n      if (error instanceof NotFoundException || error instanceof ConflictException) {\n        throw error;\n      }\n      this.logger.error(`Failed to update user: ${error.message}`, error.stack);\n      throw new InternalServerErrorException('Failed to update user');\n    }\n  }\n\n  async delete(id: string): Promise<void> {\n    try {\n      const result = await this.repository.delete(id);\n      if (result.affected === 0) {\n        throw new NotFoundException(`User with id=${id} not found`);\n      }\n      this.logger.log(`Deleted user with id=${id}`);\n    } catch (error) {\n      if (error instanceof NotFoundException) {\n        throw error;\n      }\n      this.logger.error(`Failed to delete user: ${error.message}`, error.stack);\n      throw new InternalServerErrorException('Failed to delete user');\n    }\n  }\n\n  async existsById(id: string): Promise<boolean> {\n    try {\n      const count = await this.repository.count({ where: { id } });\n      return count > 0;\n    } catch (error) {\n      this.logger.error(`Failed to check user existence: ${error.message}`, error.stack);\n      throw new InternalServerErrorException('Failed to check user existence');\n    }\n  }\n\n  // Transaction support\n  async createWithTransaction(createUserDto: CreateUserDto, manager: EntityManager): Promise<User> {\n    const repository = manager.getRepository(User);\n    const user = repository.create(createUserDto);\n    return await repository.save(user);\n  }\n}\n\n// src/users/users.service.ts\nimport { Injectable } from '@nestjs/common';\nimport { CreateUserDto } from './dto/create-user.dto';\nimport { UpdateUserDto } from './dto/update-user.dto';\nimport { UserRepository } from './repositories/user.repository';\nimport { User } from './entities/user.entity';\n\n@Injectable()\nexport class UsersService {\n  constructor(private readonly userRepository: UserRepository) {}\n\n  create(createUserDto: CreateUserDto): Promise<User> {\n    return this.userRepository.create(createUserDto);\n  }\n\n  findAll(page?: number, limit?: number) {\n    return this.userRepository.findAll(page, limit);\n  }\n\n  async findOne(id: string): Promise<User> {\n    const user = await this.userRepository.findById(id);\n    if (!user) {\n      throw new NotFoundException(`User with id=${id} not found`);\n    }\n    return user;\n  }\n\n  update(id: string, updateUserDto: UpdateUserDto): Promise<User> {\n    return this.userRepository.update(id, updateUserDto);\n  }\n\n  remove(id: string): Promise<void> {\n    return this.userRepository.delete(id);\n  }\n}\n\n// src/users/users.module.ts\nimport { Module } from '@nestjs/common';\nimport { TypeOrmModule } from '@nestjs/typeorm';\nimport { UsersService } from './users.service';\nimport { UsersController } from './users.controller';\nimport { User } from './entities/user.entity';\nimport { UserRepository } from './repositories/user.repository';\n\n@Module({\n  imports: [TypeOrmModule.forFeature([User])],\n  controllers: [UsersController],\n  providers: [UsersService, UserRepository],\n  exports: [UsersService, UserRepository],\n})\nexport class UsersModule {}",
+  "variables": {
+    "ENTITY_NAME": "User",
+    "TABLE_NAME": "users",
+    "DTO_PREFIX": "User"
+  },
+  "dependencies": [
+    "@nestjs/common@^10.0.0",
+    "@nestjs/typeorm@^10.0.0",
+    "typeorm@^0.3.17",
+    "class-validator@^0.14.0",
+    "class-transformer@^0.5.1"
+  ],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Implementing repository pattern in NestJS",
+      "Clean architecture with dependency injection",
+      "TypeORM integration with best practices",
+      "Transaction support and error handling"
+    ],
+    "team_composition": [
+      "backend_developer",
+      "solution_architect"
+    ],
+    "estimated_time_minutes": 60,
+    "prerequisites": [
+      "NestJS project setup",
+      "TypeORM configured",
+      "PostgreSQL or MySQL database",
+      "Understanding of dependency injection"
+    ],
+    "related_templates": [
+      "nestjs-clean-architecture",
+      "typeorm-advanced-patterns",
+      "nestjs-dto-validation"
+    ]
+  }
+}

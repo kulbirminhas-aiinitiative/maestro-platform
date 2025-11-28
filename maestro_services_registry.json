@@ -1,0 +1,402 @@
+{
+  "platform": {
+    "name": "maestro-platform",
+    "version": "1.0.0",
+    "description": "Maestro Platform - Comprehensive Microservices Platform",
+    "deployment_target": "/home/ec2-user/deployment",
+    "repository": "https://github.com/your-org/maestro-platform"
+  },
+  "services": [
+    {
+      "id": "maestro-frontend-ui",
+      "name": "Maestro Frontend UI",
+      "description": "React/Vite frontend for Maestro platform - Main Dashboard",
+      "source_path": "../maestro-frontend-production/frontend",
+      "docker_compose": "docker-compose.yml",
+      "dockerfile": "Dockerfile",
+      "env_file": ".env",
+      "ports": {
+        "sandbox": 3000,
+        "development": 3000,
+        "demo": 3000,
+        "production": 3000
+      },
+      "health_check": "/",
+      "dependencies": ["maestro-frontend-backend"],
+      "build_command": "npm run build",
+      "test_command": "npm test",
+      "deploy_order": 1,
+      "status": "active",
+      "notes": "Production accessed via Nginx on 443"
+    },
+    {
+      "id": "maestro-frontend-backend",
+      "name": "Maestro Frontend Backend (BFF)",
+      "description": "Backend-for-Frontend service with Express.js, handles deployment management, integrations",
+      "source_path": "../maestro-frontend-production/backend",
+      "docker_compose": "docker-compose.yml",
+      "dockerfile": "Dockerfile",
+      "env_file": ".env",
+      "ports": {
+        "sandbox": 4100,
+        "development": 4100,
+        "demo": 4100,
+        "production": 4100
+      },
+      "health_check": "/health",
+      "dependencies": ["redis", "postgres"],
+      "build_command": "npm run build",
+      "test_command": "npm test",
+      "deploy_order": 2,
+      "status": "active"
+    },
+    {
+      "id": "maestro-gateway",
+      "name": "Maestro API Gateway",
+      "description": "Main API Gateway for Maestro Platform (Nginx/Kong)",
+      "source_path": "../maestro-platform/gateway",
+      "docker_compose": "docker-compose.yml",
+      "dockerfile": "Dockerfile",
+      "env_file": ".env",
+      "ports": {
+        "sandbox": 4000,
+        "development": 4000,
+        "demo": 4000,
+        "production": 4000
+      },
+      "health_check": "/health",
+      "dependencies": ["redis"],
+      "build_command": null,
+      "test_command": null,
+      "deploy_order": 3,
+      "status": "active",
+      "notes": "Production accessed via Nginx on 443"
+    },
+    {
+      "id": "maestro-bff",
+      "name": "Maestro BFF (Multi-User WebSocket)",
+      "description": "Unified BFF service for multi-user collaboration and WebSocket",
+      "source_path": "../maestro-engine-new/src/bff",
+      "docker_compose": "docker-compose.yml",
+      "dockerfile": "Dockerfile.bff",
+      "env_file": ".env",
+      "ports": {
+        "sandbox": 4001,
+        "development": 4001,
+        "demo": 4001,
+        "production": 4001
+      },
+      "health_check": "/health",
+      "dependencies": ["maestro-engine", "redis"],
+      "build_command": null,
+      "test_command": null,
+      "deploy_order": 4,
+      "status": "active",
+      "notes": "WebSocket endpoint for real-time collaboration"
+    },
+    {
+      "id": "maestro-engine",
+      "name": "Maestro Engine",
+      "description": "Core workflow engine with multi-agent orchestration (Python/FastAPI)",
+      "source_path": "../maestro-engine-new",
+      "docker_compose": "docker-compose.yml",
+      "dockerfile": "Dockerfile",
+      "env_file": ".env",
+      "ports": {
+        "sandbox": 5000,
+        "development": 5000,
+        "demo": 5000,
+        "production": 5000
+      },
+      "health_check": "/health",
+      "dependencies": ["redis", "postgres"],
+      "build_command": "poetry build",
+      "test_command": "pytest tests/",
+      "deploy_order": 5,
+      "status": "active"
+    },
+    {
+      "id": "quality-fabric",
+      "name": "Quality Fabric",
+      "description": "Comprehensive Testing as a Service Platform",
+      "source_path": "quality-fabric",
+      "docker_compose": "docker-compose.yml",
+      "dockerfile": "Dockerfile",
+      "env_file": ".env.example",
+      "ports": {
+        "sandbox": 8000,
+        "development": 8000,
+        "demo": 8000,
+        "production": 8000
+      },
+      "health_check": "/api/health",
+      "dependencies": ["redis", "postgres"],
+      "build_command": "docker-compose build",
+      "test_command": "pytest tests/",
+      "deploy_order": 10,
+      "status": "active"
+    },
+    {
+      "id": "automation-service",
+      "name": "CARS - Continuous Automated Remediation Service",
+      "description": "Autonomous test healing and remediation service",
+      "source_path": "services/automation-service",
+      "docker_compose": "docker-compose.yml",
+      "dockerfile": "Dockerfile",
+      "env_file": ".env.example",
+      "ports": {
+        "sandbox": 8010,
+        "development": 8010,
+        "demo": 8010,
+        "production": 8010
+      },
+      "health_check": "/health",
+      "dependencies": ["redis", "postgres"],
+      "build_command": "docker-compose build",
+      "test_command": "pytest tests/",
+      "deploy_order": 20,
+      "status": "active"
+    },
+    {
+      "id": "template-service",
+      "name": "Template Service",
+      "description": "Strategic template engine and registry",
+      "source_path": "services/template-service",
+      "docker_compose": "docker-compose.yml",
+      "dockerfile": "Dockerfile",
+      "env_file": ".env.example",
+      "ports": {
+        "sandbox": 8020,
+        "development": 8020,
+        "demo": 8020,
+        "production": 8020
+      },
+      "health_check": "/health",
+      "dependencies": ["redis", "postgres"],
+      "build_command": "docker-compose build",
+      "test_command": "pytest tests/",
+      "deploy_order": 30,
+      "status": "active"
+    },
+    {
+      "id": "k8s-execution-service",
+      "name": "K8s Execution Service",
+      "description": "Ephemeral Kubernetes environments for testing",
+      "source_path": "services/k8s-execution-service",
+      "docker_compose": "docker-compose.yml",
+      "dockerfile": "Dockerfile",
+      "env_file": ".env.example",
+      "ports": {
+        "sandbox": 8030,
+        "development": 8030,
+        "demo": 8030,
+        "production": 8030
+      },
+      "health_check": "/api/v1/k8s-execution/health",
+      "dependencies": ["redis"],
+      "build_command": "docker-compose build",
+      "test_command": "pytest tests/",
+      "deploy_order": 40,
+      "status": "active"
+    },
+    {
+      "id": "jira-integration",
+      "name": "Jira Integration Service",
+      "description": "Jira synchronization and integration service",
+      "source_path": "services/jira-integration",
+      "docker_compose": "docker-compose.yml",
+      "dockerfile": "Dockerfile",
+      "env_file": ".env.example",
+      "ports": {
+        "sandbox": 8040,
+        "development": 8040,
+        "demo": 8040,
+        "production": 8040
+      },
+      "health_check": "/health",
+      "dependencies": ["redis", "postgres"],
+      "build_command": "docker-compose build",
+      "test_command": "pytest tests/",
+      "deploy_order": 50,
+      "status": "active"
+    },
+    {
+      "id": "rag-service",
+      "name": "RAG / Knowledge Base Service",
+      "description": "Retrieval-Augmented Generation and Knowledge Base",
+      "source_path": "services/rag-service",
+      "docker_compose": "docker-compose.yml",
+      "dockerfile": "Dockerfile",
+      "env_file": ".env.example",
+      "ports": {
+        "sandbox": 8050,
+        "development": 8050,
+        "demo": 8050,
+        "production": 8050
+      },
+      "health_check": "/health",
+      "dependencies": ["redis", "chromadb"],
+      "build_command": "docker-compose build",
+      "test_command": "pytest tests/",
+      "deploy_order": 60,
+      "status": "active"
+    },
+    {
+      "id": "maestro-templates-legacy",
+      "name": "Maestro Templates (Legacy)",
+      "description": "Legacy template service - being replaced by template-service",
+      "source_path": "maestro-templates",
+      "docker_compose": "docker-compose.nexus.yml",
+      "dockerfile": "Dockerfile",
+      "env_file": ".env",
+      "ports": {
+        "sandbox": 8090,
+        "development": 8090,
+        "demo": 8090,
+        "production": 8090
+      },
+      "health_check": "/health",
+      "dependencies": ["redis", "postgres"],
+      "build_command": "docker-compose -f docker-compose.nexus.yml build",
+      "test_command": null,
+      "deploy_order": 99,
+      "status": "deprecated"
+    }
+  ],
+  "infrastructure": {
+    "postgres": {
+      "image": "postgres:15-alpine",
+      "ports": {
+        "sandbox": 5432,
+        "development": 5432,
+        "demo": 5432,
+        "production": 5432
+      },
+      "volume": "maestro_postgres_data",
+      "required_by": ["quality-fabric", "automation-service", "template-service", "maestro-frontend-backend"],
+      "notes": "Sandbox: 15432, Dev/Demo/Prod: 5432"
+    },
+    "redis": {
+      "image": "redis:7-alpine",
+      "ports": {
+        "sandbox": 6379,
+        "development": 6379,
+        "demo": 6379,
+        "production": 6379
+      },
+      "volume": "maestro_redis_data",
+      "required_by": ["all"],
+      "notes": "Sandbox: 16379, Dev/Demo/Prod: 6379"
+    },
+    "rabbitmq": {
+      "image": "rabbitmq:3-management-alpine",
+      "ports": {
+        "sandbox": 5672,
+        "development": 5672,
+        "demo": 5672,
+        "production": 5672
+      },
+      "management_port": 15672,
+      "volume": "maestro_rabbitmq_data",
+      "required_by": ["automation-service", "quality-fabric"],
+      "notes": "Sandbox: 15672/25672, Dev/Demo/Prod: 5672/15672"
+    },
+    "chromadb": {
+      "image": "chromadb/chroma:latest",
+      "ports": {
+        "sandbox": 6800,
+        "development": 6800,
+        "demo": 6800,
+        "production": 6800
+      },
+      "volume": "maestro_chromadb_data",
+      "required_by": ["rag-service"],
+      "notes": "Sandbox: 16800, Dev/Demo/Prod: 6800"
+    },
+    "nexus": {
+      "image": "sonatype/nexus3",
+      "ports": {
+        "sandbox": 8081,
+        "development": 8081,
+        "demo": 8081,
+        "production": 8081
+      },
+      "volume": "maestro_nexus_data",
+      "required_by": ["build"],
+      "notes": "Sandbox: 18081, Dev/Demo/Prod: 8081"
+    }
+  },
+  "environments": {
+    "sandbox": {
+      "location": "/home/ec2-user/projects",
+      "project_root": "/home/ec2-user/projects/maestro-platform",
+      "nexus_url": "http://localhost:28081",
+      "port_offset": 10000,
+      "auto_deploy": true,
+      "quality_gates": false,
+      "purpose": "Experimental development - messy prototyping allowed",
+      "description": "The ~/projects folder for hacking and experimentation (ports 10000+)"
+    },
+    "development": {
+      "location": "/home/ec2-user/development",
+      "project_root": "/home/ec2-user/development/maestro-platform",
+      "nexus_url": "http://localhost:28081",
+      "port_offset": 0,
+      "auto_deploy": true,
+      "quality_gates": false,
+      "purpose": "Clean development environment - stable, CI/CD ready",
+      "description": "The ~/development folder for clean, integrated development (base ports)"
+    },
+    "demo": {
+      "location": "18.134.157.225",
+      "deployment_path": "/home/ec2-user/deployment",
+      "project_root": "/home/ubuntu/maestro-platform",
+      "nexus_url": "http://demo-nexus:8081",
+      "port_offset": 0,
+      "auto_deploy": false,
+      "quality_gates": false,
+      "purpose": "Demo server for stakeholder review"
+    },
+    "production": {
+      "location": "TBD",
+      "deployment_path": "/opt/maestro",
+      "project_root": "/opt/maestro/source",
+      "nexus_url": "http://prod-nexus:8081",
+      "port_offset": 0,
+      "auto_deploy": false,
+      "quality_gates": true,
+      "purpose": "Production environment"
+    }
+  },
+  "deployment": {
+    "strategy": "automated_cicd",
+    "orchestration": "docker-compose",
+    "build_system": "docker",
+    "artifact_registry": "nexus",
+    "secrets_management": "env_files",
+    "rollback_strategy": "docker_tag"
+  },
+  "ci_cd": {
+    "pipeline_location": ".github/workflows/deploy.yml",
+    "triggers": {
+      "development": ["push to main", "manual"],
+      "demo": ["manual approval"],
+      "production": ["manual approval + quality gates"]
+    },
+    "quality_gates": {
+      "test_coverage": 70,
+      "security_scan": "required",
+      "health_check": "required"
+    }
+  },
+  "metadata": {
+    "created_at": "2025-10-26T11:00:00Z",
+    "last_updated": "2025-01-28T14:00:00Z",
+    "maintainer": "maestro-platform-team",
+    "schema_version": "2.0.0",
+    "changelog": [
+      "2.0.0: Port Strategy Revision - Sandbox +10000 offset, standardized base ports (MD-1941)",
+      "1.1.0: Added sandbox environment, maestro-frontend, maestro-engine services"
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "requirement": "Build a simple REST API with user registration endpoint",
+  "initial_context": {
+    "language": "python",
+    "framework": "fastapi"
+  }
+}

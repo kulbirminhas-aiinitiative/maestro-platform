@@ -1,0 +1,233 @@
+[
+  {
+    "agent_id": "requirement_analyst",
+    "name": "Requirement Analyst",
+    "persona_type": "requirement_analyst",
+    "availability_status": "available",
+    "wip_limit": 3,
+    "current_wip": 0,
+    "capabilities": [
+      {
+        "skill_id": "Analysis:Requirements",
+        "proficiency": 5,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Documentation:Technical",
+        "proficiency": 4,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Communication:Stakeholder",
+        "proficiency": 4,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      }
+    ],
+    "quality_score_history": [],
+    "metadata": {},
+    "created_at": "2025-11-22T14:34:43.158801",
+    "updated_at": "2025-11-22T14:34:43.158807"
+  },
+  {
+    "agent_id": "backend_developer",
+    "name": "Marcus (Backend Developer)",
+    "persona_type": "backend_developer",
+    "availability_status": "available",
+    "wip_limit": 3,
+    "current_wip": 0,
+    "capabilities": [
+      {
+        "skill_id": "Backend:Python:FastAPI",
+        "proficiency": 5,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Backend:Python",
+        "proficiency": 5,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Data:SQL:PostgreSQL",
+        "proficiency": 4,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Testing:Unit",
+        "proficiency": 4,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "DevOps:Docker",
+        "proficiency": 3,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      }
+    ],
+    "quality_score_history": [],
+    "metadata": {},
+    "created_at": "2025-11-22T14:34:43.159125",
+    "updated_at": "2025-11-22T14:44:27.948979"
+  },
+  {
+    "agent_id": "qa_engineer",
+    "name": "Rachel (QA Engineer)",
+    "persona_type": "qa_engineer",
+    "availability_status": "available",
+    "wip_limit": 3,
+    "current_wip": 0,
+    "capabilities": [
+      {
+        "skill_id": "Testing:Unit",
+        "proficiency": 5,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Testing:Integration",
+        "proficiency": 5,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Testing:E2E",
+        "proficiency": 5,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Testing:Performance",
+        "proficiency": 4,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Quality:CodeReview",
+        "proficiency": 4,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      }
+    ],
+    "quality_score_history": [],
+    "metadata": {},
+    "created_at": "2025-11-22T14:34:43.160575",
+    "updated_at": "2025-11-22T14:34:43.160578"
+  },
+  {
+    "agent_id": "devops_engineer",
+    "name": "David (DevOps Engineer)",
+    "persona_type": "devops_engineer",
+    "availability_status": "available",
+    "wip_limit": 3,
+    "current_wip": 0,
+    "capabilities": [
+      {
+        "skill_id": "DevOps:Docker",
+        "proficiency": 5,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "DevOps:Kubernetes",
+        "proficiency": 5,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "DevOps:CI/CD",
+        "proficiency": 5,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Cloud:AWS",
+        "proficiency": 4,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Cloud:GCP",
+        "proficiency": 3,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Monitoring:Observability",
+        "proficiency": 4,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      }
+    ],
+    "quality_score_history": [],
+    "metadata": {},
+    "created_at": "2025-11-22T14:34:43.161857",
+    "updated_at": "2025-11-22T14:34:43.161859"
+  },
+  {
+    "agent_id": "frontend_developer",
+    "name": "Frontend Developer",
+    "persona_type": "frontend_developer",
+    "availability_status": "available",
+    "wip_limit": 3,
+    "current_wip": 0,
+    "capabilities": [
+      {
+        "skill_id": "Frontend:React",
+        "proficiency": 5,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Frontend:TypeScript",
+        "proficiency": 5,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Frontend:CSS",
+        "proficiency": 4,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      },
+      {
+        "skill_id": "Testing:Unit",
+        "proficiency": 3,
+        "source": "manual",
+        "confidence": 1.0,
+        "last_used": null
+      }
+    ],
+    "quality_score_history": [],
+    "metadata": {},
+    "created_at": "2025-11-22T14:34:43.163374",
+    "updated_at": "2025-11-22T14:34:43.163377"
+  }
+]

@@ -1,0 +1,15 @@
+---
+# Ansible Role: Docker
+- name: Ensure Docker is running
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+  ignore_errors: yes
+
+- name: Add user to docker group
+  user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: yes
+  ignore_errors: yes

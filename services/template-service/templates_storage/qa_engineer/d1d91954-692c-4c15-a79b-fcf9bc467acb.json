@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "id": "d1d91954-692c-4c15-a79b-fcf9bc467acb",
+    "name": "Pytest Test Suite",
+    "category": "testing",
+    "language": "python",
+    "framework": "pytest",
+    "description": "Comprehensive pytest test suite with fixtures and parametrize",
+    "tags": [
+      "pytest",
+      "testing",
+      "api",
+      "fixtures"
+    ],
+    "quality_score": 70.0,
+    "security_score": 70.0,
+    "performance_score": 70.0,
+    "maintainability_score": 70.0,
+    "test_coverage": 0.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-03T22:04:37.855558",
+    "updated_at": "2025-10-03T22:04:37.855561",
+    "created_by": "seed_script",
+    "persona": "qa_engineer"
+  },
+  "content": "import pytest\nfrom fastapi.testclient import TestClient\nfrom main import app\n\nclient = TestClient(app)\n\n@pytest.fixture\ndef sample_item():\n    return {\n        \"name\": \"Test Item\",\n        \"description\": \"A test item\",\n        \"price\": 10.99\n    }\n\nclass TestItemAPI:\n    def test_create_item(self, sample_item):\n        response = client.post(\"/items/\", json=sample_item)\n        assert response.status_code == 200\n        data = response.json()\n        assert data[\"name\"] == sample_item[\"name\"]\n        assert \"id\" in data\n\n    def test_read_item(self, sample_item):\n        # Create item first\n        create_response = client.post(\"/items/\", json=sample_item)\n        item_id = create_response.json()[\"id\"]\n\n        # Read item\n        response = client.get(f\"/items/{item_id}\")\n        assert response.status_code == 200\n        assert response.json()[\"id\"] == item_id\n\n    def test_read_nonexistent_item(self):\n        response = client.get(\"/items/99999\")\n        assert response.status_code == 404\n\n    @pytest.mark.parametrize(\"price\", [0.01, 100.00, 9999.99])\n    def test_item_prices(self, price):\n        item = {\n            \"name\": \"Price Test\",\n            \"description\": \"Testing prices\",\n            \"price\": price\n        }\n        response = client.post(\"/items/\", json=item)\n        assert response.status_code == 200\n        assert response.json()[\"price\"] == price\n\n    def test_update_item(self, sample_item):\n        # Create item\n        create_response = client.post(\"/items/\", json=sample_item)\n        item_id = create_response.json()[\"id\"]\n\n        # Update item\n        updated_item = {\n            \"name\": \"Updated Item\",\n            \"description\": \"Updated description\",\n            \"price\": 20.99\n        }\n        response = client.put(f\"/items/{item_id}\", json=updated_item)\n        assert response.status_code == 200\n        assert response.json()[\"name\"] == \"Updated Item\"\n\n    def test_delete_item(self, sample_item):\n        # Create item\n        create_response = client.post(\"/items/\", json=sample_item)\n        item_id = create_response.json()[\"id\"]\n\n        # Delete item\n        response = client.delete(f\"/items/{item_id}\")\n        assert response.status_code == 200\n\n        # Verify deletion\n        get_response = client.get(f\"/items/{item_id}\")\n        assert get_response.status_code == 404",
+  "variables": {},
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [],
+    "team_composition": [
+      "qa_engineer"
+    ],
+    "estimated_time_minutes": 30
+  }
+}

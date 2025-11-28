@@ -1,0 +1,134 @@
+manifest_version: '1.0'
+name: fastapi-production-boilerplate
+description: Production-ready FastAPI template with async SQLAlchemy 2.0, Pydantic V2, authentication, testing, Docker, and CI/CD. Follows best practices for scalable Python APIs.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: backend
+  sdlc_phase: development
+  language: python
+  framework: fastapi
+  tags:
+    - fastapi
+    - python
+    - async
+    - sqlalchemy
+    - pydantic
+    - rest-api
+    - docker
+    - postgresql
+  architecture: monolith
+  complexity: intermediate
+  use_cases:
+    - rest-api
+    - microservices
+    - async-web-services
+    - data-apis
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the API project
+    type: string
+    required: true
+    default: fastapi-app
+  - variable: API_VERSION
+    description: API version prefix
+    type: string
+    required: false
+    default: v1
+  - variable: DATABASE_URL
+    description: Database connection URL
+    type: string
+    required: true
+    default: postgresql+asyncpg://user:password@localhost/db
+  - variable: ENABLE_AUTH
+    description: Enable JWT authentication
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_CORS
+    description: Enable CORS middleware
+    type: boolean
+    required: false
+    default: true
+
+dependencies:
+  runtime:
+    - fastapi@0.109.0
+    - uvicorn[standard]@0.27.0
+    - sqlalchemy@2.0.0
+    - pydantic@2.5.0
+    - pydantic-settings@2.1.0
+    - alembic@1.13.0
+    - asyncpg@0.29.0
+    - python-jose[cryptography]@3.3.0
+    - passlib[bcrypt]@1.7.4
+    - python-multipart@0.0.6
+  build:
+    - poetry@1.7.0
+  testing:
+    - pytest@7.4.0
+    - pytest-asyncio@0.23.0
+    - httpx@0.26.0
+    - pytest-cov@4.1.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - poetry install
+    - alembic upgrade head
+    - pytest
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - __pycache__/**
+    - .pytest_cache/**
+    - .DS_Store
+
+features:
+  - "Async FastAPI with type hints and Pydantic V2"
+  - "SQLAlchemy 2.0 async ORM"
+  - "Alembic database migrations"
+  - "Repository pattern for data access"
+  - "JWT authentication and OAuth2"
+  - "Role-based access control (RBAC)"
+  - "Request validation with Pydantic models"
+  - "Automatic OpenAPI documentation"
+  - "CORS middleware configuration"
+  - "Rate limiting and security headers"
+  - "Structured logging with correlation IDs"
+  - "Health check endpoints"
+  - "Comprehensive pytest test suite"
+  - "Docker multi-stage builds"
+  - "Poetry for dependency management"
+  - "Pre-commit hooks (Black, Ruff, mypy)"
+
+configuration:
+  python_version: "3.11"
+  framework_version: "0.109.0"
+  api_prefix: /api/v1
+  testing:
+    coverage_threshold: 85
+    async_enabled: true
+  database:
+    migrations_tool: alembic
+    orm: sqlalchemy-2.0
+  security:
+    jwt_algorithm: HS256
+    password_hashing: bcrypt
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/API_DOCUMENTATION.md
+  deployment: docs/DEPLOYMENT.md
+  examples:
+    - examples/crud-operations
+    - examples/authentication
+    - examples/background-tasks

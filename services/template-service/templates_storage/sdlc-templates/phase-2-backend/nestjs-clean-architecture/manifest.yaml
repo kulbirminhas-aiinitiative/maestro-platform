@@ -1,0 +1,148 @@
+manifest_version: '1.0'
+name: nestjs-clean-architecture
+description: Enterprise-grade NestJS microservices template with Clean Architecture, CQRS, Event Sourcing, DDD, and comprehensive testing. Production-ready with Docker, CI/CD, and observability.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: backend
+  sdlc_phase: development
+  language: typescript
+  framework: nestjs
+  tags:
+    - nestjs
+    - microservices
+    - clean-architecture
+    - cqrs
+    - event-sourcing
+    - ddd
+    - typescript
+    - docker
+  architecture: microservices
+  complexity: advanced
+  use_cases:
+    - enterprise-applications
+    - microservices
+    - scalable-backend
+    - event-driven
+    - domain-driven-design
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the microservice
+    type: string
+    required: true
+    default: my-service
+  - variable: PORT
+    description: Service port
+    type: integer
+    required: false
+    default: 3000
+  - variable: DATABASE_TYPE
+    description: Database type
+    type: string
+    required: true
+    default: postgresql
+    choices: [postgresql, mysql, mongodb, dynamodb]
+  - variable: ENABLE_CQRS
+    description: Enable CQRS pattern
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_EVENT_SOURCING
+    description: Enable event sourcing
+    type: boolean
+    required: false
+    default: false
+  - variable: MESSAGE_BROKER
+    description: Message broker for events
+    type: string
+    required: false
+    default: rabbitmq
+    choices: [rabbitmq, kafka, nats, redis]
+
+dependencies:
+  runtime:
+    - '@nestjs/core@10.0.0'
+    - '@nestjs/common@10.0.0'
+    - '@nestjs/cqrs@10.0.0'
+    - '@nestjs/microservices@10.0.0'
+    - '@nestjs/swagger@7.0.0'
+    - prisma@5.0.0
+    - '@prisma/client@5.0.0'
+    - class-validator@0.14.0
+    - class-transformer@0.5.1
+  build:
+    - typescript@5.0.0
+    - '@types/node@20.0.0'
+    - ts-node@10.0.0
+    - webpack@5.0.0
+  testing:
+    - jest@29.0.0
+    - '@nestjs/testing@10.0.0'
+    - supertest@6.0.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - npm run prisma:generate
+    - npm run build
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - dist/**
+    - .DS_Store
+
+features:
+  - "Clean Architecture (Domain, Application, Infrastructure, Presentation layers)"
+  - "CQRS pattern with commands and queries separation"
+  - "Event Sourcing for audit trail and time travel"
+  - "Domain-Driven Design (Entities, Value Objects, Aggregates)"
+  - "Repository pattern with Prisma ORM"
+  - "Dependency injection and IoC container"
+  - "API documentation with Swagger/OpenAPI"
+  - "JWT authentication and RBAC authorization"
+  - "Request validation with class-validator"
+  - "Exception filters and error handling"
+  - "Logging with Winston and correlation IDs"
+  - "Health checks and graceful shutdown"
+  - "Docker multi-stage builds"
+  - "Comprehensive unit, integration, and e2e tests"
+  - "CI/CD with GitHub Actions"
+  - "Observability (metrics, traces, logs)"
+
+configuration:
+  architecture:
+    layers:
+      - domain
+      - application
+      - infrastructure
+      - presentation
+    patterns:
+      - cqrs
+      - event-sourcing
+      - repository
+      - unit-of-work
+  testing:
+    coverage_threshold: 80
+    frameworks: [jest, supertest]
+  documentation:
+    swagger_enabled: true
+    compodoc_enabled: true
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/API.md
+  architecture: docs/ARCHITECTURE.md
+  examples:
+    - examples/order-service
+    - examples/user-service
+    - examples/payment-service

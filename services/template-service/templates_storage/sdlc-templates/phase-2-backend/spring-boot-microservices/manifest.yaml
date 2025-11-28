@@ -1,0 +1,139 @@
+manifest_version: '1.0'
+name: spring-boot-microservices
+description: Production-ready Spring Boot microservices template with Spring Cloud, service discovery, config server, circuit breakers, and comprehensive observability.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: backend
+  sdlc_phase: development
+  language: java
+  framework: spring-boot
+  tags:
+    - spring-boot
+    - microservices
+    - spring-cloud
+    - java
+    - kubernetes
+    - resilience4j
+    - eureka
+  architecture: microservices
+  complexity: advanced
+  use_cases:
+    - enterprise-microservices
+    - scalable-java-backend
+    - cloud-native-apps
+    - distributed-systems
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the microservice
+    type: string
+    required: true
+    default: user-service
+  - variable: JAVA_VERSION
+    description: Java version
+    type: string
+    required: true
+    default: "17"
+    choices: ["17", "21"]
+  - variable: SPRING_BOOT_VERSION
+    description: Spring Boot version
+    type: string
+    required: true
+    default: 3.2.0
+  - variable: DATABASE_TYPE
+    description: Database type
+    type: string
+    required: true
+    default: postgresql
+    choices: [postgresql, mysql, mongodb, oracle]
+  - variable: ENABLE_SERVICE_DISCOVERY
+    description: Enable Eureka service discovery
+    type: boolean
+    required: false
+    default: true
+  - variable: CONFIG_SERVER_URL
+    description: Spring Cloud Config Server URL
+    type: string
+    required: false
+
+dependencies:
+  runtime:
+    - spring-boot-starter-web
+    - spring-boot-starter-data-jpa
+    - spring-boot-starter-validation
+    - spring-boot-starter-security
+    - spring-boot-starter-actuator
+    - spring-cloud-starter-netflix-eureka-client
+    - spring-cloud-starter-config
+    - spring-cloud-starter-circuitbreaker-resilience4j
+    - micrometer-registry-prometheus
+    - springdoc-openapi-starter-webmvc-ui
+  build:
+    - maven-wrapper
+    - spring-boot-maven-plugin
+  testing:
+    - spring-boot-starter-test
+    - testcontainers
+    - rest-assured
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - ./mvnw clean install
+    - ./mvnw spring-boot:run
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - target/**
+    - .DS_Store
+
+features:
+  - "Spring Boot 3.2 with Java 17/21"
+  - "Spring Cloud for microservices infrastructure"
+  - "Service discovery with Eureka"
+  - "Centralized configuration with Config Server"
+  - "Circuit breakers with Resilience4j"
+  - "API Gateway integration ready"
+  - "REST API with Spring MVC"
+  - "JPA/Hibernate for data access"
+  - "Spring Security with JWT"
+  - "OpenAPI 3.0 documentation with SpringDoc"
+  - "Actuator for health checks and metrics"
+  - "Prometheus metrics export"
+  - "Distributed tracing with Micrometer"
+  - "Testcontainers for integration tests"
+  - "Layered architecture (Controller, Service, Repository)"
+  - "Exception handling and validation"
+  - "Docker multi-stage builds"
+  - "Kubernetes deployment manifests"
+
+configuration:
+  spring_boot_version: 3.2.0
+  java_version: 17
+  build_tool: maven
+  architecture:
+    patterns:
+      - layered-architecture
+      - service-discovery
+      - circuit-breaker
+      - api-gateway
+  testing:
+    testcontainers_enabled: true
+    coverage_threshold: 75
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/API.md
+  deployment: docs/KUBERNETES.md
+  examples:
+    - examples/product-service
+    - examples/order-service
+    - examples/inventory-service

@@ -1,0 +1,33 @@
+# FastAPI and dependencies
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Database
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+
+# Redis
+redis[hiredis]==5.0.1
+
+# Structured logging
+structlog==24.1.0
+
+# Metrics
+prometheus-client==0.19.0
+
+# Utilities
+aiofiles==23.2.1
+pyyaml==6.0.1
+python-dotenv==1.0.0
+
+# HTTP client
+httpx==0.26.0
+
+# Git operations (Phase 3)
+gitpython==3.1.40
+
+# Testing (Phase 7)
+pytest==7.4.3
+pytest-asyncio==0.21.1

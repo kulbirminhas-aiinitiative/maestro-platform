@@ -1,0 +1,147 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  namespace: maestro-platform
+data:
+  01-create-databases.sql: |
+    -- Maestro Platform - PostgreSQL Database Initialization
+    CREATE DATABASE quality_fabric WITH OWNER = maestro_admin ENCODING = 'UTF8';
+    CREATE DATABASE maestro_v2 WITH OWNER = maestro_admin ENCODING = 'UTF8';
+    CREATE DATABASE maestro_frontend WITH OWNER = maestro_admin ENCODING = 'UTF8';
+    CREATE DATABASE grafana WITH OWNER = maestro_admin ENCODING = 'UTF8';
+
+    -- Create service users
+    CREATE USER quality_fabric WITH LOGIN PASSWORD 'qf_db_secure_2025' CONNECTION LIMIT 50;
+    CREATE USER maestro_v2 WITH LOGIN PASSWORD 'mv2_db_secure_2025' CONNECTION LIMIT 50;
+    CREATE USER maestro_frontend WITH LOGIN PASSWORD 'mfe_db_secure_2025' CONNECTION LIMIT 50;
+
+    -- Grant privileges
+    GRANT ALL PRIVILEGES ON DATABASE quality_fabric TO quality_fabric;
+    GRANT ALL PRIVILEGES ON DATABASE maestro_v2 TO maestro_v2;
+    GRANT ALL PRIVILEGES ON DATABASE maestro_frontend TO maestro_frontend;
+
+    -- Enable extensions
+    \c quality_fabric
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+
+    \c maestro_v2
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+
+    \c maestro_frontend
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secrets
+  namespace: maestro-platform
+type: Opaque
+stringData:
+  postgres-password: "maestro_secure_admin_2025_change_me"
+  quality-fabric-password: "qf_db_secure_2025"
+  maestro-v2-password: "mv2_db_secure_2025"
+  maestro-frontend-password: "mfe_db_secure_2025"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: maestro-postgres
+  namespace: maestro-platform
+  labels:
+    app: postgres
+    tier: infrastructure
+spec:
+  type: ClusterIP
+  clusterIP: None  # Headless service for StatefulSet
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: postgres
+  selector:
+    app: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: maestro-postgres
+  namespace: maestro-platform
+  labels:
+    app: postgres
+    tier: infrastructure
+spec:
+  serviceName: maestro-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+        tier: infrastructure
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        - name: POSTGRES_USER
+          value: "maestro_admin"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-password
+        - name: POSTGRES_INITDB_ARGS
+          value: "--encoding=UTF8 --lc-collate=en_US.utf8 --lc-ctype=en_US.utf8"
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+          readOnly: true
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - maestro_admin
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - maestro_admin
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+      volumes:
+      - name: init-scripts
+        configMap:
+          name: postgres-init-scripts
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 20Gi
+      storageClassName: gp3  # AWS EBS gp3 for production

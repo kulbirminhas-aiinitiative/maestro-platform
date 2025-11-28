@@ -1,0 +1,27 @@
+# Maestro Template Registry Configuration
+# This file defines templates to be seeded into the central registry
+
+templates:
+  # Example: Python FastAPI Microservice Template
+  - name: "fastapi-microservice"
+    git_url: "https://github.com/maestro-platform/template-fastapi-microservice.git"
+    git_branch: "main"
+    organization: "maestro"
+    description: "Production-ready FastAPI microservice template with best practices"
+
+  # Example: Python Data Pipeline Template
+  - name: "data-pipeline"
+    git_url: "https://github.com/maestro-platform/template-data-pipeline.git"
+    git_branch: "main"
+    organization: "maestro"
+    description: "ETL/ELT data pipeline template with quality gates"
+
+  # Example: React Frontend Template
+  - name: "react-frontend"
+    git_url: "https://github.com/maestro-platform/template-react-frontend.git"
+    git_branch: "main"
+    organization: "maestro"
+    description: "Modern React frontend with TypeScript and best practices"
+
+# Note: These are example templates. Update with actual repository URLs
+# or leave empty to start with an empty registry (templates will be added via API)

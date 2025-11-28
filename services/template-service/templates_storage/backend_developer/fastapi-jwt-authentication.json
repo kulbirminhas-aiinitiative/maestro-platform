@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "id": "fastapi-jwt-auth-v1",
+    "name": "FastAPI JWT Authentication with Refresh Tokens",
+    "category": "authentication",
+    "language": "python",
+    "framework": "fastapi",
+    "description": "Complete JWT authentication system with access/refresh tokens, password hashing, token blacklisting, and security best practices",
+    "tags": [
+      "jwt",
+      "authentication",
+      "security",
+      "refresh-tokens",
+      "password-hashing",
+      "oauth2"
+    ],
+    "quality_score": 90.0,
+    "security_score": 95.0,
+    "performance_score": 85.0,
+    "maintainability_score": 88.0,
+    "test_coverage": 85.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-04T20:00:00.000000",
+    "updated_at": "2025-10-04T20:00:00.000000",
+    "created_by": "template_enhancement_phase1",
+    "persona": "backend_developer"
+  },
+  "content": "from fastapi import FastAPI, Depends, HTTPException, status\nfrom fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm\nfrom jose import JWTError, jwt\nfrom passlib.context import CryptContext\nfrom pydantic import BaseModel, EmailStr, Field\nfrom datetime import datetime, timedelta\nfrom typing import Optional\nimport os\nimport redis\nimport logging\n\nlogger = logging.getLogger(__name__)\n\n# Configuration\nSECRET_KEY = os.getenv(\"JWT_SECRET_KEY\", \"your-secret-key-change-in-production\")\nALGORITHM = \"HS256\"\nACCESS_TOKEN_EXPIRE_MINUTES = 15\nREFRESH_TOKEN_EXPIRE_DAYS = 7\n\n# Redis for token blacklist (optional but recommended for production)\nredis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)\n\n# Password hashing\npwd_context = CryptContext(schemes=[\"bcrypt\"], deprecated=\"auto\")\noauth2_scheme = OAuth2PasswordBearer(tokenUrl=\"/auth/login\")\n\napp = FastAPI(title=\"JWT Authentication API\")\n\n# Schemas\nclass UserBase(BaseModel):\n    email: EmailStr\n    username: str = Field(..., min_length=3, max_length=50)\n\nclass UserCreate(UserBase):\n    password: str = Field(..., min_length=8, max_length=100)\n\nclass UserResponse(UserBase):\n    id: int\n    is_active: bool\n    created_at: datetime\n\nclass Token(BaseModel):\n    access_token: str\n    refresh_token: str\n    token_type: str = \"bearer\"\n\nclass TokenData(BaseModel):\n    username: Optional[str] = None\n    token_type: str = \"access\"  # \"access\" or \"refresh\"\n\nclass RefreshTokenRequest(BaseModel):\n    refresh_token: str\n\n# Mock user database (replace with real database)\nfake_users_db = {}\n\n# Utility Functions\ndef verify_password(plain_password: str, hashed_password: str) -> bool:\n    \"\"\"Verify a password against its hash\"\"\"\n    return pwd_context.verify(plain_password, hashed_password)\n\ndef get_password_hash(password: str) -> str:\n    \"\"\"Hash a password for storing\"\"\"\n    return pwd_context.hash(password)\n\ndef create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:\n    \"\"\"Create JWT access token\"\"\"\n    to_encode = data.copy()\n    \n    if expires_delta:\n        expire = datetime.utcnow() + expires_delta\n    else:\n        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)\n    \n    to_encode.update({\n        \"exp\": expire,\n        \"iat\": datetime.utcnow(),\n        \"type\": \"access\"\n    })\n    \n    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)\n    return encoded_jwt\n\ndef create_refresh_token(data: dict) -> str:\n    \"\"\"Create JWT refresh token with longer expiration\"\"\"\n    to_encode = data.copy()\n    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)\n    \n    to_encode.update({\n        \"exp\": expire,\n        \"iat\": datetime.utcnow(),\n        \"type\": \"refresh\"\n    })\n    \n    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)\n    return encoded_jwt\n\ndef is_token_blacklisted(token: str) -> bool:\n    \"\"\"Check if token is blacklisted in Redis\"\"\"\n    try:\n        return redis_client.exists(f\"blacklist:{token}\") > 0\n    except redis.RedisError:\n        logger.warning(\"Redis connection failed, skipping blacklist check\")\n        return False\n\ndef blacklist_token(token: str, expires_in: int):\n    \"\"\"Add token to blacklist with expiration\"\"\"\n    try:\n        redis_client.setex(f\"blacklist:{token}\", expires_in, \"1\")\n    except redis.RedisError as e:\n        logger.error(f\"Failed to blacklist token: {e}\")\n\nasync def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:\n    \"\"\"Validate JWT token and return current user\"\"\"\n    credentials_exception = HTTPException(\n        status_code=status.HTTP_401_UNAUTHORIZED,\n        detail=\"Could not validate credentials\",\n        headers={\"WWW-Authenticate\": \"Bearer\"},\n    )\n    \n    # Check if token is blacklisted\n    if is_token_blacklisted(token):\n        raise HTTPException(\n            status_code=status.HTTP_401_UNAUTHORIZED,\n            detail=\"Token has been revoked\",\n            headers={\"WWW-Authenticate\": \"Bearer\"},\n        )\n    \n    try:\n        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])\n        username: str = payload.get(\"sub\")\n        token_type: str = payload.get(\"type\")\n        \n        if username is None or token_type != \"access\":\n            raise credentials_exception\n            \n        token_data = TokenData(username=username, token_type=token_type)\n        \n    except JWTError as e:\n        logger.error(f\"JWT validation failed: {e}\")\n        raise credentials_exception\n    \n    # Get user from database\n    user = fake_users_db.get(token_data.username)\n    if user is None:\n        raise credentials_exception\n    \n    if not user.get(\"is_active\"):\n        raise HTTPException(\n            status_code=status.HTTP_403_FORBIDDEN,\n            detail=\"Inactive user\"\n        )\n    \n    return user\n\nasync def get_current_active_user(current_user: dict = Depends(get_current_user)) -> dict:\n    \"\"\"Ensure user is active\"\"\"\n    if not current_user.get(\"is_active\"):\n        raise HTTPException(status_code=400, detail=\"Inactive user\")\n    return current_user\n\n# Endpoints\n@app.post(\"/auth/register\", response_model=UserResponse, status_code=status.HTTP_201_CREATED)\nasync def register(user: UserCreate):\n    \"\"\"Register a new user\"\"\"\n    # Check if user exists\n    if user.username in fake_users_db:\n        raise HTTPException(\n            status_code=status.HTTP_400_BAD_REQUEST,\n            detail=\"Username already registered\"\n        )\n    \n    # Check if email exists\n    if any(u.get(\"email\") == user.email for u in fake_users_db.values()):\n        raise HTTPException(\n            status_code=status.HTTP_400_BAD_REQUEST,\n            detail=\"Email already registered\"\n        )\n    \n    # Hash password and store user\n    hashed_password = get_password_hash(user.password)\n    user_dict = {\n        \"id\": len(fake_users_db) + 1,\n        \"email\": user.email,\n        \"username\": user.username,\n        \"hashed_password\": hashed_password,\n        \"is_active\": True,\n        \"created_at\": datetime.utcnow()\n    }\n    \n    fake_users_db[user.username] = user_dict\n    logger.info(f\"User registered: {user.username}\")\n    \n    return user_dict\n\n@app.post(\"/auth/login\", response_model=Token)\nasync def login(form_data: OAuth2PasswordRequestForm = Depends()):\n    \"\"\"Login and get access/refresh tokens\"\"\"\n    user = fake_users_db.get(form_data.username)\n    \n    if not user or not verify_password(form_data.password, user[\"hashed_password\"]):\n        raise HTTPException(\n            status_code=status.HTTP_401_UNAUTHORIZED,\n            detail=\"Incorrect username or password\",\n            headers={\"WWW-Authenticate\": \"Bearer\"},\n        )\n    \n    if not user.get(\"is_active\"):\n        raise HTTPException(\n            status_code=status.HTTP_403_FORBIDDEN,\n            detail=\"Inactive user\"\n        )\n    \n    # Create tokens\n    access_token = create_access_token(data={\"sub\": user[\"username\"]})\n    refresh_token = create_refresh_token(data={\"sub\": user[\"username\"]})\n    \n    logger.info(f\"User logged in: {user['username']}\")\n    \n    return {\n        \"access_token\": access_token,\n        \"refresh_token\": refresh_token,\n        \"token_type\": \"bearer\"\n    }\n\n@app.post(\"/auth/refresh\", response_model=Token)\nasync def refresh_token(request: RefreshTokenRequest):\n    \"\"\"Get new access token using refresh token\"\"\"\n    credentials_exception = HTTPException(\n        status_code=status.HTTP_401_UNAUTHORIZED,\n        detail=\"Could not validate refresh token\",\n        headers={\"WWW-Authenticate\": \"Bearer\"},\n    )\n    \n    # Check if token is blacklisted\n    if is_token_blacklisted(request.refresh_token):\n        raise HTTPException(\n            status_code=status.HTTP_401_UNAUTHORIZED,\n            detail=\"Refresh token has been revoked\"\n        )\n    \n    try:\n        payload = jwt.decode(request.refresh_token, SECRET_KEY, algorithms=[ALGORITHM])\n        username: str = payload.get(\"sub\")\n        token_type: str = payload.get(\"type\")\n        \n        if username is None or token_type != \"refresh\":\n            raise credentials_exception\n            \n    except JWTError:\n        raise credentials_exception\n    \n    # Verify user exists and is active\n    user = fake_users_db.get(username)\n    if not user or not user.get(\"is_active\"):\n        raise credentials_exception\n    \n    # Create new tokens\n    new_access_token = create_access_token(data={\"sub\": username})\n    new_refresh_token = create_refresh_token(data={\"sub\": username})\n    \n    # Blacklist old refresh token\n    blacklist_token(request.refresh_token, REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60)\n    \n    logger.info(f\"Tokens refreshed for user: {username}\")\n    \n    return {\n        \"access_token\": new_access_token,\n        \"refresh_token\": new_refresh_token,\n        \"token_type\": \"bearer\"\n    }\n\n@app.post(\"/auth/logout\")\nasync def logout(token: str = Depends(oauth2_scheme)):\n    \"\"\"Logout and blacklist token\"\"\"\n    try:\n        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])\n        exp = payload.get(\"exp\")\n        \n        if exp:\n            # Calculate remaining TTL\n            remaining_seconds = int(exp - datetime.utcnow().timestamp())\n            if remaining_seconds > 0:\n                blacklist_token(token, remaining_seconds)\n        \n        logger.info(\"User logged out successfully\")\n        return {\"message\": \"Successfully logged out\"}\n        \n    except JWTError:\n        raise HTTPException(\n            status_code=status.HTTP_401_UNAUTHORIZED,\n            detail=\"Invalid token\"\n        )\n\n@app.get(\"/auth/me\", response_model=UserResponse)\nasync def get_me(current_user: dict = Depends(get_current_active_user)):\n    \"\"\"Get current authenticated user\"\"\"\n    return current_user",
+  "variables": {
+    "SECRET_KEY": "your-secret-key-change-in-production",
+    "ACCESS_TOKEN_EXPIRE_MINUTES": 15,
+    "REFRESH_TOKEN_EXPIRE_DAYS": 7
+  },
+  "dependencies": [
+    "fastapi==0.109.0",
+    "python-jose[cryptography]==3.3.0",
+    "passlib[bcrypt]==1.7.4",
+    "python-multipart==0.0.6",
+    "redis==5.0.1",
+    "pydantic[email]==2.5.3"
+  ],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Implementing secure JWT authentication",
+      "User login/logout with token management",
+      "Refresh token rotation",
+      "Token blacklisting for security"
+    ],
+    "team_composition": [
+      "backend_developer",
+      "security_specialist"
+    ],
+    "estimated_time_minutes": 90,
+    "prerequisites": [
+      "FastAPI project setup",
+      "Redis server running (optional but recommended)",
+      "Understanding of JWT and OAuth2",
+      "SSL/TLS for production"
+    ],
+    "related_templates": [
+      "fastapi-async-crud-complete",
+      "oauth2-oidc-integration",
+      "password-reset-flow"
+    ]
+  }
+}

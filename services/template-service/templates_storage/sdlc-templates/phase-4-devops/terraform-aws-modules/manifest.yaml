@@ -1,0 +1,121 @@
+manifest_version: '1.0'
+name: terraform-aws-infrastructure-modules
+description: Production-ready Terraform modules for AWS infrastructure including VPC, EKS, RDS, S3, and observability. Follows HashiCorp best practices with modular, reusable code.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: infrastructure
+  sdlc_phase: deployment
+  language: hcl
+  framework: terraform
+  tags:
+    - terraform
+    - aws
+    - infrastructure-as-code
+    - iac
+    - cloud
+    - devops
+  complexity: advanced
+  use_cases:
+    - cloud-infrastructure
+    - aws-provisioning
+    - infrastructure-automation
+    - multi-environment
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+  - variable: AWS_REGION
+    description: AWS region
+    type: string
+    required: true
+    default: us-east-1
+  - variable: ENVIRONMENT
+    description: Environment name
+    type: string
+    required: true
+    default: dev
+    choices: [dev, staging, production]
+  - variable: ENABLE_EKS
+    description: Enable EKS cluster
+    type: boolean
+    required: false
+    default: true
+  - variable: ENABLE_RDS
+    description: Enable RDS database
+    type: boolean
+    required: false
+    default: true
+
+dependencies:
+  runtime: []
+  build: []
+  tools:
+    - terraform@1.6.0
+    - aws-cli@2.0.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - terraform init
+    - terraform validate
+    - terraform plan
+
+files:
+  include:
+    - '**/*.tf'
+    - '**/*.tfvars'
+  exclude:
+    - .git/**
+    - .terraform/**
+    - '*.tfstate'
+
+features:
+  - "Modular Terraform code structure"
+  - "VPC with public/private subnets"
+  - "EKS cluster with node groups"
+  - "RDS database (PostgreSQL/MySQL)"
+  - "S3 buckets with encryption"
+  - "ALB/NLB for load balancing"
+  - "Route53 DNS management"
+  - "ACM for SSL certificates"
+  - "IAM roles and policies"
+  - "Security groups and NACLs"
+  - "CloudWatch for monitoring"
+  - "KMS for encryption"
+  - "State backend with S3 + DynamoDB"
+  - "Environment-specific tfvars"
+  - "Remote state data sources"
+
+configuration:
+  terraform_version: ">=1.6.0"
+  aws_provider_version: "~> 5.0"
+  module_structure:
+    - modules/vpc
+    - modules/eks
+    - modules/rds
+    - modules/s3
+    - modules/iam
+    - environments/dev
+    - environments/staging
+    - environments/production
+  best_practices:
+    - version_pinning
+    - state_locking
+    - module_versioning
+    - variable_validation
+    - output_documentation
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  modules: docs/MODULES.md
+  examples:
+    - examples/vpc-eks-rds
+    - examples/serverless-infrastructure
+    - examples/multi-region

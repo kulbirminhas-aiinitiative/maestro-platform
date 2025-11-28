@@ -1,0 +1,119 @@
+manifest_version: '1.0'
+name: tremor-data-dashboard
+description: Beautiful data visualization dashboard built with Tremor and React. Specialized for real-time monitoring, KPIs, metrics, and analytics with stunning chart components.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO Frontend Templates
+
+metadata:
+  category: frontend
+  language: typescript
+  framework: react
+  tags:
+    - dashboard
+    - data-visualization
+    - tremor
+    - react
+    - typescript
+    - analytics
+    - monitoring
+    - kpi
+    - charts
+  design_system: tremor
+  ui_complexity: intermediate
+  use_cases:
+    - analytics-dashboards
+    - monitoring
+    - kpi-tracking
+    - business-intelligence
+    - real-time-data
+  license: MIT
+
+placeholders:
+  - variable: PROJECT_NAME
+    description: Name of the project
+    type: string
+    required: true
+    default: my-analytics-dashboard
+  - variable: APP_TITLE
+    description: Application title displayed in UI
+    type: string
+    required: true
+    default: Analytics Dashboard
+  - variable: ENABLE_REALTIME
+    description: Enable real-time data updates
+    type: boolean
+    required: false
+    default: true
+  - variable: REFRESH_INTERVAL
+    description: Data refresh interval in seconds
+    type: integer
+    required: false
+    default: 30
+  - variable: API_BASE_URL
+    description: Backend API base URL
+    type: string
+    required: false
+    default: http://localhost:8000/api
+
+dependencies:
+  runtime:
+    - react@18.2.0
+    - react-dom@18.2.0
+    - '@tremor/react@3.13.0'
+    - tailwindcss@3.4.0
+    - recharts@2.10.0
+    - date-fns@2.30.0
+    - react-router-dom@6.20.0
+  build:
+    - typescript@5.0.0
+    - vite@5.0.0
+    - postcss@8.4.0
+    - autoprefixer@10.4.0
+
+hooks:
+  pre_generation: []
+  post_generation:
+    - npm install
+    - npm run build
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - node_modules/**
+    - dist/**
+    - build/**
+    - .DS_Store
+
+features:
+  - "KPI cards with trend indicators"
+  - "Time-series line and area charts"
+  - "Bar and column charts for comparisons"
+  - "Donut and pie charts for distributions"
+  - "Data tables with search and filter"
+  - "Real-time data updates"
+  - "Date range selectors"
+  - "Export to CSV/PDF"
+  - "Responsive layout for all devices"
+  - "Dark mode support"
+
+configuration:
+  min_node_version: "18.0.0"
+  supported_os:
+    - linux
+    - darwin
+    - windows
+  architecture:
+    - amd64
+    - arm64
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  api_docs: docs/API.md
+  examples:
+    - examples/sales-dashboard
+    - examples/system-monitoring
+    - examples/financial-metrics

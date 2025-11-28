@@ -1,0 +1,86 @@
+# Resilience Configuration - MAESTRO Architecture Compliance (ADR-006)
+
+circuit_breakers:
+  event_store:
+    failure_threshold: 5
+    success_threshold: 2
+    timeout: 60
+    description: "Circuit breaker for PostgreSQL event store operations"
+
+  query_handler:
+    failure_threshold: 3
+    success_threshold: 2
+    timeout: 30
+    description: "Circuit breaker for read model queries"
+
+  command_handler:
+    failure_threshold: 5
+    success_threshold: 2
+    timeout: 45
+    description: "Circuit breaker for command processing"
+
+  projection_manager:
+    failure_threshold: 10
+    success_threshold: 3
+    timeout: 90
+    description: "Circuit breaker for event projections"
+
+retry_policies:
+  database:
+    max_retries: 3
+    initial_delay: 1.0
+    backoff_factor: 2.0
+    max_delay: 30.0
+    retryable_exceptions:
+      - asyncpg.exceptions.ConnectionDoesNotExistError
+      - asyncpg.exceptions.ConnectionFailureError
+    description: "Retry policy for database connection failures"
+
+  event_processing:
+    max_retries: 2
+    initial_delay: 2.0
+    backoff_factor: 2.0
+    max_delay: 60.0
+    description: "Retry policy for event processing failures"
+
+  http_requests:
+    max_retries: 3
+    initial_delay: 0.5
+    backoff_factor: 2.0
+    max_delay: 10.0
+    description: "Retry policy for HTTP requests to external services"
+
+timeouts:
+  database_query: 10
+  database_transaction: 30
+  event_processing: 30
+  projection_update: 60
+  command_execution: 45
+  query_execution: 15
+  http_request: 10
+
+fallbacks:
+  query_handler:
+    enabled: true
+    strategy: cached_result
+    cache_ttl: 300
+    description: "Return cached results if query handler fails"
+
+  event_store:
+    enabled: true
+    strategy: in_memory_queue
+    max_queue_size: 1000
+    description: "Queue events in memory if event store unavailable"
+
+bulkheads:
+  command_processing:
+    max_concurrent: 10
+    description: "Limit concurrent command processing to prevent overload"
+
+  query_processing:
+    max_concurrent: 50
+    description: "Limit concurrent query processing"
+
+  projection_updates:
+    max_concurrent: 5
+    description: "Limit concurrent projection updates"

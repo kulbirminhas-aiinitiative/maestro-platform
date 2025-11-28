@@ -1,0 +1,102 @@
+---
+# Ansible Playbook: Deploy Maestro Infrastructure
+# Usage: ansible-playbook -i inventory/demo.ini playbooks/deploy-infrastructure.yml
+
+- name: Deploy Maestro Platform Infrastructure
+  hosts: infrastructure_hosts
+  become: yes
+  vars:
+    maestro_root: "/opt/maestro-platform"
+    environment_name: "{{ deployment_environment | default('demo') }}"
+  
+  roles:
+    - common
+    - docker
+    - security
+  
+  tasks:
+    - name: Create infrastructure directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+      loop:
+        - "{{ maestro_root }}/infrastructure"
+        - "{{ maestro_root }}/infrastructure/terraform"
+        - "{{ maestro_root }}/infrastructure/databases"
+        - "{{ maestro_root }}/infrastructure/monitoring"
+        - "{{ maestro_root }}/logs"
+        - "{{ maestro_root }}/backups"
+    
+    - name: Copy infrastructure code
+      synchronize:
+        src: "{{ playbook_dir }}/../../"
+        dest: "{{ maestro_root }}/infrastructure/"
+        delete: yes
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=*.tfstate"
+          - "--exclude=.terraform"
+      delegate_to: localhost
+    
+    - name: Load environment secrets from Vault/SSM
+      include_role:
+        name: secrets
+      vars:
+        secret_backend: "{{ secrets_backend | default('env') }}"
+    
+    - name: Deploy using Terraform
+      terraform:
+        project_path: "{{ maestro_root }}/infrastructure/terraform/environments/{{ environment_name }}"
+        state: present
+        force_init: yes
+        variables:
+          postgres_admin_password: "{{ postgres_admin_password }}"
+          redis_password: "{{ redis_password }}"
+          grafana_admin_password: "{{ grafana_admin_password }}"
+      register: terraform_output
+    
+    - name: Wait for services to be healthy
+      uri:
+        url: "{{ item.url }}"
+        status_code: 200
+        timeout: 5
+      loop:
+        - { name: "Prometheus", url: "http://localhost:29090/-/healthy" }
+        - { name: "Grafana", url: "http://localhost:23000/api/health" }
+      retries: 30
+      delay: 2
+      register: health_check
+      until: health_check is succeeded
+    
+    - name: Configure Grafana organizations
+      uri:
+        url: "http://localhost:23000/api/orgs"
+        method: POST
+        user: "{{ grafana_admin_user }}"
+        password: "{{ grafana_admin_password }}"
+        force_basic_auth: yes
+        body_format: json
+        body:
+          name: "{{ item }}"
+        status_code: [200, 409]  # 409 = already exists
+      loop:
+        - "Quality Fabric"
+        - "Maestro V2"
+        - "Maestro Frontend"
+    
+    - name: Display infrastructure info
+      debug:
+        msg: |
+          ========================================
+          Maestro Infrastructure Deployed!
+          ========================================
+          Grafana: http://{{ ansible_host }}:23000
+          Prometheus: http://{{ ansible_host }}:29090
+          PostgreSQL: {{ ansible_host }}:25432
+          Redis: {{ ansible_host }}:27379
+          
+          Network: maestro-network
+          ========================================

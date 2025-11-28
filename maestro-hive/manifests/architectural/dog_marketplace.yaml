@@ -1,0 +1,158 @@
+# ACC Architectural Manifest - Dog Marketplace
+# Defines layered architecture rules and component boundaries
+
+project: DogMarketplace
+version: "1.0.0"
+description: "Layered architecture for Dog Marketplace platform with clean separation of concerns"
+
+components:
+  - name: Presentation
+    paths:
+      - frontend/src/components/
+      - frontend/src/pages/
+      - frontend/src/layouts/
+    description: "React-based UI components and pages"
+    technology: React
+
+  - name: BusinessLogic
+    paths:
+      - backend/src/services/
+      - backend/src/domain/
+      - backend/src/use_cases/
+    description: "Core business logic and domain models"
+    technology: FastAPI
+
+  - name: DataAccess
+    paths:
+      - backend/src/repositories/
+      - backend/src/models/
+      - backend/src/database/
+    description: "Database access layer and ORM models"
+    technology: SQLAlchemy
+
+  - name: Infrastructure
+    paths:
+      - backend/src/infrastructure/
+      - backend/src/config/
+      - backend/src/integrations/
+    description: "External integrations and infrastructure concerns"
+    technology: Python
+
+  - name: API
+    paths:
+      - backend/src/api/
+      - backend/src/routers/
+      - backend/src/schemas/
+    description: "REST API endpoints and request/response schemas"
+    technology: FastAPI
+
+rules:
+  # Layering Rules
+  - id: R1
+    type: dependency
+    description: "Presentation can only call BusinessLogic and API"
+    rule: "Presentation: CAN_CALL(BusinessLogic, API)"
+    severity: BLOCKING
+    applicable_to: [Presentation]
+
+  - id: R2
+    type: dependency
+    description: "BusinessLogic can only call DataAccess and Infrastructure"
+    rule: "BusinessLogic: CAN_CALL(DataAccess, Infrastructure)"
+    severity: BLOCKING
+    applicable_to: [BusinessLogic]
+
+  - id: R3
+    type: dependency
+    description: "Presentation must not call DataAccess directly"
+    rule: "Presentation: MUST_NOT_CALL(DataAccess)"
+    severity: BLOCKING
+    applicable_to: [Presentation]
+
+  - id: R4
+    type: dependency
+    description: "DataAccess must not call Presentation or BusinessLogic"
+    rule: "DataAccess: MUST_NOT_CALL(Presentation, BusinessLogic, API)"
+    severity: BLOCKING
+    applicable_to: [DataAccess]
+
+  - id: R5
+    type: dependency
+    description: "API layer can call BusinessLogic only"
+    rule: "API: CAN_CALL(BusinessLogic)"
+    severity: BLOCKING
+    applicable_to: [API]
+
+  # Coupling Rules
+  - id: R6
+    type: coupling
+    description: "BusinessLogic efferent coupling must be low"
+    rule: "BusinessLogic: COUPLING < 10"
+    severity: WARNING
+    applicable_to: [BusinessLogic]
+
+  - id: R7
+    type: coupling
+    description: "Infrastructure should be stable (low instability)"
+    rule: "Infrastructure: INSTABILITY < 0.3"
+    severity: WARNING
+    applicable_to: [Infrastructure]
+
+  # Cyclic Dependency Rules
+  - id: R8
+    type: cycles
+    description: "No cyclic dependencies allowed"
+    rule: "ALL: NO_CYCLES"
+    severity: BLOCKING
+
+  # Naming Convention Rules
+  - id: R9
+    type: naming
+    description: "Service classes must end with 'Service'"
+    rule: "BusinessLogic: CLASS_NAME_PATTERN = .*Service$"
+    severity: WARNING
+    applicable_to: [BusinessLogic]
+
+  - id: R10
+    type: naming
+    description: "Repository classes must end with 'Repository'"
+    rule: "DataAccess: CLASS_NAME_PATTERN = .*Repository$"
+    severity: WARNING
+    applicable_to: [DataAccess]
+
+  # Size and Complexity Rules
+  - id: R11
+    type: size
+    description: "Module size must not exceed 500 lines"
+    rule: "ALL: MODULE_SIZE < 500"
+    severity: WARNING
+
+  - id: R12
+    type: size
+    description: "Function cyclomatic complexity must be low"
+    rule: "ALL: CYCLOMATIC_COMPLEXITY < 10"
+    severity: WARNING
+
+tech:
+  language: python
+  analyzers:
+    - import_graph
+    - ast
+
+exclusions:
+  - "**/tests/"
+  - "**/test_*.py"
+  - "**/__pycache__/"
+  - "**/migrations/"
+  - "**/alembic/"
+  - "**/.venv/"
+  - "**/node_modules/"
+
+metadata:
+  author: "Architecture Team"
+  architecture_style: "Layered Architecture"
+  last_reviewed: "2025-10-12"
+  adr_references:
+    - "ADR-001: Layered Architecture Decision"
+    - "ADR-002: Dependency Rules"
+  documentation: "docs/architecture/layered_architecture.md"

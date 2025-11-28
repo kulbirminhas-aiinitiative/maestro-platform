@@ -1,0 +1,82 @@
+[tool.poetry]
+name = "maestro-template-service"
+version = "1.0.0"
+description = "Maestro Platform - Strategic Template Engine & Registry"
+authors = ["Maestro Platform Team"]
+readme = "README.md"
+packages = [{include = "template_service", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+# FastAPI and Web Framework
+fastapi = "^0.118.0"
+uvicorn = {extras = ["standard"], version = "^0.37.0"}
+pydantic = "^2.11.9"
+pydantic-settings = "^2.1.0"
+
+# Database
+asyncpg = "^0.29.0"
+psycopg2-binary = "^2.9.9"
+alembic = "^1.13.0"
+
+# Cache
+redis = {extras = ["hiredis"], version = "^5.0.1"}
+
+# Security
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+bcrypt = "^4.0.0"
+python-multipart = "^0.0.6"
+email-validator = "^2.0.0"
+
+# Git & Storage
+gitpython = "^3.1.40"
+pyyaml = "^6.0"
+aiofiles = "^23.0.0"
+
+# Templates & Rendering
+jinja2 = "^3.1.2"
+
+# HTTP Client
+httpx = "^0.25.0"
+
+# Structured Logging
+structlog = "^24.1.0"
+
+# Metrics & Monitoring
+prometheus-client = "^0.19.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.0"
+pytest-cov = "^4.1.0"
+black = "^23.7.0"
+isort = "^5.12.0"
+mypy = "^1.5.0"
+ruff = "^0.0.287"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

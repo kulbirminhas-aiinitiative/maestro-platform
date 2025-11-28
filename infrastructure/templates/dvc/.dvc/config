@@ -1,0 +1,25 @@
+[core]
+    remote = minio-dev
+    autostage = true
+    analytics = false
+
+# Development/Test Remote (MinIO)
+['remote "minio-dev"']
+    url = s3://dvc-storage
+    endpointurl = http://localhost:29000
+    access_key_id = minioadmin
+    secret_access_key = minio_secure_2025_change_me
+    ssl_verify = false
+
+# Production Remote (AWS S3)
+['remote "s3-prod"']
+    url = s3://maestro-dvc-production
+    region = us-east-1
+    # Use AWS credentials from environment or IAM role
+    # access_key_id = <set via AWS_ACCESS_KEY_ID env var>
+    # secret_access_key = <set via AWS_SECRET_ACCESS_KEY env var>
+
+# Local cache configuration
+[cache]
+    dir = .dvc/cache
+    type = symlink

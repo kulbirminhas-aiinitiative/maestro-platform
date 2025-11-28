@@ -1,0 +1,26 @@
+[run]
+source = .
+omit =
+    test_*.py
+    *_test.py
+    conftest.py
+    setup.py
+branch = True
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    pass
+    except ImportError:
+show_missing = True
+precision = 2
+
+[html]
+directory = coverage_html
+title = Health Check API Coverage Report
+
+[xml]
+output = coverage.xml

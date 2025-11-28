@@ -1,0 +1,116 @@
+[0;34m[INFO][0m Target: 18.134.157.225
+[0;34m[INFO][0m User: ec2-user
+[0;34m[INFO][0m Path: /opt/maestro-platform
+[0;34m[INFO][0m SSH Key: /home/ec2-user/projects/genesis-dev.pem
+[0;34m[INFO][0m Log: deployment-20251024-165732.log
+[0;35m[STEP][0m PHASE 1/7: Prerequisites Check
+[0;34m[INFO][0m Checking local prerequisites...
+[0;32m[SUCCESS][0m ✓ rsync found
+[0;32m[SUCCESS][0m ✓ ssh found
+[0;32m[SUCCESS][0m ✓ docker found
+[0;34m[INFO][0m Checking SSH key...
+[0;32m[SUCCESS][0m ✓ SSH key found
+[0;34m[INFO][0m Checking demo server connectivity...
+[0;32m[SUCCESS][0m ✓ Demo server accessible
+[0;34m[INFO][0m Checking remote prerequisites...
+[0;32m[SUCCESS][0m ✓ Remote prerequisites OK
+[0;35m[STEP][0m PHASE 2/7: Creating Remote Directory Structure
+[0;32m[SUCCESS][0m ✓ Directory structure created
+[0;35m[STEP][0m PHASE 3/7: Transferring Files
+[0;34m[INFO][0m Transferring infrastructure code...
+[0;32m[SUCCESS][0m ✓ Infrastructure code transferred
+[0;34m[INFO][0m Transferring quality-fabric code...
+[0;32m[SUCCESS][0m ✓ Quality Fabric code transferred
+[0;34m[INFO][0m Transferring shared packages...
+[0;32m[SUCCESS][0m ✓ Shared packages transferred
+[0;35m[STEP][0m PHASE 4/7: Docker BuildX Setup
+[0;34m[INFO][0m Checking BuildX version...
+[0;34m[INFO][0m Current BuildX version: v0.19.2
+[0;32m[SUCCESS][0m ✓ BuildX version sufficient
+[0;34m[INFO][0m Creating BuildX builder...
+[0;32m[SUCCESS][0m ✓ BuildX builder created
+[0;35m[STEP][0m PHASE 5/7: Deploying Centralized Infrastructure
+[0;31m[ERROR #1][0m Command failed at line 267: ssh -i "$SSH_KEY" ${DEMO_USER}@${DEMO_SERVER} bash <<'REMOTE_INFRA'
+set -e
+cd /opt/maestro-platform/infrastructure
+
+echo "Setting up environment..."
+if [ ! -f .env.infrastructure ]; then
+    cat > .env.infrastructure << 'ENV'
+MAESTRO_POSTGRES_ADMIN_USER=maestro_admin
+MAESTRO_POSTGRES_ADMIN_PASSWORD=maestro_secure_admin_2025_change_me
+MAESTRO_REDIS_PASSWORD=maestro_redis_secure_2025
+MAESTRO_GRAFANA_ADMIN_USER=admin
+MAESTRO_GRAFANA_ADMIN_PASSWORD=grafana_secure_admin_2025_change_me
+QUALITY_FABRIC_DB_PASSWORD=qf_db_secure_2025
+MAESTRO_V2_DB_PASSWORD=mv2_db_secure_2025
+MAESTRO_FRONTEND_DB_PASSWORD=mfe_db_secure_2025
+MAESTRO_POSTGRES_PORT=25432
+MAESTRO_REDIS_PORT=27379
+PROMETHEUS_PORT=29090
+GRAFANA_PORT=23000
+JAEGER_UI_PORT=26686
+JAEGER_COLLECTOR_PORT=24268
+MAESTRO_NETWORK_NAME=maestro-network
+ENV
+    echo "✓ Created .env.infrastructure"
+else
+    echo "✓ Using existing .env.infrastructure"
+fi
+
+echo "Creating required directories..."
+mkdir -p monitoring/grafana/dashboards/{platform,quality-fabric,maestro-v2,maestro-frontend}
+mkdir -p databases/postgres/init-scripts
+mkdir -p monitoring/prometheus
+for dir in monitoring/grafana/dashboards/*; do
+    touch $dir/.gitkeep 2>/dev/null || true
+done
+
+echo "Loading environment..."
+set -a
+source .env.infrastructure
+set +a
+
+echo "Deploying infrastructure..."
+docker-compose -f docker-compose.infrastructure.yml down --remove-orphans 2>/dev/null || true
+docker-compose -f docker-compose.infrastructure.yml up -d
+
+echo "Waiting for services to be healthy..."
+sleep 30
+
+# Check health
+for i in {1..60}; do
+    POSTGRES_HEALTHY=$(docker inspect maestro-postgres --format='{{.State.Health.Status}}' 2>/dev/null || echo "unknown")
+    REDIS_HEALTHY=$(docker inspect maestro-redis --format='{{.State.Health.Status}}' 2>/dev/null || echo "unknown")
+    PROMETHEUS_HEALTHY=$(docker inspect maestro-prometheus --format='{{.State.Health.Status}}' 2>/dev/null || echo "unknown")
+    GRAFANA_HEALTHY=$(docker inspect maestro-grafana --format='{{.State.Health.Status}}' 2>/dev/null || echo "unknown")
+
+    if [ "$POSTGRES_HEALTHY" = "healthy" ] && \
+       [ "$REDIS_HEALTHY" = "healthy" ] && \
+       [ "$PROMETHEUS_HEALTHY" = "healthy" ] && \
+       [ "$GRAFANA_HEALTHY" = "healthy" ]; then
+        echo "✓ All infrastructure services healthy!"
+        break
+    fi
+
+    if [ $i -eq 60 ]; then
+        echo "ERROR: Services failed to become healthy after 2 minutes"
+        echo "  PostgreSQL: $POSTGRES_HEALTHY"
+        echo "  Redis: $REDIS_HEALTHY"
+        echo "  Prometheus: $PROMETHEUS_HEALTHY"
+        echo "  Grafana: $GRAFANA_HEALTHY"
+        exit 1
+    fi
+
+    echo "Waiting for health checks... ($i/60)"
+    sleep 2
+done
+
+docker-compose -f docker-compose.infrastructure.yml ps
+REMOTE_INFRA
+
+[0;31m[ERROR #2][0m Exit code: 0
+[0;31m[ERROR #3][0m Current deployment state: infrastructure_deployment
+[0;31m[ERROR #4][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;31m[ERROR #5][0m DEPLOYMENT FAILED
+[0;31m[ERROR #6][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

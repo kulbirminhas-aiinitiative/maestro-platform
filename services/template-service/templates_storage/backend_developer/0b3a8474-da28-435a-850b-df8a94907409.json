@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "id": "0b3a8474-da28-435a-850b-df8a94907409",
+    "name": "FastAPI CRUD Endpoint",
+    "category": "api",
+    "language": "python",
+    "framework": "fastapi",
+    "description": "Complete CRUD endpoint with SQLAlchemy models and Pydantic schemas",
+    "tags": [
+      "crud",
+      "rest",
+      "api",
+      "sqlalchemy",
+      "pydantic"
+    ],
+    "quality_score": 70.0,
+    "security_score": 70.0,
+    "performance_score": 70.0,
+    "maintainability_score": 70.0,
+    "test_coverage": 0.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-03T22:04:37.854508",
+    "updated_at": "2025-10-03T22:04:37.854515",
+    "created_by": "seed_script",
+    "persona": "backend_developer"
+  },
+  "content": "from fastapi import FastAPI, Depends, HTTPException\nfrom sqlalchemy.orm import Session\nfrom pydantic import BaseModel\nfrom typing import List\n\napp = FastAPI()\n\nclass ItemBase(BaseModel):\n    name: str\n    description: str | None = None\n    price: float\n\nclass ItemCreate(ItemBase):\n    pass\n\nclass Item(ItemBase):\n    id: int\n\n    class Config:\n        from_attributes = True\n\n@app.post(\"/items/\", response_model=Item)\ndef create_item(item: ItemCreate, db: Session = Depends(get_db)):\n    db_item = ItemModel(**item.dict())\n    db.add(db_item)\n    db.commit()\n    db.refresh(db_item)\n    return db_item\n\n@app.get(\"/items/{item_id}\", response_model=Item)\ndef read_item(item_id: int, db: Session = Depends(get_db)):\n    item = db.query(ItemModel).filter(ItemModel.id == item_id).first()\n    if not item:\n        raise HTTPException(status_code=404, detail=\"Item not found\")\n    return item\n\n@app.put(\"/items/{item_id}\", response_model=Item)\ndef update_item(item_id: int, item: ItemCreate, db: Session = Depends(get_db)):\n    db_item = db.query(ItemModel).filter(ItemModel.id == item_id).first()\n    if not db_item:\n        raise HTTPException(status_code=404, detail=\"Item not found\")\n\n    for key, value in item.dict().items():\n        setattr(db_item, key, value)\n\n    db.commit()\n    db.refresh(db_item)\n    return db_item\n\n@app.delete(\"/items/{item_id}\")\ndef delete_item(item_id: int, db: Session = Depends(get_db)):\n    db_item = db.query(ItemModel).filter(ItemModel.id == item_id).first()\n    if not db_item:\n        raise HTTPException(status_code=404, detail=\"Item not found\")\n\n    db.delete(db_item)\n    db.commit()\n    return {\"message\": \"Item deleted\"}",
+  "variables": {},
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [],
+    "team_composition": [
+      "backend_developer"
+    ],
+    "estimated_time_minutes": 30
+  }
+}

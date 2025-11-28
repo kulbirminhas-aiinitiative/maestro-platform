@@ -1,0 +1,53 @@
+# Service Registry - MAESTRO Architecture Compliance (ADR-001, ADR-004)
+
+metadata:
+  service_name: event-sourcing-saas
+  version: 1.0.0
+  environment: ${ENVIRONMENT:development}
+
+service:
+  name: event-sourcing-saas-api
+  port: 8000
+  host: 0.0.0.0
+  health_endpoint: /health
+  metrics_endpoint: /metrics
+  category: user_facing_api
+  public: false
+
+dependencies:
+  - name: postgresql
+    host: ${POSTGRES_HOST:localhost}
+    port: 5432
+    database: ${POSTGRES_DB:eventsourcing}
+    user: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+    required: true
+    health_check: tcp
+    connection_pool:
+      min_size: 10
+      max_size: 20
+
+  - name: redis
+    host: ${REDIS_HOST:localhost}
+    port: 6379
+    required: false
+    health_check: tcp
+    use_case: caching_and_events
+
+monitoring:
+  prometheus:
+    enabled: true
+    port: 8000
+    path: /metrics
+
+  logging:
+    level: ${LOG_LEVEL:INFO}
+    format: json
+    structured: true
+
+features:
+  multi_tenancy: true
+  event_sourcing: true
+  cqrs: true
+  circuit_breakers: true
+  retry_logic: true

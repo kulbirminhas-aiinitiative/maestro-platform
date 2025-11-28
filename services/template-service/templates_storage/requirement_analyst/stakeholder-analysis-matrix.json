@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "id": "stakeholder-analysis-matrix-v1",
+    "name": "Stakeholder Analysis Matrix with Power-Interest Grid",
+    "category": "documentation",
+    "language": "markdown",
+    "framework": "requirements",
+    "description": "Comprehensive stakeholder identification and analysis template with power-interest grid, communication plan, and engagement strategies for requirement gathering",
+    "tags": [
+      "stakeholder",
+      "analysis",
+      "requirements",
+      "power-interest-grid",
+      "communication",
+      "engagement",
+      "project-management"
+    ],
+    "quality_score": 88.0,
+    "security_score": 70.0,
+    "performance_score": 70.0,
+    "maintainability_score": 90.0,
+    "test_coverage": 85.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T10:00:00.000000",
+    "updated_at": "2025-10-10T10:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "requirement_analyst"
+  },
+  "content": "# Stakeholder Analysis Matrix\n\n## Project Information\n\n**Project Name:** {{PROJECT_NAME}}  \n**Analysis Date:** {{DATE}}  \n**Analyst:** {{ANALYST_NAME}}  \n**Version:** {{VERSION}}  \n\n---\n\n## 1. Stakeholder Identification\n\n### Internal Stakeholders\n\n| ID | Name | Role | Department | Contact | Influence Level |\n|----|------|------|------------|---------|----------------|\n| IS-01 | {{NAME_1}} | {{ROLE_1}} | {{DEPT_1}} | {{CONTACT_1}} | High/Medium/Low |\n| IS-02 | {{NAME_2}} | {{ROLE_2}} | {{DEPT_2}} | {{CONTACT_2}} | High/Medium/Low |\n| IS-03 | {{NAME_3}} | {{ROLE_3}} | {{DEPT_3}} | {{CONTACT_3}} | High/Medium/Low |\n\n### External Stakeholders\n\n| ID | Name | Role | Organization | Contact | Influence Level |\n|----|------|------|--------------|---------|----------------|\n| ES-01 | {{NAME_4}} | {{ROLE_4}} | {{ORG_1}} | {{CONTACT_4}} | High/Medium/Low |\n| ES-02 | {{NAME_5}} | {{ROLE_5}} | {{ORG_2}} | {{CONTACT_5}} | High/Medium/Low |\n| ES-03 | {{NAME_6}} | {{ROLE_6}} | {{ORG_3}} | {{CONTACT_6}} | High/Medium/Low |\n\n### End Users\n\n| ID | User Type | Characteristics | Estimated Count | Primary Needs |\n|----|-----------|-----------------|-----------------|---------------|\n| EU-01 | {{USER_TYPE_1}} | {{CHARACTERISTICS_1}} | {{COUNT_1}} | {{NEEDS_1}} |\n| EU-02 | {{USER_TYPE_2}} | {{CHARACTERISTICS_2}} | {{COUNT_2}} | {{NEEDS_2}} |\n| EU-03 | {{USER_TYPE_3}} | {{CHARACTERISTICS_3}} | {{COUNT_3}} | {{NEEDS_3}} |\n\n---\n\n## 2. Power-Interest Grid Analysis\n\n### High Power, High Interest (Manage Closely)\n**Key Players - Highest Priority**\n\n| Stakeholder | Interests | Expectations | Potential Impact | Engagement Strategy |\n|-------------|-----------|--------------|------------------|---------------------|\n| {{STAKEHOLDER_1}} | {{INTERESTS_1}} | {{EXPECTATIONS_1}} | {{IMPACT_1}} | {{STRATEGY_1}} |\n| {{STAKEHOLDER_2}} | {{INTERESTS_2}} | {{EXPECTATIONS_2}} | {{IMPACT_2}} | {{STRATEGY_2}} |\n\n### High Power, Low Interest (Keep Satisfied)\n**Keep Informed - High Priority**\n\n| Stakeholder | Interests | Expectations | Potential Impact | Engagement Strategy |\n|-------------|-----------|--------------|------------------|---------------------|\n| {{STAKEHOLDER_3}} | {{INTERESTS_3}} | {{EXPECTATIONS_3}} | {{IMPACT_3}} | {{STRATEGY_3}} |\n\n### Low Power, High Interest (Keep Informed)\n**Show Consideration - Medium Priority**\n\n| Stakeholder | Interests | Expectations | Potential Impact | Engagement Strategy |\n|-------------|-----------|--------------|------------------|---------------------|\n| {{STAKEHOLDER_4}} | {{INTERESTS_4}} | {{EXPECTATIONS_4}} | {{IMPACT_4}} | {{STRATEGY_4}} |\n\n### Low Power, Low Interest (Monitor)\n**Minimal Effort - Low Priority**\n\n| Stakeholder | Interests | Expectations | Potential Impact | Engagement Strategy |\n|-------------|-----------|--------------|------------------|---------------------|\n| {{STAKEHOLDER_5}} | {{INTERESTS_5}} | {{EXPECTATIONS_5}} | {{IMPACT_5}} | {{STRATEGY_5}} |\n\n---\n\n## 3. Detailed Stakeholder Profiles\n\n### Stakeholder Profile: {{STAKEHOLDER_NAME_1}}\n\n**Basic Information:**\n- **ID:** {{STAKEHOLDER_ID_1}}\n- **Role:** {{ROLE_1}}\n- **Authority Level:** {{AUTHORITY_1}}\n- **Department:** {{DEPARTMENT_1}}\n\n**Analysis:**\n- **Power Level:** High/Medium/Low\n- **Interest Level:** High/Medium/Low\n- **Attitude:** Supporter/Neutral/Blocker\n- **Decision Making Authority:** Yes/No/Partial\n\n**Interests & Motivations:**\n- {{INTEREST_1}}\n- {{INTEREST_2}}\n- {{INTEREST_3}}\n\n**Concerns & Risks:**\n- {{CONCERN_1}}\n- {{CONCERN_2}}\n- {{CONCERN_3}}\n\n**Requirements Expectations:**\n- {{REQUIREMENT_1}}\n- {{REQUIREMENT_2}}\n- {{REQUIREMENT_3}}\n\n**Communication Preferences:**\n- **Frequency:** {{FREQUENCY_1}}\n- **Channel:** {{CHANNEL_1}}\n- **Format:** {{FORMAT_1}}\n- **Best Time:** {{TIME_1}}\n\n**Influence on Others:**\n- {{INFLUENCE_1}}\n- {{INFLUENCE_2}}\n\n---\n\n## 4. RACI Matrix (Responsibility Assignment)\n\n| Activity | Responsible | Accountable | Consulted | Informed |\n|----------|-------------|-------------|-----------|----------|\n| Requirements Gathering | {{R_1}} | {{A_1}} | {{C_1}} | {{I_1}} |\n| Requirements Validation | {{R_2}} | {{A_2}} | {{C_2}} | {{I_2}} |\n| Design Review | {{R_3}} | {{A_3}} | {{C_3}} | {{I_3}} |\n| Testing & QA | {{R_4}} | {{A_4}} | {{C_4}} | {{I_4}} |\n| Go-Live Decision | {{R_5}} | {{A_5}} | {{C_5}} | {{I_5}} |\n| Post-Launch Support | {{R_6}} | {{A_6}} | {{C_6}} | {{I_6}} |\n\n---\n\n## 5. Communication Plan\n\n### Regular Communications\n\n| Stakeholder Group | Communication Type | Frequency | Channel | Owner | Content |\n|-------------------|-------------------|-----------|---------|-------|----------|\n| {{GROUP_1}} | {{TYPE_1}} | {{FREQ_1}} | {{CHANNEL_1}} | {{OWNER_1}} | {{CONTENT_1}} |\n| {{GROUP_2}} | {{TYPE_2}} | {{FREQ_2}} | {{CHANNEL_2}} | {{OWNER_2}} | {{CONTENT_2}} |\n| {{GROUP_3}} | {{TYPE_3}} | {{FREQ_3}} | {{CHANNEL_3}} | {{OWNER_3}} | {{CONTENT_3}} |\n\n### Milestone Communications\n\n| Milestone | Stakeholders | Communication Method | Timing | Key Messages |\n|-----------|--------------|---------------------|--------|---------------|\n| {{MILESTONE_1}} | {{STAKEHOLDERS_1}} | {{METHOD_1}} | {{TIMING_1}} | {{MESSAGE_1}} |\n| {{MILESTONE_2}} | {{STAKEHOLDERS_2}} | {{METHOD_2}} | {{TIMING_2}} | {{MESSAGE_2}} |\n| {{MILESTONE_3}} | {{STAKEHOLDERS_3}} | {{METHOD_3}} | {{TIMING_3}} | {{MESSAGE_3}} |\n\n---\n\n## 6. Engagement Strategies\n\n### For Key Players (High Power, High Interest)\n**Strategy:** Manage Closely\n- Involve in decision-making processes\n- Regular 1-on-1 meetings\n- Early preview of deliverables\n- Seek input and feedback frequently\n- Address concerns immediately\n\n**Action Items:**\n- [ ] {{ACTION_1}}\n- [ ] {{ACTION_2}}\n- [ ] {{ACTION_3}}\n\n### For High Power, Low Interest\n**Strategy:** Keep Satisfied\n- Provide executive summaries\n- Escalate only critical issues\n- Quarterly progress updates\n- Respect their time constraints\n\n**Action Items:**\n- [ ] {{ACTION_4}}\n- [ ] {{ACTION_5}}\n\n### For Low Power, High Interest\n**Strategy:** Keep Informed\n- Regular project updates\n- Invite to demos and reviews\n- Respond to questions promptly\n- Leverage as advocates\n\n**Action Items:**\n- [ ] {{ACTION_6}}\n- [ ] {{ACTION_7}}\n\n### For Low Power, Low Interest\n**Strategy:** Monitor\n- Include in general communications\n- Monitor for changes in interest/power\n- Keep on distribution lists\n\n**Action Items:**\n- [ ] {{ACTION_8}}\n\n---\n\n## 7. Conflict Resolution\n\n### Potential Conflicts\n\n| Conflict Area | Stakeholders Involved | Root Cause | Priority | Resolution Strategy |\n|---------------|----------------------|------------|----------|---------------------|\n| {{CONFLICT_1}} | {{PARTIES_1}} | {{CAUSE_1}} | High/Med/Low | {{RESOLUTION_1}} |\n| {{CONFLICT_2}} | {{PARTIES_2}} | {{CAUSE_2}} | High/Med/Low | {{RESOLUTION_2}} |\n| {{CONFLICT_3}} | {{PARTIES_3}} | {{CAUSE_3}} | High/Med/Low | {{RESOLUTION_3}} |\n\n### Escalation Path\n1. {{ESCALATION_LEVEL_1}}\n2. {{ESCALATION_LEVEL_2}}\n3. {{ESCALATION_LEVEL_3}}\n\n---\n\n## 8. Risk Assessment\n\n### Stakeholder-Related Risks\n\n| Risk | Likelihood | Impact | Affected Stakeholders | Mitigation Strategy |\n|------|------------|--------|----------------------|---------------------|\n| {{RISK_1}} | High/Med/Low | High/Med/Low | {{STAKEHOLDERS_R1}} | {{MITIGATION_1}} |\n| {{RISK_2}} | High/Med/Low | High/Med/Low | {{STAKEHOLDERS_R2}} | {{MITIGATION_2}} |\n| {{RISK_3}} | High/Med/Low | High/Med/Low | {{STAKEHOLDERS_R3}} | {{MITIGATION_3}} |\n\n---\n\n## 9. Success Criteria\n\n### Stakeholder Satisfaction Metrics\n- {{METRIC_1}}: {{TARGET_1}}\n- {{METRIC_2}}: {{TARGET_2}}\n- {{METRIC_3}}: {{TARGET_3}}\n\n### Engagement Quality Indicators\n- Meeting attendance rate: {{ATTENDANCE_TARGET}}%\n- Feedback response rate: {{RESPONSE_TARGET}}%\n- Requirements approval time: < {{APPROVAL_TIME}} days\n- Stakeholder satisfaction score: > {{SATISFACTION_SCORE}}/10\n\n---\n\n## 10. Review & Updates\n\n### Review Schedule\n- **Initial Review:** {{INITIAL_DATE}}\n- **Quarterly Reviews:** {{Q1_DATE}}, {{Q2_DATE}}, {{Q3_DATE}}, {{Q4_DATE}}\n- **Ad-hoc Reviews:** When significant changes occur\n\n### Change Log\n\n| Date | Analyst | Changes Made | Reason |\n|------|---------|--------------|--------|\n| {{CHANGE_DATE_1}} | {{ANALYST_1}} | {{CHANGE_1}} | {{REASON_1}} |\n| {{CHANGE_DATE_2}} | {{ANALYST_2}} | {{CHANGE_2}} | {{REASON_2}} |\n\n---\n\n## Appendix: Interview Questions\n\n### For Executives\n1. {{EXEC_QUESTION_1}}\n2. {{EXEC_QUESTION_2}}\n3. {{EXEC_QUESTION_3}}\n\n### For End Users\n1. {{USER_QUESTION_1}}\n2. {{USER_QUESTION_2}}\n3. {{USER_QUESTION_3}}\n\n### For Technical Teams\n1. {{TECH_QUESTION_1}}\n2. {{TECH_QUESTION_2}}\n3. {{TECH_QUESTION_3}}\n",
+  "variables": {
+    "PROJECT_NAME": "Your Project Name",
+    "DATE": "YYYY-MM-DD",
+    "ANALYST_NAME": "Analyst Name",
+    "VERSION": "1.0",
+    "NAME_1": "Stakeholder Name",
+    "ROLE_1": "Role/Title",
+    "DEPT_1": "Department",
+    "CONTACT_1": "email@example.com",
+    "STAKEHOLDER_NAME_1": "Primary Stakeholder",
+    "ATTENDANCE_TARGET": "85",
+    "RESPONSE_TARGET": "90",
+    "APPROVAL_TIME": "5",
+    "SATISFACTION_SCORE": "8"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Identifying and analyzing project stakeholders",
+      "Creating stakeholder engagement plans",
+      "Managing stakeholder communications",
+      "Resolving stakeholder conflicts",
+      "Requirements elicitation planning"
+    ],
+    "team_composition": [
+      "requirement_analyst",
+      "solution_architect",
+      "backend_developer"
+    ],
+    "estimated_time_minutes": 120,
+    "prerequisites": [
+      "Project charter approved",
+      "Initial stakeholder list available",
+      "Understanding of organizational structure",
+      "Access to stakeholder contact information"
+    ],
+    "related_templates": [
+      "srs-document-template",
+      "user-story-template",
+      "requirements-validation-checklist",
+      "communication-plan-template"
+    ]
+  }
+}

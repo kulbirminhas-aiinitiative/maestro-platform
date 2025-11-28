@@ -1,0 +1,30 @@
+[0;34m[INFO][0m Target: 18.134.157.225
+[0;34m[INFO][0m User: ec2-user
+[0;34m[INFO][0m Path: /opt/maestro-platform
+[0;34m[INFO][0m SSH Key: /home/ec2-user/projects/genesis-dev.pem
+[0;34m[INFO][0m Log: deployment-20251024-170129.log
+[0;35m[STEP][0m PHASE 1/7: Prerequisites Check
+[0;34m[INFO][0m Checking local prerequisites...
+[0;32m[SUCCESS][0m ✓ rsync found
+[0;32m[SUCCESS][0m ✓ ssh found
+[0;32m[SUCCESS][0m ✓ docker found
+[0;34m[INFO][0m Checking SSH key...
+[0;32m[SUCCESS][0m ✓ SSH key found
+[0;34m[INFO][0m Checking demo server connectivity...
+[0;32m[SUCCESS][0m ✓ Demo server accessible
+[0;34m[INFO][0m Checking remote prerequisites...
+[0;32m[SUCCESS][0m ✓ Remote prerequisites OK
+[0;35m[STEP][0m PHASE 2/7: Creating Remote Directory Structure
+[0;32m[SUCCESS][0m ✓ Directory structure created
+[0;35m[STEP][0m PHASE 3/7: Transferring Files
+[0;34m[INFO][0m Transferring infrastructure code...
+[0;32m[SUCCESS][0m ✓ Infrastructure code transferred
+[0;34m[INFO][0m Transferring quality-fabric code...
+[0;32m[SUCCESS][0m ✓ Quality Fabric code transferred
+[0;34m[INFO][0m Transferring shared packages...
+[0;32m[SUCCESS][0m ✓ Shared packages transferred
+[0;35m[STEP][0m PHASE 4/7: Docker BuildX Setup
+[0;34m[INFO][0m Checking BuildX version...
+[0;34m[INFO][0m Current BuildX version: v0.19.2
+[0;32m[SUCCESS][0m ✓ BuildX version sufficient
+[0;34m[INFO][0m Creating BuildX builder...

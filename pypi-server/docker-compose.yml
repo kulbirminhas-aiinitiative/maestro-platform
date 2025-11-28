@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  pypi:
+    image: pypiserver/pypiserver:latest
+    container_name: maestro-pypi-server
+    ports:
+      - "8888:8080"  # PyPI server on port 8888
+    volumes:
+      - ./packages:/data/packages
+      - ./auth:/data/auth
+    command: run -p 8080 --host 0.0.0.0 /data/packages
+    environment:
+      - PYPISERVER_NO_REDIRECT=1
+    restart: unless-stopped
+    networks:
+      - maestro-dev-network
+
+networks:
+  maestro-dev-network:
+    external: true
+    name: maestro-dev-network

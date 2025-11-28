@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "id": "normalized-schema-design-3nf-v1",
+    "name": "Normalized Database Schema Design (3NF)",
+    "category": "backend",
+    "language": "sql",
+    "framework": "postgresql",
+    "description": "Comprehensive guide to database normalization through Third Normal Form (3NF) with practical examples, denormalization strategies, and trade-off analysis for optimal schema design",
+    "tags": [
+      "database-design",
+      "normalization",
+      "3nf",
+      "schema-design",
+      "postgresql",
+      "relational-database"
+    ],
+    "quality_score": 93.0,
+    "security_score": 88.0,
+    "performance_score": 85.0,
+    "maintainability_score": 94.0,
+    "test_coverage": 80.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T12:00:00.000000",
+    "updated_at": "2025-10-10T12:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase2",
+    "persona": "database_specialist"
+  },
+  "content": "# Normalized Database Schema Design (3NF)\n\n## Overview\n\n**Database:** {{DATABASE_NAME}}  \n**DBMS:** {{DBMS}} (PostgreSQL/MySQL/SQL Server)  \n**Target Normal Form:** Third Normal Form (3NF)  \n**Designer:** {{DESIGNER}}  \n**Date:** {{DATE}}  \n\n---\n\n## Normalization Process\n\n### First Normal Form (1NF)\n\n**Rules:**\n- Eliminate repeating groups\n- Each cell contains atomic (indivisible) values\n- Each row is unique (has primary key)\n\n**Example - Before 1NF:**\n```sql\n-- VIOLATION: Multi-valued attributes\nCREATE TABLE orders_bad (\n    order_id INT PRIMARY KEY,\n    customer_name VARCHAR(100),\n    products VARCHAR(500),  -- 'Product1, Product2, Product3'\n    quantities VARCHAR(100)  -- '2, 1, 5'\n);\n```\n\n**After 1NF:**\n```sql\nCREATE TABLE orders (\n    order_id INT PRIMARY KEY,\n    customer_id INT NOT NULL,\n    order_date TIMESTAMP DEFAULT NOW()\n);\n\nCREATE TABLE order_items (\n    order_item_id SERIAL PRIMARY KEY,\n    order_id INT NOT NULL,\n    product_id INT NOT NULL,\n    quantity INT NOT NULL,\n    FOREIGN KEY (order_id) REFERENCES orders(order_id)\n);\n```\n\n### Second Normal Form (2NF)\n\n**Rules:**\n- Must be in 1NF\n- Remove partial dependencies (all non-key attributes depend on entire primary key)\n- Only applies to composite keys\n\n**Example - Before 2NF:**\n```sql\n-- VIOLATION: product_name depends only on product_id, not full key\nCREATE TABLE order_items_bad (\n    order_id INT,\n    product_id INT,\n    product_name VARCHAR(100),  -- Partial dependency!\n    quantity INT,\n    PRIMARY KEY (order_id, product_id)\n);\n```\n\n**After 2NF:**\n```sql\nCREATE TABLE products (\n    product_id SERIAL PRIMARY KEY,\n    product_name VARCHAR(100) NOT NULL,\n    category_id INT,\n    unit_price DECIMAL(10,2) NOT NULL\n);\n\nCREATE TABLE order_items (\n    order_id INT,\n    product_id INT,\n    quantity INT NOT NULL,\n    unit_price_snapshot DECIMAL(10,2),  -- Historical price\n    PRIMARY KEY (order_id, product_id),\n    FOREIGN KEY (order_id) REFERENCES orders(order_id),\n    FOREIGN KEY (product_id) REFERENCES products(product_id)\n);\n```\n\n### Third Normal Form (3NF)\n\n**Rules:**\n- Must be in 2NF\n- Remove transitive dependencies (non-key attributes depend only on primary key)\n\n**Example - Before 3NF:**\n```sql\n-- VIOLATION: city and state depend on zip_code, not customer_id\nCREATE TABLE customers_bad (\n    customer_id SERIAL PRIMARY KEY,\n    name VARCHAR(100) NOT NULL,\n    email VARCHAR(100) UNIQUE NOT NULL,\n    zip_code VARCHAR(10),\n    city VARCHAR(50),      -- Transitive dependency!\n    state VARCHAR(50)      -- Transitive dependency!\n);\n```\n\n**After 3NF:**\n```sql\nCREATE TABLE zip_codes (\n    zip_code VARCHAR(10) PRIMARY KEY,\n    city VARCHAR(50) NOT NULL,\n    state VARCHAR(50) NOT NULL,\n    country VARCHAR(50) NOT NULL DEFAULT 'USA'\n);\n\nCREATE TABLE customers (\n    customer_id SERIAL PRIMARY KEY,\n    name VARCHAR(100) NOT NULL,\n    email VARCHAR(100) UNIQUE NOT NULL,\n    phone VARCHAR(20),\n    created_at TIMESTAMP DEFAULT NOW()\n);\n\nCREATE TABLE customer_addresses (\n    address_id SERIAL PRIMARY KEY,\n    customer_id INT NOT NULL,\n    address_type VARCHAR(20) CHECK (address_type IN ('billing', 'shipping')),\n    street_address VARCHAR(200) NOT NULL,\n    zip_code VARCHAR(10) NOT NULL,\n    is_default BOOLEAN DEFAULT FALSE,\n    FOREIGN KEY (customer_id) REFERENCES customers(customer_id),\n    FOREIGN KEY (zip_code) REFERENCES zip_codes(zip_code)\n);\n```\n\n---\n\n## Complete 3NF Schema Example: E-Commerce System\n\n```sql\n-- ============================================================================\n-- CUSTOMERS & AUTHENTICATION\n-- ============================================================================\n\nCREATE TABLE users (\n    user_id SERIAL PRIMARY KEY,\n    email VARCHAR(100) UNIQUE NOT NULL,\n    password_hash VARCHAR(255) NOT NULL,\n    status VARCHAR(20) CHECK (status IN ('active', 'suspended', 'deleted')),\n    created_at TIMESTAMP DEFAULT NOW(),\n    updated_at TIMESTAMP DEFAULT NOW()\n);\n\nCREATE TABLE customers (\n    customer_id SERIAL PRIMARY KEY,\n    user_id INT UNIQUE NOT NULL,\n    first_name VARCHAR(50) NOT NULL,\n    last_name VARCHAR(50) NOT NULL,\n    phone VARCHAR(20),\n    date_of_birth DATE,\n    FOREIGN KEY (user_id) REFERENCES users(user_id)\n);\n\n-- ============================================================================\n-- PRODUCT CATALOG\n-- ============================================================================\n\nCREATE TABLE categories (\n    category_id SERIAL PRIMARY KEY,\n    category_name VARCHAR(100) NOT NULL,\n    parent_category_id INT,\n    FOREIGN KEY (parent_category_id) REFERENCES categories(category_id)\n);\n\nCREATE TABLE brands (\n    brand_id SERIAL PRIMARY KEY,\n    brand_name VARCHAR(100) UNIQUE NOT NULL,\n    country_of_origin VARCHAR(50)\n);\n\nCREATE TABLE products (\n    product_id SERIAL PRIMARY KEY,\n    sku VARCHAR(50) UNIQUE NOT NULL,\n    product_name VARCHAR(200) NOT NULL,\n    description TEXT,\n    category_id INT NOT NULL,\n    brand_id INT,\n    base_price DECIMAL(10,2) NOT NULL,\n    weight_kg DECIMAL(8,3),\n    is_active BOOLEAN DEFAULT TRUE,\n    created_at TIMESTAMP DEFAULT NOW(),\n    FOREIGN KEY (category_id) REFERENCES categories(category_id),\n    FOREIGN KEY (brand_id) REFERENCES brands(brand_id)\n);\n\nCREATE TABLE product_variants (\n    variant_id SERIAL PRIMARY KEY,\n    product_id INT NOT NULL,\n    size VARCHAR(20),\n    color VARCHAR(30),\n    sku_variant VARCHAR(50) UNIQUE NOT NULL,\n    price_adjustment DECIMAL(10,2) DEFAULT 0.00,\n    stock_quantity INT DEFAULT 0,\n    FOREIGN KEY (product_id) REFERENCES products(product_id)\n);\n\n-- ============================================================================\n-- ORDERS & PAYMENTS\n-- ============================================================================\n\nCREATE TABLE order_statuses (\n    status_id SERIAL PRIMARY KEY,\n    status_name VARCHAR(30) UNIQUE NOT NULL\n);\n\nCREATE TABLE orders (\n    order_id SERIAL PRIMARY KEY,\n    customer_id INT NOT NULL,\n    order_number VARCHAR(50) UNIQUE NOT NULL,\n    status_id INT NOT NULL,\n    subtotal DECIMAL(10,2) NOT NULL,\n    tax_amount DECIMAL(10,2) NOT NULL,\n    shipping_cost DECIMAL(10,2) NOT NULL,\n    total_amount DECIMAL(10,2) NOT NULL,\n    ordered_at TIMESTAMP DEFAULT NOW(),\n    FOREIGN KEY (customer_id) REFERENCES customers(customer_id),\n    FOREIGN KEY (status_id) REFERENCES order_statuses(status_id)\n);\n\nCREATE TABLE order_items (\n    order_item_id SERIAL PRIMARY KEY,\n    order_id INT NOT NULL,\n    variant_id INT NOT NULL,\n    quantity INT NOT NULL CHECK (quantity > 0),\n    unit_price DECIMAL(10,2) NOT NULL,  -- Snapshot at order time\n    discount_amount DECIMAL(10,2) DEFAULT 0.00,\n    line_total DECIMAL(10,2) NOT NULL,\n    FOREIGN KEY (order_id) REFERENCES orders(order_id),\n    FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id)\n);\n\nCREATE TABLE payment_methods (\n    payment_method_id SERIAL PRIMARY KEY,\n    method_name VARCHAR(30) UNIQUE NOT NULL\n);\n\nCREATE TABLE payments (\n    payment_id SERIAL PRIMARY KEY,\n    order_id INT NOT NULL,\n    payment_method_id INT NOT NULL,\n    amount DECIMAL(10,2) NOT NULL,\n    transaction_id VARCHAR(100) UNIQUE,\n    status VARCHAR(20) CHECK (status IN ('pending', 'completed', 'failed', 'refunded')),\n    paid_at TIMESTAMP,\n    FOREIGN KEY (order_id) REFERENCES orders(order_id),\n    FOREIGN KEY (payment_method_id) REFERENCES payment_methods(payment_method_id)\n);\n```\n\n---\n\n## Strategic Denormalization\n\n### When to Denormalize\n\n| Scenario | Reason | Trade-off |\n|----------|--------|----------|\n| Frequently joined tables | Reduce JOIN overhead | Write complexity, data redundancy |\n| Read-heavy analytics | Query performance | Stale data, sync complexity |\n| Aggregate calculations | Avoid expensive GROUP BY | Update triggers needed |\n| Audit/historical data | Preserve state at point in time | Storage overhead |\n\n### Example: Denormalized Order Summary\n\n```sql\n-- Add calculated/redundant columns for performance\nALTER TABLE orders ADD COLUMN customer_name VARCHAR(100);\nALTER TABLE orders ADD COLUMN item_count INT DEFAULT 0;\n\n-- Trigger to maintain denormalized data\nCREATE OR REPLACE FUNCTION update_order_summary()\nRETURNS TRIGGER AS $$\nBEGIN\n    -- Update item count\n    UPDATE orders \n    SET item_count = (\n        SELECT SUM(quantity) \n        FROM order_items \n        WHERE order_id = NEW.order_id\n    )\n    WHERE order_id = NEW.order_id;\n    \n    RETURN NEW;\nEND;\n$$ LANGUAGE plpgsql;\n\nCREATE TRIGGER order_items_summary_trigger\nAFTER INSERT OR UPDATE OR DELETE ON order_items\nFOR EACH ROW EXECUTE FUNCTION update_order_summary();\n```\n\n---\n\n## Normalization Checklist\n\n### 1NF Verification\n- [ ] All attributes contain atomic values\n- [ ] No repeating groups or arrays\n- [ ] Each table has a primary key\n- [ ] All rows are unique\n\n### 2NF Verification\n- [ ] Table is in 1NF\n- [ ] All non-key attributes depend on entire primary key\n- [ ] No partial dependencies exist\n\n### 3NF Verification\n- [ ] Table is in 2NF\n- [ ] No transitive dependencies\n- [ ] All non-key attributes depend only on primary key\n\n### Data Integrity\n- [ ] Foreign keys defined with appropriate ON DELETE/UPDATE actions\n- [ ] CHECK constraints for valid values\n- [ ] NOT NULL constraints where appropriate\n- [ ] UNIQUE constraints for natural keys\n- [ ] Default values specified\n\n---\n\n## Performance Considerations\n\n### Indexing Strategy\n```sql\n-- Primary keys (automatic)\n-- Foreign keys (recommended)\nCREATE INDEX idx_order_items_order_id ON order_items(order_id);\nCREATE INDEX idx_order_items_variant_id ON order_items(variant_id);\nCREATE INDEX idx_orders_customer_id ON orders(customer_id);\n\n-- Frequently queried columns\nCREATE INDEX idx_products_category_id ON products(category_id);\nCREATE INDEX idx_orders_status_id ON orders(status_id);\n\n-- Composite indexes for common queries\nCREATE INDEX idx_orders_customer_status ON orders(customer_id, status_id);\nCREATE INDEX idx_products_active_category ON products(is_active, category_id) \n    WHERE is_active = TRUE;\n```\n\n### Query Optimization\n```sql\n-- Use covering indexes\nCREATE INDEX idx_order_items_covering \n    ON order_items(order_id) \n    INCLUDE (variant_id, quantity, unit_price);\n\n-- Partial indexes for common filters\nCREATE INDEX idx_orders_recent \n    ON orders(ordered_at DESC) \n    WHERE ordered_at > NOW() - INTERVAL '90 days';\n```\n\n---\n\n**Schema Version:** {{SCHEMA_VERSION}}  \n**Last Updated:** {{LAST_UPDATED}}  \n**Migration Required:** {{MIGRATION_REQUIRED}}  \n",
+  "variables": {
+    "DATABASE_NAME": "ecommerce_db",
+    "DBMS": "PostgreSQL 15+",
+    "DESIGNER": "Database Architect Name",
+    "DATE": "YYYY-MM-DD",
+    "SCHEMA_VERSION": "1.0.0",
+    "LAST_UPDATED": "YYYY-MM-DD",
+    "MIGRATION_REQUIRED": "No"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "E-commerce database design",
+      "Transactional system schemas",
+      "Data integrity optimization",
+      "Legacy database refactoring",
+      "New application database architecture"
+    ],
+    "team_composition": [
+      "database_specialist",
+      "backend_developer",
+      "solution_architect"
+    ],
+    "estimated_time_minutes": 240,
+    "prerequisites": [
+      "Business requirements documented",
+      "Entity relationships identified",
+      "Data volume estimates available",
+      "Query patterns understood"
+    ],
+    "related_templates": [
+      "database-indexing-strategy",
+      "zero-downtime-migration",
+      "database-sharding-pattern"
+    ]
+  }
+}

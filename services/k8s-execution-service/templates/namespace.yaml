@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${NAMESPACE}
+  labels:
+    app: quality-fabric
+    managed-by: maestro-k8s-execution
+    execution-id: ${EXECUTION_ID}
+    ttl-minutes: "${TTL_MINUTES}"
+    created-at: "${CREATED_AT}"
+  annotations:
+    maestro.io/execution-id: ${EXECUTION_ID}
+    maestro.io/ttl-minutes: "${TTL_MINUTES}"
+    maestro.io/auto-cleanup: "true"
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: compute-resources
+  namespace: ${NAMESPACE}
+spec:
+  hard:
+    requests.cpu: "${CPU_QUOTA}"
+    requests.memory: ${MEMORY_QUOTA}
+    limits.cpu: "${CPU_LIMIT}"
+    limits.memory: ${MEMORY_LIMIT}
+    pods: "10"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: resource-limits
+  namespace: ${NAMESPACE}
+spec:
+  limits:
+  - max:
+      cpu: "2"
+      memory: "2Gi"
+    min:
+      cpu: "100m"
+      memory: "128Mi"
+    type: Container

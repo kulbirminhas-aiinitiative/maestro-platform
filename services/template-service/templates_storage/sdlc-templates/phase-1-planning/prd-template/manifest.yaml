@@ -1,0 +1,109 @@
+manifest_version: '1.0'
+name: prd-template
+description: Product Requirements Document (PRD) template following industry best practices from Product School, Lenny Rachitsky, and Marty Cagan. Defines product purpose, features, functionality, and success metrics.
+version: 1.0.0
+engine: jinja2
+author: MAESTRO SDLC Templates
+
+metadata:
+  category: requirements
+  sdlc_phase: planning
+  language: markdown
+  framework: product-management
+  tags:
+    - prd
+    - requirements
+    - product-management
+    - documentation
+    - features
+    - specifications
+  methodology: agile
+  complexity: intermediate
+  use_cases:
+    - product-definition
+    - feature-specification
+    - stakeholder-alignment
+    - development-roadmap
+  license: MIT
+
+placeholders:
+  - variable: PRODUCT_NAME
+    description: Name of the product or feature
+    type: string
+    required: true
+  - variable: PRODUCT_MANAGER
+    description: Product manager name
+    type: string
+    required: true
+  - variable: TARGET_RELEASE_DATE
+    description: Target release date
+    type: string
+    required: false
+  - variable: PRIORITY
+    description: Priority level
+    type: string
+    required: true
+    default: high
+    choices: [critical, high, medium, low]
+  - variable: PROBLEM_STATEMENT
+    description: Core problem being solved
+    type: string
+    required: true
+  - variable: SUCCESS_METRICS
+    description: Key success metrics
+    type: list
+    required: true
+
+dependencies:
+  runtime: []
+  build: []
+
+hooks:
+  pre_generation: []
+  post_generation: []
+
+files:
+  include:
+    - '**/*'
+  exclude:
+    - .git/**
+    - .DS_Store
+
+features:
+  - "Executive summary with one-liner and elevator pitch"
+  - "Problem statement and user pain points"
+  - "Goals and success metrics (OKRs/KPIs)"
+  - "User personas and target audience"
+  - "User stories and use cases"
+  - "Feature requirements (must-have, should-have, nice-to-have)"
+  - "User experience and UI mockups section"
+  - "Technical considerations and constraints"
+  - "Dependencies and integrations"
+  - "Release criteria and rollout plan"
+  - "Risks and mitigation strategies"
+  - "Open questions and assumptions"
+  - "Appendix for research and data"
+
+configuration:
+  sections:
+    - executive_summary
+    - background
+    - problem_statement
+    - goals_and_success_metrics
+    - user_personas
+    - user_stories
+    - feature_requirements
+    - user_experience
+    - technical_requirements
+    - dependencies
+    - release_plan
+    - risks
+    - appendix
+
+documentation:
+  readme: README.md
+  quickstart: docs/QUICKSTART.md
+  examples:
+    - examples/mobile-app-prd
+    - examples/api-feature-prd
+    - examples/dashboard-prd

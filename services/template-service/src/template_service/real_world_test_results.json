@@ -1,0 +1,1751 @@
+{
+  "test_date": "2025-10-10T05:21:41.076976",
+  "total_scenarios": 12,
+  "overall_coverage_score": 49.20517076719577,
+  "scenarios_well_covered": 0,
+  "scenarios_poorly_covered": 0,
+  "personas_with_no_templates": [
+    "requirement_analyst",
+    "solution_architect"
+  ],
+  "persona_coverage": {
+    "requirement_analyst": {
+      "scenarios_used": 2,
+      "total_templates": 0,
+      "total_high_relevance": 0,
+      "scenarios_with_no_templates": [
+        "E-Commerce Platform",
+        "Multi-Tenant SaaS Application"
+      ]
+    },
+    "solution_architect": {
+      "scenarios_used": 9,
+      "total_templates": 0,
+      "total_high_relevance": 0,
+      "scenarios_with_no_templates": [
+        "E-Commerce Platform",
+        "Multi-Tenant SaaS Application",
+        "Real-Time Chat/Messaging System",
+        "IoT Data Pipeline",
+        "API Gateway with BFF Pattern",
+        "Machine Learning Pipeline",
+        "Event-Driven Microservices",
+        "GDPR/HIPAA Compliance System",
+        "GraphQL API Platform"
+      ]
+    },
+    "frontend_developer": {
+      "scenarios_used": 5,
+      "total_templates": 10,
+      "total_high_relevance": 0,
+      "scenarios_with_no_templates": []
+    },
+    "backend_developer": {
+      "scenarios_used": 12,
+      "total_templates": 60,
+      "total_high_relevance": 0,
+      "scenarios_with_no_templates": []
+    },
+    "database_specialist": {
+      "scenarios_used": 7,
+      "total_templates": 7,
+      "total_high_relevance": 0,
+      "scenarios_with_no_templates": []
+    },
+    "security_specialist": {
+      "scenarios_used": 7,
+      "total_templates": 14,
+      "total_high_relevance": 0,
+      "scenarios_with_no_templates": []
+    },
+    "qa_engineer": {
+      "scenarios_used": 8,
+      "total_templates": 8,
+      "total_high_relevance": 0,
+      "scenarios_with_no_templates": []
+    },
+    "devops_engineer": {
+      "scenarios_used": 11,
+      "total_templates": 33,
+      "total_high_relevance": 0,
+      "scenarios_with_no_templates": []
+    }
+  },
+  "category_usage": {
+    "data-fetching": 5,
+    "forms": 5,
+    "api": 12,
+    "real_time": 8,
+    "background-processing": 8,
+    "database": 9,
+    "authentication": 7,
+    "authorization": 7,
+    "testing": 8,
+    "infrastructure": 11,
+    "ci_cd": 11,
+    "security": 11,
+    "error-handling": 10,
+    "architecture": 1
+  },
+  "missing_categories": [
+    "integration",
+    "iot",
+    "frontend",
+    "logging"
+  ],
+  "critical_gaps": [
+    "Personas with ZERO templates: requirement_analyst, solution_architect",
+    "solution_architect: Used in 9 scenarios but only 0 total templates (0.0 avg per scenario)",
+    "database_specialist: Used in 7 scenarios but only 7 total templates (1.0 avg per scenario)",
+    "qa_engineer: Used in 8 scenarios but only 8 total templates (1.0 avg per scenario)",
+    "Expected categories with NO templates: frontend, integration, iot, logging"
+  ],
+  "recommendations": [
+    "CRITICAL: Create templates for requirement_analyst (currently has ZERO)",
+    "CRITICAL: Create templates for solution_architect (currently has ZERO)",
+    "HIGH: Expand frontend_developer templates (only 2.0 per scenario)",
+    "HIGH: Expand database_specialist templates (only 1.0 per scenario)",
+    "HIGH: Expand security_specialist templates (only 2.0 per scenario)",
+    "HIGH: Expand qa_engineer templates (only 1.0 per scenario)",
+    "MEDIUM: Create templates for 'frontend' category",
+    "MEDIUM: Create templates for 'integration' category",
+    "MEDIUM: Create templates for 'iot' category",
+    "MEDIUM: Create templates for 'logging' category"
+  ],
+  "scenario_results": [
+    {
+      "scenario_id": "SC01",
+      "scenario_name": "E-Commerce Platform",
+      "project_type": "e-commerce",
+      "package_recommended": true,
+      "package_name": "User Authentication System",
+      "package_confidence": 0.6034285714285715,
+      "total_templates_found": 14,
+      "total_high_relevance": 0,
+      "personas_with_templates": 6,
+      "personas_with_high_relevance": 0,
+      "average_relevance": 0.40982222222222225,
+      "coverage_score": 45.696444444444445,
+      "missing_personas": [
+        "requirement_analyst",
+        "solution_architect"
+      ],
+      "persona_results": {
+        "requirement_analyst": {
+          "templates_found": 0,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
+        },
+        "solution_architect": {
+          "templates_found": 0,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
+        },
+        "frontend_developer": {
+          "templates_found": 2,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 2,
+          "average_relevance": 0.3995,
+          "categories_covered": [
+            "data-fetching",
+            "forms"
+          ],
+          "top_templates": [
+            {
+              "name": "React Data Fetching with TanStack Query",
+              "category": "data-fetching",
+              "relevance": 0.4,
+              "quality": 91.0
+            },
+            {
+              "name": "React Form Handling with react-hook-form & Zod",
+              "category": "forms",
+              "relevance": 0.399,
+              "quality": 90.0
+            }
+          ]
+        },
+        "backend_developer": {
+          "templates_found": 5,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 5,
+          "average_relevance": 0.4196,
+          "categories_covered": [
+            "api",
+            "real_time",
+            "background-processing"
+          ],
+          "top_templates": [
+            {
+              "name": "FastAPI Advanced Pagination & Filtering",
+              "category": "api",
+              "relevance": 0.426,
+              "quality": 86.0
+            },
+            {
+              "name": "FastAPI Advanced Pagination & Filtering - Gold Standard",
+              "category": "api",
+              "relevance": 0.423,
+              "quality": 92.0
+            },
+            {
+              "name": "WebSocket Real-Time Server with Broadcasting",
+              "category": "real_time",
+              "relevance": 0.421,
+              "quality": 90.0
+            }
+          ]
+        },
+        "database_specialist": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.389,
+          "categories_covered": [
+            "database"
+          ],
+          "top_templates": [
+            {
+              "name": "Prisma Schema Design Patterns",
+              "category": "database",
+              "relevance": 0.389,
+              "quality": 89.0
+            }
+          ]
+        },
+        "security_specialist": {
+          "templates_found": 2,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 2,
+          "average_relevance": 0.4195,
+          "categories_covered": [
+            "authentication",
+            "authorization"
+          ],
+          "top_templates": [
+            {
+              "name": "JWT Authentication with Refresh Tokens & Token Rotation",
+              "category": "authentication",
+              "relevance": 0.432,
+              "quality": 94.0
+            },
+            {
+              "name": "Role-Based Access Control (RBAC) Implementation",
+              "category": "authorization",
+              "relevance": 0.407,
+              "quality": 93.0
+            }
+          ]
+        },
+        "qa_engineer": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.408,
+          "categories_covered": [
+            "testing"
+          ],
+          "top_templates": [
+            {
+              "name": "Playwright E2E Testing Patterns",
+              "category": "testing",
+              "relevance": 0.408,
+              "quality": 91.0
+            }
+          ]
+        },
+        "devops_engineer": {
+          "templates_found": 3,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 3,
+          "average_relevance": 0.42333333333333334,
+          "categories_covered": [
+            "infrastructure",
+            "ci_cd",
+            "security"
+          ],
+          "top_templates": [
+            {
+              "name": "Docker Compose Full Stack Multi-Service Setup",
+              "category": "infrastructure",
+              "relevance": 0.426,
+              "quality": 93.0
+            },
+            {
+              "name": "GitHub Actions Full Stack CI/CD Pipeline",
+              "category": "ci_cd",
+              "relevance": 0.426,
+              "quality": 92.0
+            },
+            {
+              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
+              "category": "security",
+              "relevance": 0.418,
+              "quality": 94.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario_id": "SC02",
+      "scenario_name": "Multi-Tenant SaaS Application",
+      "project_type": "saas",
+      "package_recommended": true,
+      "package_name": "E-Commerce Platform",
+      "package_confidence": 0.6665974025974027,
+      "total_templates_found": 13,
+      "total_high_relevance": 0,
+      "personas_with_templates": 5,
+      "personas_with_high_relevance": 0,
+      "average_relevance": 0.4096333333333333,
+      "coverage_score": 44.26409523809524,
+      "missing_personas": [
+        "requirement_analyst",
+        "solution_architect"
+      ],
+      "persona_results": {
+        "requirement_analyst": {
+          "templates_found": 0,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
+        },
+        "solution_architect": {
+          "templates_found": 0,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
+        },
+        "backend_developer": {
+          "templates_found": 5,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 5,
+          "average_relevance": 0.418,
+          "categories_covered": [
+            "real_time",
+            "api",
+            "error-handling",
+            "background-processing"
+          ],
+          "top_templates": [
+            {
+              "name": "WebSocket Real-Time Server with Broadcasting",
+              "category": "real_time",
+              "relevance": 0.445,
+              "quality": 90.0
+            },
+            {
+              "name": "FastAPI Async CRUD Complete - Gold Standard",
+              "category": "api",
+              "relevance": 0.431,
+              "quality": 92.0
+            },
+            {
+              "name": "GraphQL Resolvers with DataLoader & Caching",
+              "category": "api",
+              "relevance": 0.41,
+              "quality": 92.0
+            }
+          ]
+        },
+        "frontend_developer": {
+          "templates_found": 2,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 2,
+          "average_relevance": 0.397,
+          "categories_covered": [
+            "data-fetching",
+            "forms"
+          ],
+          "top_templates": [
+            {
+              "name": "React Data Fetching with TanStack Query",
+              "category": "data-fetching",
+              "relevance": 0.398,
+              "quality": 91.0
+            },
+            {
+              "name": "React Form Handling with react-hook-form & Zod",
+              "category": "forms",
+              "relevance": 0.396,
+              "quality": 90.0
+            }
+          ]
+        },
+        "database_specialist": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.388,
+          "categories_covered": [
+            "database"
+          ],
+          "top_templates": [
+            {
+              "name": "Prisma Schema Design Patterns",
+              "category": "database",
+              "relevance": 0.388,
+              "quality": 89.0
+            }
+          ]
+        },
+        "security_specialist": {
+          "templates_found": 2,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 2,
+          "average_relevance": 0.4325,
+          "categories_covered": [
+            "authorization",
+            "authentication"
+          ],
+          "top_templates": [
+            {
+              "name": "Role-Based Access Control (RBAC) Implementation",
+              "category": "authorization",
+              "relevance": 0.442,
+              "quality": 93.0
+            },
+            {
+              "name": "JWT Authentication with Refresh Tokens & Token Rotation",
+              "category": "authentication",
+              "relevance": 0.423,
+              "quality": 94.0
+            }
+          ]
+        },
+        "devops_engineer": {
+          "templates_found": 3,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 3,
+          "average_relevance": 0.4126666666666667,
+          "categories_covered": [
+            "security",
+            "infrastructure",
+            "ci_cd"
+          ],
+          "top_templates": [
+            {
+              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
+              "category": "security",
+              "relevance": 0.414,
+              "quality": 94.0
+            },
+            {
+              "name": "Docker Compose Full Stack Multi-Service Setup",
+              "category": "infrastructure",
+              "relevance": 0.412,
+              "quality": 93.0
+            },
+            {
+              "name": "GitHub Actions Full Stack CI/CD Pipeline",
+              "category": "ci_cd",
+              "relevance": 0.412,
+              "quality": 92.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario_id": "SC03",
+      "scenario_name": "Real-Time Chat/Messaging System",
+      "project_type": "real-time",
+      "package_recommended": true,
+      "package_name": "Social Media Application",
+      "package_confidence": 0.6053333333333334,
+      "total_templates_found": 14,
+      "total_high_relevance": 0,
+      "personas_with_templates": 6,
+      "personas_with_high_relevance": 0,
+      "average_relevance": 0.41754444444444444,
+      "coverage_score": 51.20803174603174,
+      "missing_personas": [
+        "solution_architect"
+      ],
+      "persona_results": {
+        "solution_architect": {
+          "templates_found": 0,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
+        },
+        "backend_developer": {
+          "templates_found": 5,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 5,
+          "average_relevance": 0.44559999999999994,
+          "categories_covered": [
+            "real_time",
+            "api"
+          ],
+          "top_templates": [
+            {
+              "name": "WebSocket Real-Time Server with Broadcasting",
+              "category": "real_time",
+              "relevance": 0.466,
+              "quality": 90.0
+            },
+            {
+              "name": "FastAPI Advanced Pagination & Filtering",
+              "category": "api",
+              "relevance": 0.462,
+              "quality": 86.0
+            },
+            {
+              "name": "FastAPI Advanced Pagination & Filtering - Gold Standard",
+              "category": "api",
+              "relevance": 0.445,
+              "quality": 92.0
+            }
+          ]
+        },
+        "frontend_developer": {
+          "templates_found": 2,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 2,
+          "average_relevance": 0.435,
+          "categories_covered": [
+            "data-fetching",
+            "forms"
+          ],
+          "top_templates": [
+            {
+              "name": "React Data Fetching with TanStack Query",
+              "category": "data-fetching",
+              "relevance": 0.436,
+              "quality": 91.0
+            },
+            {
+              "name": "React Form Handling with react-hook-form & Zod",
+              "category": "forms",
+              "relevance": 0.434,
+              "quality": 90.0
+            }
+          ]
+        },
+        "database_specialist": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.391,
+          "categories_covered": [
+            "database"
+          ],
+          "top_templates": [
+            {
+              "name": "Prisma Schema Design Patterns",
+              "category": "database",
+              "relevance": 0.391,
+              "quality": 89.0
+            }
+          ]
+        },
+        "security_specialist": {
+          "templates_found": 2,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 2,
+          "average_relevance": 0.421,
+          "categories_covered": [
+            "authorization",
+            "authentication"
+          ],
+          "top_templates": [
+            {
+              "name": "Role-Based Access Control (RBAC) Implementation",
+              "category": "authorization",
+              "relevance": 0.421,
+              "quality": 93.0
+            },
+            {
+              "name": "JWT Authentication with Refresh Tokens & Token Rotation",
+              "category": "authentication",
+              "relevance": 0.421,
+              "quality": 94.0
+            }
+          ]
+        },
+        "qa_engineer": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.4,
+          "categories_covered": [
+            "testing"
+          ],
+          "top_templates": [
+            {
+              "name": "Playwright E2E Testing Patterns",
+              "category": "testing",
+              "relevance": 0.4,
+              "quality": 91.0
+            }
+          ]
+        },
+        "devops_engineer": {
+          "templates_found": 3,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 3,
+          "average_relevance": 0.4126666666666667,
+          "categories_covered": [
+            "infrastructure",
+            "security",
+            "ci_cd"
+          ],
+          "top_templates": [
+            {
+              "name": "Docker Compose Full Stack Multi-Service Setup",
+              "category": "infrastructure",
+              "relevance": 0.42,
+              "quality": 93.0
+            },
+            {
+              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
+              "category": "security",
+              "relevance": 0.41,
+              "quality": 94.0
+            },
+            {
+              "name": "GitHub Actions Full Stack CI/CD Pipeline",
+              "category": "ci_cd",
+              "relevance": 0.408,
+              "quality": 92.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario_id": "SC04",
+      "scenario_name": "IoT Data Pipeline",
+      "project_type": "iot",
+      "package_recommended": true,
+      "package_name": "User Authentication System",
+      "package_confidence": 0.6354285714285716,
+      "total_templates_found": 10,
+      "total_high_relevance": 0,
+      "personas_with_templates": 4,
+      "personas_with_high_relevance": 0,
+      "average_relevance": 0.41061666666666663,
+      "coverage_score": 48.54566666666667,
+      "missing_personas": [
+        "solution_architect"
+      ],
+      "persona_results": {
+        "solution_architect": {
+          "templates_found": 0,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
+        },
+        "backend_developer": {
+          "templates_found": 5,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 5,
+          "average_relevance": 0.43679999999999997,
+          "categories_covered": [
+            "real_time",
+            "error-handling",
+            "background-processing",
+            "api"
+          ],
+          "top_templates": [
+            {
+              "name": "WebSocket Real-Time Server with Broadcasting",
+              "category": "real_time",
+              "relevance": 0.473,
+              "quality": 90.0
+            },
+            {
+              "name": "NestJS Global Error Handling & Exception Filters - Gold Standard",
+              "category": "error-handling",
+              "relevance": 0.437,
+              "quality": 93.0
+            },
+            {
+              "name": "NestJS Global Error Handling & Exception Filters",
+              "category": "error-handling",
+              "relevance": 0.436,
+              "quality": 87.0
+            }
+          ]
+        },
+        "database_specialist": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.39,
+          "categories_covered": [
+            "database"
+          ],
+          "top_templates": [
+            {
+              "name": "Prisma Schema Design Patterns",
+              "category": "database",
+              "relevance": 0.39,
+              "quality": 89.0
+            }
+          ]
+        },
+        "devops_engineer": {
+          "templates_found": 3,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 3,
+          "average_relevance": 0.41766666666666663,
+          "categories_covered": [
+            "security",
+            "infrastructure",
+            "ci_cd"
+          ],
+          "top_templates": [
+            {
+              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
+              "category": "security",
+              "relevance": 0.419,
+              "quality": 94.0
+            },
+            {
+              "name": "Docker Compose Full Stack Multi-Service Setup",
+              "category": "infrastructure",
+              "relevance": 0.417,
+              "quality": 93.0
+            },
+            {
+              "name": "GitHub Actions Full Stack CI/CD Pipeline",
+              "category": "ci_cd",
+              "relevance": 0.417,
+              "quality": 92.0
+            }
+          ]
+        },
+        "qa_engineer": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.398,
+          "categories_covered": [
+            "testing"
+          ],
+          "top_templates": [
+            {
+              "name": "Playwright E2E Testing Patterns",
+              "category": "testing",
+              "relevance": 0.398,
+              "quality": 91.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario_id": "SC05",
+      "scenario_name": "API Gateway with BFF Pattern",
+      "project_type": "api-gateway",
+      "package_recommended": true,
+      "package_name": "E-Commerce Platform",
+      "package_confidence": 0.6388571428571429,
+      "total_templates_found": 10,
+      "total_high_relevance": 0,
+      "personas_with_templates": 3,
+      "personas_with_high_relevance": 0,
+      "average_relevance": 0.43804444444444446,
+      "coverage_score": 47.09422222222222,
+      "missing_personas": [
+        "solution_architect"
+      ],
+      "persona_results": {
+        "solution_architect": {
+          "templates_found": 0,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
+        },
+        "backend_developer": {
+          "templates_found": 5,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 5,
+          "average_relevance": 0.4528,
+          "categories_covered": [
+            "error-handling",
+            "api"
+          ],
+          "top_templates": [
+            {
+              "name": "NestJS Global Error Handling & Exception Filters",
+              "category": "error-handling",
+              "relevance": 0.484,
+              "quality": 87.0
+            },
+            {
+              "name": "NestJS Global Error Handling & Exception Filters - Gold Standard",
+              "category": "error-handling",
+              "relevance": 0.473,
+              "quality": 93.0
+            },
+            {
+              "name": "GraphQL Resolvers with DataLoader & Caching",
+              "category": "api",
+              "relevance": 0.443,
+              "quality": 92.0
+            }
+          ]
+        },
+        "security_specialist": {
+          "templates_found": 2,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 2,
+          "average_relevance": 0.44999999999999996,
+          "categories_covered": [
+            "authentication",
+            "authorization"
+          ],
+          "top_templates": [
+            {
+              "name": "JWT Authentication with Refresh Tokens & Token Rotation",
+              "category": "authentication",
+              "relevance": 0.485,
+              "quality": 94.0
+            },
+            {
+              "name": "Role-Based Access Control (RBAC) Implementation",
+              "category": "authorization",
+              "relevance": 0.415,
+              "quality": 93.0
+            }
+          ]
+        },
+        "devops_engineer": {
+          "templates_found": 3,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 3,
+          "average_relevance": 0.41133333333333333,
+          "categories_covered": [
+            "infrastructure",
+            "ci_cd",
+            "security"
+          ],
+          "top_templates": [
+            {
+              "name": "Docker Compose Full Stack Multi-Service Setup",
+              "category": "infrastructure",
+              "relevance": 0.414,
+              "quality": 93.0
+            },
+            {
+              "name": "GitHub Actions Full Stack CI/CD Pipeline",
+              "category": "ci_cd",
+              "relevance": 0.414,
+              "quality": 92.0
+            },
+            {
+              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
+              "category": "security",
+              "relevance": 0.406,
+              "quality": 94.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario_id": "SC06",
+      "scenario_name": "Machine Learning Pipeline",
+      "project_type": "ml-ops",
+      "package_recommended": true,
+      "package_name": "E-Commerce Platform",
+      "package_confidence": 0.6377142857142858,
+      "total_templates_found": 9,
+      "total_high_relevance": 0,
+      "personas_with_templates": 3,
+      "personas_with_high_relevance": 0,
+      "average_relevance": 0.4294,
+      "coverage_score": 46.588,
+      "missing_personas": [
+        "solution_architect"
+      ],
+      "persona_results": {
+        "solution_architect": {
+          "templates_found": 0,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
+        },
+        "backend_developer": {
+          "templates_found": 5,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 5,
+          "average_relevance": 0.43620000000000003,
+          "categories_covered": [
+            "error-handling",
+            "real_time",
+            "background-processing",
+            "api"
+          ],
+          "top_templates": [
+            {
+              "name": "NestJS Global Error Handling & Exception Filters",
+              "category": "error-handling",
+              "relevance": 0.448,
+              "quality": 87.0
+            },
+            {
+              "name": "WebSocket Real-Time Server with Broadcasting",
+              "category": "real_time",
+              "relevance": 0.444,
+              "quality": 90.0
+            },
+            {
+              "name": "NestJS Global Error Handling & Exception Filters - Gold Standard",
+              "category": "error-handling",
+              "relevance": 0.438,
+              "quality": 93.0
+            }
+          ]
+        },
+        "devops_engineer": {
+          "templates_found": 3,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 3,
+          "average_relevance": 0.44199999999999995,
+          "categories_covered": [
+            "ci_cd",
+            "infrastructure",
+            "security"
+          ],
+          "top_templates": [
+            {
+              "name": "GitHub Actions Full Stack CI/CD Pipeline",
+              "category": "ci_cd",
+              "relevance": 0.477,
+              "quality": 92.0
+            },
+            {
+              "name": "Docker Compose Full Stack Multi-Service Setup",
+              "category": "infrastructure",
+              "relevance": 0.429,
+              "quality": 93.0
+            },
+            {
+              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
+              "category": "security",
+              "relevance": 0.42,
+              "quality": 94.0
+            }
+          ]
+        },
+        "qa_engineer": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.41,
+          "categories_covered": [
+            "testing"
+          ],
+          "top_templates": [
+            {
+              "name": "Playwright E2E Testing Patterns",
+              "category": "testing",
+              "relevance": 0.41,
+              "quality": 91.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario_id": "SC07",
+      "scenario_name": "Mobile Backend as a Service",
+      "project_type": "mobile-backend",
+      "package_recommended": true,
+      "package_name": "User Authentication System",
+      "package_confidence": 0.6171428571428572,
+      "total_templates_found": 11,
+      "total_high_relevance": 0,
+      "personas_with_templates": 4,
+      "personas_with_high_relevance": 0,
+      "average_relevance": 0.41209166666666663,
+      "coverage_score": 56.57516666666667,
+      "missing_personas": [],
+      "persona_results": {
+        "backend_developer": {
+          "templates_found": 5,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 5,
+          "average_relevance": 0.4152,
+          "categories_covered": [
+            "real_time",
+            "error-handling",
+            "background-processing",
+            "api"
+          ],
+          "top_templates": [
+            {
+              "name": "WebSocket Real-Time Server with Broadcasting",
+              "category": "real_time",
+              "relevance": 0.433,
+              "quality": 90.0
+            },
+            {
+              "name": "NestJS Global Error Handling & Exception Filters - Gold Standard",
+              "category": "error-handling",
+              "relevance": 0.418,
+              "quality": 93.0
+            },
+            {
+              "name": "FastAPI Background Tasks with Celery & Redis - Gold Standard",
+              "category": "background-processing",
+              "relevance": 0.416,
+              "quality": 92.0
+            }
+          ]
+        },
+        "security_specialist": {
+          "templates_found": 2,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 2,
+          "average_relevance": 0.4265,
+          "categories_covered": [
+            "authentication",
+            "authorization"
+          ],
+          "top_templates": [
+            {
+              "name": "JWT Authentication with Refresh Tokens & Token Rotation",
+              "category": "authentication",
+              "relevance": 0.445,
+              "quality": 94.0
+            },
+            {
+              "name": "Role-Based Access Control (RBAC) Implementation",
+              "category": "authorization",
+              "relevance": 0.408,
+              "quality": 93.0
+            }
+          ]
+        },
+        "devops_engineer": {
+          "templates_found": 3,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 3,
+          "average_relevance": 0.4076666666666666,
+          "categories_covered": [
+            "security",
+            "infrastructure",
+            "ci_cd"
+          ],
+          "top_templates": [
+            {
+              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
+              "category": "security",
+              "relevance": 0.409,
+              "quality": 94.0
+            },
+            {
+              "name": "Docker Compose Full Stack Multi-Service Setup",
+              "category": "infrastructure",
+              "relevance": 0.407,
+              "quality": 93.0
+            },
+            {
+              "name": "GitHub Actions Full Stack CI/CD Pipeline",
+              "category": "ci_cd",
+              "relevance": 0.407,
+              "quality": 92.0
+            }
+          ]
+        },
+        "qa_engineer": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.399,
+          "categories_covered": [
+            "testing"
+          ],
+          "top_templates": [
+            {
+              "name": "Playwright E2E Testing Patterns",
+              "category": "testing",
+              "relevance": 0.399,
+              "quality": 91.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario_id": "SC08",
+      "scenario_name": "Event-Driven Microservices",
+      "project_type": "microservices",
+      "package_recommended": true,
+      "package_name": "E-Commerce Platform",
+      "package_confidence": 0.5885714285714285,
+      "total_templates_found": 10,
+      "total_high_relevance": 0,
+      "personas_with_templates": 4,
+      "personas_with_high_relevance": 0,
+      "average_relevance": 0.42084999999999995,
+      "coverage_score": 48.75033333333334,
+      "missing_personas": [
+        "solution_architect"
+      ],
+      "persona_results": {
+        "solution_architect": {
+          "templates_found": 0,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
+        },
+        "backend_developer": {
+          "templates_found": 5,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 5,
+          "average_relevance": 0.4393999999999999,
+          "categories_covered": [
+            "database",
+            "architecture",
+            "error-handling",
+            "background-processing",
+            "api"
+          ],
+          "top_templates": [
+            {
+              "name": "Database Transaction Patterns (SQLAlchemy & TypeORM)",
+              "category": "database",
+              "relevance": 0.476,
+              "quality": 87.0
+            },
+            {
+              "name": "NestJS Repository Pattern with TypeORM",
+              "category": "architecture",
+              "relevance": 0.448,
+              "quality": 88.0
+            },
+            {
+              "name": "NestJS Global Error Handling & Exception Filters - Gold Standard",
+              "category": "error-handling",
+              "relevance": 0.426,
+              "quality": 93.0
+            }
+          ]
+        },
+        "database_specialist": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.406,
+          "categories_covered": [
+            "database"
+          ],
+          "top_templates": [
+            {
+              "name": "Prisma Schema Design Patterns",
+              "category": "database",
+              "relevance": 0.406,
+              "quality": 89.0
+            }
+          ]
+        },
+        "devops_engineer": {
+          "templates_found": 3,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 3,
+          "average_relevance": 0.434,
+          "categories_covered": [
+            "infrastructure",
+            "ci_cd",
+            "security"
+          ],
+          "top_templates": [
+            {
+              "name": "Docker Compose Full Stack Multi-Service Setup",
+              "category": "infrastructure",
+              "relevance": 0.462,
+              "quality": 93.0
+            },
+            {
+              "name": "GitHub Actions Full Stack CI/CD Pipeline",
+              "category": "ci_cd",
+              "relevance": 0.426,
+              "quality": 92.0
+            },
+            {
+              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
+              "category": "security",
+              "relevance": 0.414,
+              "quality": 94.0
+            }
+          ]
+        },
+        "qa_engineer": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.404,
+          "categories_covered": [
+            "testing"
+          ],
+          "top_templates": [
+            {
+              "name": "Playwright E2E Testing Patterns",
+              "category": "testing",
+              "relevance": 0.404,
+              "quality": 91.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario_id": "SC09",
+      "scenario_name": "GDPR/HIPAA Compliance System",
+      "project_type": "compliance",
+      "package_recommended": true,
+      "package_name": "User Authentication System",
+      "package_confidence": 0.5931428571428572,
+      "total_templates_found": 9,
+      "total_high_relevance": 0,
+      "personas_with_templates": 4,
+      "personas_with_high_relevance": 0,
+      "average_relevance": 0.4188,
+      "coverage_score": 47.04266666666666,
+      "missing_personas": [
+        "solution_architect"
+      ],
+      "persona_results": {
+        "solution_architect": {
+          "templates_found": 0,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
+        },
+        "security_specialist": {
+          "templates_found": 2,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 2,
+          "average_relevance": 0.442,
+          "categories_covered": [
+            "authorization",
+            "authentication"
+          ],
+          "top_templates": [
+            {
+              "name": "Role-Based Access Control (RBAC) Implementation",
+              "category": "authorization",
+              "relevance": 0.464,
+              "quality": 93.0
+            },
+            {
+              "name": "JWT Authentication with Refresh Tokens & Token Rotation",
+              "category": "authentication",
+              "relevance": 0.42,
+              "quality": 94.0
+            }
+          ]
+        },
+        "backend_developer": {
+          "templates_found": 5,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 5,
+          "average_relevance": 0.4332,
+          "categories_covered": [
+            "api",
+            "error-handling",
+            "background-processing"
+          ],
+          "top_templates": [
+            {
+              "name": "FastAPI Async CRUD Complete - Gold Standard",
+              "category": "api",
+              "relevance": 0.449,
+              "quality": 92.0
+            },
+            {
+              "name": "NestJS Global Error Handling & Exception Filters",
+              "category": "error-handling",
+              "relevance": 0.448,
+              "quality": 87.0
+            },
+            {
+              "name": "NestJS Global Error Handling & Exception Filters - Gold Standard",
+              "category": "error-handling",
+              "relevance": 0.438,
+              "quality": 93.0
+            }
+          ]
+        },
+        "database_specialist": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.401,
+          "categories_covered": [
+            "database"
+          ],
+          "top_templates": [
+            {
+              "name": "Prisma Schema Design Patterns",
+              "category": "database",
+              "relevance": 0.401,
+              "quality": 89.0
+            }
+          ]
+        },
+        "qa_engineer": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.399,
+          "categories_covered": [
+            "testing"
+          ],
+          "top_templates": [
+            {
+              "name": "Playwright E2E Testing Patterns",
+              "category": "testing",
+              "relevance": 0.399,
+              "quality": 91.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario_id": "SC10",
+      "scenario_name": "Serverless API Application",
+      "project_type": "serverless",
+      "package_recommended": true,
+      "package_name": "Social Media Application",
+      "package_confidence": 0.3653333333333334,
+      "total_templates_found": 9,
+      "total_high_relevance": 0,
+      "personas_with_templates": 3,
+      "personas_with_high_relevance": 0,
+      "average_relevance": 0.4212222222222222,
+      "coverage_score": 54.42444444444445,
+      "missing_personas": [],
+      "persona_results": {
+        "backend_developer": {
+          "templates_found": 5,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 5,
+          "average_relevance": 0.446,
+          "categories_covered": [
+            "api",
+            "error-handling",
+            "background-processing"
+          ],
+          "top_templates": [
+            {
+              "name": "FastAPI Async CRUD Complete - Gold Standard",
+              "category": "api",
+              "relevance": 0.504,
+              "quality": 92.0
+            },
+            {
+              "name": "NestJS Global Error Handling & Exception Filters",
+              "category": "error-handling",
+              "relevance": 0.448,
+              "quality": 87.0
+            },
+            {
+              "name": "FastAPI Background Tasks with Celery & Redis - Gold Standard",
+              "category": "background-processing",
+              "relevance": 0.435,
+              "quality": 92.0
+            }
+          ]
+        },
+        "devops_engineer": {
+          "templates_found": 3,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 3,
+          "average_relevance": 0.4186666666666667,
+          "categories_covered": [
+            "security",
+            "infrastructure",
+            "ci_cd"
+          ],
+          "top_templates": [
+            {
+              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
+              "category": "security",
+              "relevance": 0.42,
+              "quality": 94.0
+            },
+            {
+              "name": "Docker Compose Full Stack Multi-Service Setup",
+              "category": "infrastructure",
+              "relevance": 0.418,
+              "quality": 93.0
+            },
+            {
+              "name": "GitHub Actions Full Stack CI/CD Pipeline",
+              "category": "ci_cd",
+              "relevance": 0.418,
+              "quality": 92.0
+            }
+          ]
+        },
+        "qa_engineer": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.399,
+          "categories_covered": [
+            "testing"
+          ],
+          "top_templates": [
+            {
+              "name": "Playwright E2E Testing Patterns",
+              "category": "testing",
+              "relevance": 0.399,
+              "quality": 91.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario_id": "SC11",
+      "scenario_name": "GraphQL API Platform",
+      "project_type": "graphql",
+      "package_recommended": true,
+      "package_name": "E-Commerce Platform",
+      "package_confidence": 0.6068571428571429,
+      "total_templates_found": 10,
+      "total_high_relevance": 0,
+      "personas_with_templates": 3,
+      "personas_with_high_relevance": 0,
+      "average_relevance": 0.43498888888888887,
+      "coverage_score": 43.699777777777776,
+      "missing_personas": [
+        "solution_architect"
+      ],
+      "persona_results": {
+        "solution_architect": {
+          "templates_found": 0,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 0,
+          "average_relevance": 0.0,
+          "categories_covered": [],
+          "top_templates": []
+        },
+        "backend_developer": {
+          "templates_found": 5,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 5,
+          "average_relevance": 0.4528,
+          "categories_covered": [
+            "api",
+            "real_time",
+            "error-handling"
+          ],
+          "top_templates": [
+            {
+              "name": "GraphQL Resolvers with DataLoader & Caching",
+              "category": "api",
+              "relevance": 0.521,
+              "quality": 92.0
+            },
+            {
+              "name": "WebSocket Real-Time Server with Broadcasting",
+              "category": "real_time",
+              "relevance": 0.456,
+              "quality": 90.0
+            },
+            {
+              "name": "FastAPI Async CRUD Complete - Gold Standard",
+              "category": "api",
+              "relevance": 0.44,
+              "quality": 92.0
+            }
+          ]
+        },
+        "frontend_developer": {
+          "templates_found": 2,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 2,
+          "average_relevance": 0.4315,
+          "categories_covered": [
+            "data-fetching",
+            "forms"
+          ],
+          "top_templates": [
+            {
+              "name": "React Data Fetching with TanStack Query",
+              "category": "data-fetching",
+              "relevance": 0.461,
+              "quality": 91.0
+            },
+            {
+              "name": "React Form Handling with react-hook-form & Zod",
+              "category": "forms",
+              "relevance": 0.402,
+              "quality": 90.0
+            }
+          ]
+        },
+        "devops_engineer": {
+          "templates_found": 3,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 3,
+          "average_relevance": 0.4206666666666667,
+          "categories_covered": [
+            "infrastructure",
+            "security",
+            "ci_cd"
+          ],
+          "top_templates": [
+            {
+              "name": "Docker Compose Full Stack Multi-Service Setup",
+              "category": "infrastructure",
+              "relevance": 0.443,
+              "quality": 93.0
+            },
+            {
+              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
+              "category": "security",
+              "relevance": 0.41,
+              "quality": 94.0
+            },
+            {
+              "name": "GitHub Actions Full Stack CI/CD Pipeline",
+              "category": "ci_cd",
+              "relevance": 0.409,
+              "quality": 92.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario_id": "SC12",
+      "scenario_name": "Headless CMS",
+      "project_type": "cms",
+      "package_recommended": true,
+      "package_name": "E-Commerce Platform",
+      "package_confidence": 0.8771428571428572,
+      "total_templates_found": 13,
+      "total_high_relevance": 0,
+      "personas_with_templates": 5,
+      "personas_with_high_relevance": 0,
+      "average_relevance": 0.4119933333333333,
+      "coverage_score": 56.5732,
+      "missing_personas": [],
+      "persona_results": {
+        "backend_developer": {
+          "templates_found": 5,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 5,
+          "average_relevance": 0.4258,
+          "categories_covered": [
+            "api",
+            "database",
+            "real_time",
+            "error-handling"
+          ],
+          "top_templates": [
+            {
+              "name": "FastAPI Async CRUD Complete - Gold Standard",
+              "category": "api",
+              "relevance": 0.443,
+              "quality": 92.0
+            },
+            {
+              "name": "Database Transaction Patterns (SQLAlchemy & TypeORM)",
+              "category": "database",
+              "relevance": 0.434,
+              "quality": 87.0
+            },
+            {
+              "name": "GraphQL Resolvers with DataLoader & Caching",
+              "category": "api",
+              "relevance": 0.422,
+              "quality": 92.0
+            }
+          ]
+        },
+        "frontend_developer": {
+          "templates_found": 2,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 2,
+          "average_relevance": 0.405,
+          "categories_covered": [
+            "data-fetching",
+            "forms"
+          ],
+          "top_templates": [
+            {
+              "name": "React Data Fetching with TanStack Query",
+              "category": "data-fetching",
+              "relevance": 0.406,
+              "quality": 91.0
+            },
+            {
+              "name": "React Form Handling with react-hook-form & Zod",
+              "category": "forms",
+              "relevance": 0.404,
+              "quality": 90.0
+            }
+          ]
+        },
+        "database_specialist": {
+          "templates_found": 1,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 1,
+          "average_relevance": 0.392,
+          "categories_covered": [
+            "database"
+          ],
+          "top_templates": [
+            {
+              "name": "Prisma Schema Design Patterns",
+              "category": "database",
+              "relevance": 0.392,
+              "quality": 89.0
+            }
+          ]
+        },
+        "security_specialist": {
+          "templates_found": 2,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 2,
+          "average_relevance": 0.4125,
+          "categories_covered": [
+            "authentication",
+            "authorization"
+          ],
+          "top_templates": [
+            {
+              "name": "JWT Authentication with Refresh Tokens & Token Rotation",
+              "category": "authentication",
+              "relevance": 0.413,
+              "quality": 94.0
+            },
+            {
+              "name": "Role-Based Access Control (RBAC) Implementation",
+              "category": "authorization",
+              "relevance": 0.412,
+              "quality": 93.0
+            }
+          ]
+        },
+        "devops_engineer": {
+          "templates_found": 3,
+          "templates_high_relevance": 0,
+          "templates_medium_relevance": 0,
+          "templates_low_relevance": 3,
+          "average_relevance": 0.4246666666666667,
+          "categories_covered": [
+            "security",
+            "infrastructure",
+            "ci_cd"
+          ],
+          "top_templates": [
+            {
+              "name": "Secrets Management - AWS Secrets Manager & HashiCorp Vault",
+              "category": "security",
+              "relevance": 0.426,
+              "quality": 94.0
+            },
+            {
+              "name": "Docker Compose Full Stack Multi-Service Setup",
+              "category": "infrastructure",
+              "relevance": 0.424,
+              "quality": 93.0
+            },
+            {
+              "name": "GitHub Actions Full Stack CI/CD Pipeline",
+              "category": "ci_cd",
+              "relevance": 0.424,
+              "quality": 92.0
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

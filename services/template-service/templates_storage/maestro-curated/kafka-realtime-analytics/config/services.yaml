@@ -1,0 +1,60 @@
+# Service Registry - ADR-001 Compliant
+# Environment-based service discovery with zero hardcoded URLs
+
+services:
+  producer:
+    name: kafka-producer
+    port: ${PRODUCER_PORT:8080}
+    host: ${PRODUCER_HOST:0.0.0.0}
+    health_endpoint: /health
+    metrics_endpoint: /metrics
+
+  api:
+    name: analytics-api
+    port: ${API_PORT:8081}
+    host: ${API_HOST:0.0.0.0}
+    health_endpoint: /health
+    metrics_endpoint: /metrics
+
+dependencies:
+  kafka:
+    brokers: ${KAFKA_BROKERS:localhost:9092}
+    required: true
+    description: "Kafka message broker"
+
+  zookeeper:
+    host: ${ZOOKEEPER_HOST:localhost}
+    port: ${ZOOKEEPER_PORT:2181}
+    required: true
+    description: "Zookeeper for Kafka coordination"
+
+  postgresql:
+    host: ${POSTGRES_HOST:localhost}
+    port: ${POSTGRES_PORT:5432}
+    database: ${POSTGRES_DB:analytics}
+    required: true
+    description: "PostgreSQL for aggregated data"
+
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    required: false
+    description: "Redis for caching"
+
+  prometheus:
+    host: ${PROMETHEUS_HOST:localhost}
+    port: ${PROMETHEUS_PORT:9090}
+    required: false
+    description: "Metrics collection"
+
+endpoints:
+  producer:
+    health: GET /health
+    publish: POST /publish
+    metrics: GET /metrics
+
+  api:
+    health: GET /health
+    query: GET /analytics/query
+    realtime: WS /analytics/stream
+    metrics: GET /metrics

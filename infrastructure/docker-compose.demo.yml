@@ -1,0 +1,166 @@
+# Maestro Platform - DEMO Infrastructure (Core Services Only)
+# Minimal setup for demo deployment
+#
+# Usage:
+#   docker-compose -f docker-compose.demo.yml up -d
+
+services:
+  # ============================================================================
+  # DATABASE - PostgreSQL
+  # ============================================================================
+  maestro-postgres:
+    image: postgres:15
+    container_name: maestro-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${MAESTRO_POSTGRES_ADMIN_USER:-maestro_admin}
+      - POSTGRES_PASSWORD=${MAESTRO_POSTGRES_ADMIN_PASSWORD:-maestro_secure_admin_2025}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8 --lc-collate=en_US.utf8 --lc-ctype=en_US.utf8
+    ports:
+      - "${MAESTRO_POSTGRES_PORT:-25432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./databases/postgres/init-scripts:/docker-entrypoint-initdb.d:ro
+    networks:
+      - maestro-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MAESTRO_POSTGRES_ADMIN_USER:-maestro_admin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    labels:
+      - "maestro.service=postgres"
+      - "maestro.layer=infrastructure"
+
+  # ============================================================================
+  # CACHE - Redis
+  # ============================================================================
+  maestro-redis:
+    image: redis:7-alpine
+    container_name: maestro-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${MAESTRO_REDIS_PASSWORD:-maestro_redis_secure_2025}
+    ports:
+      - "${MAESTRO_REDIS_PORT:-27379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - maestro-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    labels:
+      - "maestro.service=redis"
+      - "maestro.layer=infrastructure"
+
+  # ============================================================================
+  # MONITORING - Prometheus
+  # ============================================================================
+  maestro-prometheus:
+    image: prom/prometheus:latest
+    container_name: maestro-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "${PROMETHEUS_PORT:-29090}:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - maestro-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    labels:
+      - "maestro.service=prometheus"
+      - "maestro.layer=monitoring"
+
+  # ============================================================================
+  # VISUALIZATION - Grafana
+  # ============================================================================
+  maestro-grafana:
+    image: grafana/grafana:latest
+    container_name: maestro-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${MAESTRO_GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${MAESTRO_GRAFANA_ADMIN_PASSWORD:-grafana_secure_admin_2025}
+      - GF_DATABASE_TYPE=postgres
+      - GF_DATABASE_HOST=maestro-postgres:5432
+      - GF_DATABASE_NAME=grafana
+      - GF_DATABASE_USER=${MAESTRO_POSTGRES_ADMIN_USER:-maestro_admin}
+      - GF_DATABASE_PASSWORD=${MAESTRO_POSTGRES_ADMIN_PASSWORD:-maestro_secure_admin_2025}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "${GRAFANA_PORT:-23000}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - maestro-network
+    depends_on:
+      maestro-postgres:
+        condition: service_healthy
+      maestro-prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    labels:
+      - "maestro.service=grafana"
+      - "maestro.layer=monitoring"
+
+  # ============================================================================
+  # TRACING - Jaeger (Optional - can fail without breaking deployment)
+  # ============================================================================
+  maestro-jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: maestro-jaeger
+    restart: unless-stopped
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "${JAEGER_UI_PORT:-26686}:16686"
+      - "${JAEGER_COLLECTOR_PORT:-24268}:4318"
+    networks:
+      - maestro-network
+    labels:
+      - "maestro.service=jaeger"
+      - "maestro.layer=monitoring"
+
+# ============================================================================
+# NETWORKS
+# ============================================================================
+networks:
+  maestro-network:
+    name: ${MAESTRO_NETWORK_NAME:-maestro-network}
+    driver: bridge
+
+# ============================================================================
+# VOLUMES
+# ============================================================================
+volumes:
+  postgres_data:
+    name: maestro_postgres_data
+  redis_data:
+    name: maestro_redis_data
+  prometheus_data:
+    name: maestro_prometheus_data
+  grafana_data:
+    name: maestro_grafana_data

@@ -1,0 +1,7 @@
+providers:
+  claude_agent:
+    capabilities: [system_prompts, streaming]
+  openai:
+    capabilities: [system_prompts, tool_calling, json_mode, vision, streaming, stop_sequences, token_count]
+  gemini:
+    capabilities: [system_prompts, json_mode, vision, streaming]

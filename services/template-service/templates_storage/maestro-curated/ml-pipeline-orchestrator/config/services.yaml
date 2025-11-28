@@ -1,0 +1,46 @@
+# Service Registry - ADR-001 Compliant
+# Environment-based service discovery with zero hardcoded URLs
+
+service:
+  name: ml-pipeline-orchestrator
+  port: ${API_PORT:8000}
+  host: ${API_HOST:0.0.0.0}
+  health_endpoint: /health
+  metrics_endpoint: /metrics
+
+dependencies:
+  - name: postgresql
+    host: ${POSTGRES_HOST:localhost}
+    port: ${POSTGRES_PORT:5432}
+    required: false
+    description: "Optional persistence for workflow state"
+
+  - name: redis
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    required: false
+    description: "Optional caching and task queue"
+
+  - name: prometheus
+    host: ${PROMETHEUS_HOST:localhost}
+    port: ${PROMETHEUS_PORT:9090}
+    required: false
+    description: "Metrics collection"
+
+endpoints:
+  workflows:
+    create: POST /workflows
+    list: GET /workflows
+    get: GET /workflows/{id}
+    delete: DELETE /workflows/{id}
+    execute: POST /workflows/{id}/execute
+    status: GET /workflows/{id}/status
+
+  executions:
+    list: GET /executions
+    get: GET /executions/{id}
+    results: GET /executions/{id}/results
+
+  monitoring:
+    health: GET /health
+    metrics: GET /metrics

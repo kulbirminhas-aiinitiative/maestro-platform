@@ -1,0 +1,15 @@
+{
+  "iteration_id": "test-scenario-hooks-114",
+  "total_scenarios": 1,
+  "passed": 1,
+  "failed": 0,
+  "skipped": 0,
+  "duration": 0.00026,
+  "timestamp": "2025-10-13T21:01:12.720710Z",
+  "scenarios": [],
+  "summary": {
+    "exit_code": 0,
+    "stdout_lines": 1,
+    "stderr_lines": 0
+  }
+}

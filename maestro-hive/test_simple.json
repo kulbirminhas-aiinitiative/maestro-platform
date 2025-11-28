@@ -1,0 +1,6 @@
+{
+  "requirement": "Create a simple hello world API endpoint",
+  "initial_context": {
+    "language": "python"
+  }
+}

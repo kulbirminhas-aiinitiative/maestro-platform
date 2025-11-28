@@ -1,0 +1,57 @@
+{
+  "iteration_id": "Demo-DesignGap-001",
+  "verdict": "design_gap",
+  "timestamp": "2025-10-13T19:04:29.344196Z",
+  "dde_passed": true,
+  "bdv_passed": false,
+  "acc_passed": true,
+  "can_deploy": false,
+  "diagnosis": "\u26a0\ufe0f DESIGN GAP DETECTED\n\nDDE and ACC passed, but BDV failed.\n\nThis indicates a gap between implementation and business intent. The system is technically correct and architecturally sound, but doesn't meet user needs or acceptance criteria.\n\nAction: Revisit requirements and contracts. Re-align implementation with business goals. The technical quality is good, but you've built the wrong thing.",
+  "recommendations": [
+    "Fix 7 failing BDV scenarios",
+    "Update scenarios to match deployed contract versions: AuthAPI:v1.2 -> v1.3",
+    "Add scenarios for critical user journeys"
+  ],
+  "dde_details": {
+    "iteration_id": "Demo-DesignGap-001",
+    "passed": true,
+    "score": 0.92,
+    "all_nodes_complete": true,
+    "blocking_gates_passed": true,
+    "artifacts_stamped": true,
+    "lineage_intact": true,
+    "contracts_locked": true,
+    "details": {}
+  },
+  "bdv_details": {
+    "iteration_id": "Demo-DesignGap-001",
+    "passed": false,
+    "total_scenarios": 25,
+    "passed_scenarios": 18,
+    "failed_scenarios": 7,
+    "flake_rate": 0.08,
+    "contract_mismatches": [
+      "AuthAPI:v1.2 -> v1.3"
+    ],
+    "critical_journeys_covered": false,
+    "details": {
+      "failing_scenarios": [
+        "User login flow doesn't match new requirements",
+        "Profile update missing validation rules",
+        "Search results don't match expected behavior"
+      ]
+    }
+  },
+  "acc_details": {
+    "iteration_id": "Demo-DesignGap-001",
+    "passed": true,
+    "blocking_violations": 0,
+    "warning_violations": 3,
+    "cycles": [],
+    "coupling_scores": {},
+    "suppressions_have_adrs": true,
+    "coupling_within_limits": true,
+    "no_new_cycles": true,
+    "details": {}
+  }
+}

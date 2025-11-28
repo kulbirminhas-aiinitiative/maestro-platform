@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "id": "scalability-planning-template-v1",
+    "name": "Scalability Planning & Capacity Assessment Template",
+    "category": "documentation",
+    "language": "markdown",
+    "framework": "architecture",
+    "description": "Comprehensive scalability planning template with load forecasting, bottleneck analysis, horizontal/vertical scaling strategies, and auto-scaling configuration",
+    "tags": [
+      "scalability",
+      "capacity-planning",
+      "performance",
+      "auto-scaling",
+      "load-testing",
+      "architecture"
+    ],
+    "quality_score": 88.0,
+    "security_score": 73.0,
+    "performance_score": 95.0,
+    "maintainability_score": 86.0,
+    "test_coverage": 82.0,
+    "usage_count": 0,
+    "success_rate": 0.0,
+    "status": "approved",
+    "created_at": "2025-10-10T11:00:00.000000",
+    "updated_at": "2025-10-10T11:00:00.000000",
+    "created_by": "template_enhancement_ultra_phase1",
+    "persona": "solution_architect"
+  },
+  "content": "# Scalability Planning Document\n\n## System Overview\n\n**System:** {{SYSTEM_NAME}}  \n**Current Users:** {{CURRENT_USERS}}  \n**Target Users (1 year):** {{TARGET_USERS_1Y}}  \n**Target Users (3 years):** {{TARGET_USERS_3Y}}  \n**Growth Rate:** {{GROWTH_RATE}}% per month  \n\n---\n\n## Current State Analysis\n\n### Traffic Patterns\n\n| Metric | Current | Peak | Notes |\n|--------|---------|------|-------|\n| Requests/sec | {{CURRENT_RPS}} | {{PEAK_RPS}} | |\n| Concurrent Users | {{CURRENT_CONCURRENT}} | {{PEAK_CONCURRENT}} | |\n| Data Volume | {{CURRENT_DATA}}TB | {{PEAK_DATA}}TB | |\n| Database Connections | {{DB_CONNECTIONS}} | {{MAX_DB_CONNECTIONS}} | |\n\n### Resource Utilization\n\n| Resource | Average | Peak | Threshold | Status |\n|----------|---------|------|-----------|--------|\n| CPU | {{AVG_CPU}}% | {{PEAK_CPU}}% | {{CPU_THRESHOLD}}% | {{CPU_STATUS}} |\n| Memory | {{AVG_MEM}}% | {{PEAK_MEM}}% | {{MEM_THRESHOLD}}% | {{MEM_STATUS}} |\n| Network | {{AVG_NETWORK}}Mbps | {{PEAK_NETWORK}}Mbps | {{NETWORK_THRESHOLD}}Mbps | {{NETWORK_STATUS}} |\n| Disk I/O | {{AVG_DISK}}IOPS | {{PEAK_DISK}}IOPS | {{DISK_THRESHOLD}}IOPS | {{DISK_STATUS}} |\n\n### Bottlenecks Identified\n\n1. **{{BOTTLENECK_1}}**\n   - Impact: {{IMPACT_1}}\n   - Current Limit: {{LIMIT_1}}\n   - Recommended Action: {{ACTION_1}}\n\n2. **{{BOTTLENECK_2}}**\n   - Impact: {{IMPACT_2}}\n   - Current Limit: {{LIMIT_2}}\n   - Recommended Action: {{ACTION_2}}\n\n---\n\n## Scaling Strategies\n\n### Horizontal Scaling (Scale Out)\n\n**Application Tier:**\n- Current: {{CURRENT_APP_INSTANCES}} instances\n- Recommended: {{RECOMMENDED_APP_INSTANCES}} instances\n- Auto-scaling: Enabled\n- Scale-out trigger: CPU > {{CPU_SCALE_OUT}}% for {{SCALE_OUT_DURATION}} minutes\n- Scale-in trigger: CPU < {{CPU_SCALE_IN}}% for {{SCALE_IN_DURATION}} minutes\n- Min instances: {{MIN_INSTANCES}}\n- Max instances: {{MAX_INSTANCES}}\n\n**Database Tier:**\n- Read replicas: {{READ_REPLICAS}}\n- Write scaling: Sharding by {{SHARD_KEY}}\n- Connection pooling: Max {{CONNECTION_POOL_SIZE}} connections per instance\n\n### Vertical Scaling (Scale Up)\n\n| Component | Current Size | Recommended Size | Cost Delta |\n|-----------|-------------|------------------|------------|\n| App Server | {{CURRENT_APP_SIZE}} | {{RECOMMENDED_APP_SIZE}} | {{APP_COST_DELTA}} |\n| Database | {{CURRENT_DB_SIZE}} | {{RECOMMENDED_DB_SIZE}} | {{DB_COST_DELTA}} |\n| Cache | {{CURRENT_CACHE_SIZE}} | {{RECOMMENDED_CACHE_SIZE}} | {{CACHE_COST_DELTA}} |\n\n---\n\n## Performance Optimization\n\n### Caching Strategy\n\n| Layer | Technology | TTL | Hit Rate Target |\n|-------|------------|-----|------------------|\n| CDN | {{CDN_PROVIDER}} | {{CDN_TTL}} | {{CDN_HIT_RATE}}% |\n| Application Cache | {{APP_CACHE}} | {{APP_CACHE_TTL}} | {{APP_CACHE_HIT_RATE}}% |\n| Database Query Cache | {{DB_CACHE}} | {{DB_CACHE_TTL}} | {{DB_CACHE_HIT_RATE}}% |\n\n### Database Optimization\n\n- [ ] Add indexes on {{INDEX_COLUMNS}}\n- [ ] Implement query result caching\n- [ ] Enable connection pooling\n- [ ] Configure read replicas\n- [ ] Implement database sharding\n- [ ] Optimize slow queries (> {{SLOW_QUERY_THRESHOLD}}ms)\n\n### API Optimization\n\n- [ ] Implement response compression (gzip)\n- [ ] Enable HTTP/2\n- [ ] Implement pagination (limit: {{PAGE_SIZE}} items)\n- [ ] Add rate limiting ({{RATE_LIMIT}} req/min)\n- [ ] Implement request batching\n- [ ] Use async processing for heavy operations\n\n---\n\n## Load Testing Results\n\n### Test Configuration\n\n- Tool: {{LOAD_TEST_TOOL}}\n- Duration: {{TEST_DURATION}} minutes\n- Ramp-up: {{RAMP_UP}} seconds\n- Target Load: {{TARGET_LOAD}} users\n\n### Results\n\n| Concurrent Users | Avg Response Time | 95th Percentile | Error Rate | Throughput |\n|------------------|-------------------|-----------------|------------|------------|\n| {{LOAD_1}} | {{RT_1}}ms | {{P95_1}}ms | {{ERROR_1}}% | {{THROUGHPUT_1}} req/s |\n| {{LOAD_2}} | {{RT_2}}ms | {{P95_2}}ms | {{ERROR_2}}% | {{THROUGHPUT_2}} req/s |\n| {{LOAD_3}} | {{RT_3}}ms | {{P95_3}}ms | {{ERROR_3}}% | {{THROUGHPUT_3}} req/s |\n\n**Breaking Point:** {{BREAKING_POINT}} concurrent users\n\n---\n\n## Auto-Scaling Configuration\n\n### AWS Auto Scaling (Example)\n\n```yaml\nAutoScalingGroup:\n  MinSize: {{MIN_INSTANCES}}\n  MaxSize: {{MAX_INSTANCES}}\n  DesiredCapacity: {{DESIRED_CAPACITY}}\n  \n  ScaleOutPolicy:\n    MetricName: CPUUtilization\n    Threshold: {{SCALE_OUT_CPU}}%\n    EvaluationPeriods: {{SCALE_OUT_PERIODS}}\n    Cooldown: {{SCALE_OUT_COOLDOWN}} seconds\n    ScalingAdjustment: +{{SCALE_OUT_INCREMENT}} instances\n  \n  ScaleInPolicy:\n    MetricName: CPUUtilization\n    Threshold: {{SCALE_IN_CPU}}%\n    EvaluationPeriods: {{SCALE_IN_PERIODS}}\n    Cooldown: {{SCALE_IN_COOLDOWN}} seconds\n    ScalingAdjustment: -{{SCALE_IN_DECREMENT}} instances\n```\n\n---\n\n## Cost Projection\n\n### Infrastructure Costs\n\n| Component | Current Monthly Cost | Projected (1yr) | Projected (3yr) |\n|-----------|---------------------|-----------------|------------------|\n| Compute | {{CURRENT_COMPUTE}} | {{COMPUTE_1Y}} | {{COMPUTE_3Y}} |\n| Database | {{CURRENT_DB}} | {{DB_1Y}} | {{DB_3Y}} |\n| Storage | {{CURRENT_STORAGE}} | {{STORAGE_1Y}} | {{STORAGE_3Y}} |\n| Network | {{CURRENT_NETWORK}} | {{NETWORK_1Y}} | {{NETWORK_3Y}} |\n| **Total** | **{{CURRENT_TOTAL}}** | **{{TOTAL_1Y}}** | **{{TOTAL_3Y}}** |\n\n### Cost Optimization Recommendations\n\n1. {{COST_OPT_1}}\n2. {{COST_OPT_2}}\n3. {{COST_OPT_3}}\n\n**Potential Savings:** {{POTENTIAL_SAVINGS}}/month\n\n---\n\n## Monitoring & Alerts\n\n### Key Metrics to Monitor\n\n| Metric | Warning Threshold | Critical Threshold | Action |\n|--------|-------------------|-------------------|--------|\n| Response Time | {{RT_WARNING}}ms | {{RT_CRITICAL}}ms | {{RT_ACTION}} |\n| Error Rate | {{ERROR_WARNING}}% | {{ERROR_CRITICAL}}% | {{ERROR_ACTION}} |\n| CPU Utilization | {{CPU_WARNING}}% | {{CPU_CRITICAL}}% | Auto-scale |\n| Memory Usage | {{MEM_WARNING}}% | {{MEM_CRITICAL}}% | Investigate memory leak |\n| Database Connections | {{DB_CONN_WARNING}} | {{DB_CONN_CRITICAL}}% | Add read replicas |\n\n---\n\n## Implementation Roadmap\n\n### Phase 1: Immediate (0-3 months)\n- [ ] {{IMMEDIATE_1}}\n- [ ] {{IMMEDIATE_2}}\n- [ ] {{IMMEDIATE_3}}\n\n### Phase 2: Short-term (3-6 months)\n- [ ] {{SHORT_TERM_1}}\n- [ ] {{SHORT_TERM_2}}\n\n### Phase 3: Long-term (6-12 months)\n- [ ] {{LONG_TERM_1}}\n- [ ] {{LONG_TERM_2}}\n\n---\n\n## Risk Assessment\n\n| Risk | Likelihood | Impact | Mitigation |\n|------|------------|--------|------------|\n| {{RISK_1}} | H/M/L | H/M/L | {{MITIGATION_1}} |\n| {{RISK_2}} | H/M/L | H/M/L | {{MITIGATION_2}} |\n\n---\n\n**Prepared By:** {{AUTHOR}}  \n**Date:** {{DATE}}  \n**Next Review:** {{NEXT_REVIEW}}  \n",
+  "variables": {
+    "SYSTEM_NAME": "E-Commerce Platform",
+    "CURRENT_USERS": "100,000",
+    "TARGET_USERS_1Y": "500,000",
+    "GROWTH_RATE": "15",
+    "CURRENT_RPS": "1,000",
+    "PEAK_RPS": "5,000",
+    "MIN_INSTANCES": "3",
+    "MAX_INSTANCES": "50",
+    "SCALE_OUT_CPU": "70",
+    "SCALE_IN_CPU": "30",
+    "LOAD_TEST_TOOL": "JMeter/k6/Gatling"
+  },
+  "dependencies": [],
+  "workflow_context": {
+    "typical_use_cases": [
+      "Capacity planning for growing systems",
+      "Performance optimization",
+      "Auto-scaling configuration",
+      "Cost optimization analysis",
+      "Load testing strategy"
+    ],
+    "team_composition": [
+      "solution_architect",
+      "devops_engineer",
+      "backend_developer"
+    ],
+    "estimated_time_minutes": 180,
+    "prerequisites": [
+      "Current metrics available",
+      "Growth projections defined",
+      "Load testing environment ready",
+      "Monitoring tools configured"
+    ],
+    "related_templates": [
+      "cqrs-pattern",
+      "multi-tenant-architecture-pattern",
+      "circuit-breaker-pattern"
+    ]
+  }
+}

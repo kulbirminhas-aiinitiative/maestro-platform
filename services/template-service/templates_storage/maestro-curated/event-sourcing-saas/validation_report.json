@@ -1,0 +1,17 @@
+{
+  "project_path": "/home/ec2-user/projects/maestro-v2/enhanced_lean_output/ultimate_20250930_024146",
+  "project_name": "ultimate_20250930_024146",
+  "total_score": 91.0,
+  "tier": "\ud83e\udd48 Gold",
+  "category_scores": {
+    "code_organization": 13.0,
+    "service_discovery": 15.0,
+    "port_allocation": 10.0,
+    "resilience_patterns": 18.0,
+    "quality_testing": 18.0,
+    "infrastructure": 10.0,
+    "documentation": 7.0
+  },
+  "violations": [],
+  "recommendations": []
+}

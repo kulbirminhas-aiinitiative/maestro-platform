@@ -1,0 +1,306 @@
+// Prisma schema for Maestro Hybrid Teams
+// Part of MD-598: Epic 7 - Hybrid Team Foundation
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Team types
+enum TeamType {
+  augmentation
+  oversight
+  symbiotic
+}
+
+// Team stages (evolution)
+enum TeamStage {
+  assembly
+  synchronization
+  stress_test
+  symbiosis
+  transcendence
+}
+
+// Team status
+enum TeamStatus {
+  active
+  archived
+  dissolved
+}
+
+// Member types
+enum MemberType {
+  ai_persona
+  human
+}
+
+// Member status
+enum MemberStatus {
+  active
+  inactive
+  removed
+}
+
+// Interaction types
+enum InteractionType {
+  request
+  response
+  collaboration
+  feedback
+  delegation
+  escalation
+}
+
+// Blueprint visibility
+enum BlueprintVisibility {
+  private
+  team
+  organization
+  public
+}
+
+// Core Team model
+model HybridTeam {
+  id              String      @id @default(uuid())
+  name            String      @unique
+  displayName     String
+  teamType        TeamType
+  objective       String
+  description     String?
+  domain          String?
+  currentStage    TeamStage   @default(assembly)
+  stageStartedAt  DateTime?
+  tags            String[]    @default([])
+  metadata        Json        @default("{}")
+
+  // Metrics
+  totalInteractions   Int     @default(0)
+  successfulOutcomes  Int     @default(0)
+  avgSynergyScore     Float   @default(0)
+
+  status          TeamStatus  @default(active)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  createdBy       String?
+
+  // Relations
+  members         TeamMember[]
+  cortex          TeamCortex?
+  interactions    TeamInteraction[]
+  learningEvents  TeamLearningEvent[]
+  stageTransitions StageTransition[]
+
+  // Blueprint relation
+  blueprints      TeamBlueprint[] @relation("SourceTeam")
+
+  @@map("hybrid_teams")
+}
+
+// Team Member model
+model TeamMember {
+  id                    String       @id @default(uuid())
+  teamId                String
+  memberId              String       // External ID (persona ID or user ID)
+  memberType            MemberType
+  memberName            String
+  teamRole              String
+  roleDescription       String?
+
+  // Metrics
+  contributionCount     Int          @default(0)
+  avgContributionQuality Float       @default(0)
+  interactionFrequency  Float        @default(0)
+
+  status                MemberStatus @default(active)
+  joinedAt              DateTime     @default(now())
+  leftAt                DateTime?
+
+  // Relations
+  team                  HybridTeam   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  // Interactions as initiator or recipient
+  initiatedInteractions TeamInteraction[] @relation("Initiator")
+  receivedInteractions  TeamInteraction[] @relation("Recipient")
+
+  // Learning events
+  learnerEvents         TeamLearningEvent[] @relation("Learner")
+  teacherEvents         TeamLearningEvent[] @relation("Teacher")
+
+  @@unique([teamId, memberId])
+  @@map("team_members")
+}
+
+// Team Cortex (brain/analytics state)
+model TeamCortex {
+  id                      String    @id @default(uuid())
+  teamId                  String    @unique
+
+  // Current state
+  currentWorkflow         Json      @default("{}")
+  communicationProtocols  Json      @default("{}")
+
+  // Synergy metrics
+  interactionFriction     Float     @default(0)
+  mutualLearningRate      Float     @default(0)
+  timeToInsightMs         Int?
+  collaborationEfficiency Float     @default(0)
+
+  // Analysis results
+  detectedBottlenecks     Json      @default("[]")
+  suggestedInterventions  Json      @default("[]")
+  stageMetrics            Json      @default("{}")
+  readinessForNextStage   Float     @default(0)
+
+  // Learning
+  learnedPatterns         Json      @default("{}")
+  optimizationHistory     Json      @default("[]")
+
+  lastAnalysisAt          DateTime?
+  updatedAt               DateTime  @updatedAt
+
+  // Relations
+  team                    HybridTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("team_cortex")
+}
+
+// Team Interaction model
+model TeamInteraction {
+  id                String          @id @default(uuid())
+  teamId            String
+  initiatorId       String
+  initiatorType     MemberType
+  recipientId       String?
+  recipientType     MemberType?
+  interactionType   InteractionType
+
+  // Content
+  contextSnapshot   Json            @default("{}")
+  content           String
+  executionResult   Json?
+
+  // Quality metrics
+  outcomeQuality    Float?
+  frictionScore     Float?
+  responseTimeMs    Int?
+  revisionCount     Int             @default(0)
+
+  // Learning signals
+  learningSignal    Boolean         @default(false)
+  learningType      String?
+
+  metadata          Json            @default("{}")
+  createdAt         DateTime        @default(now())
+
+  // Relations
+  team              HybridTeam      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  initiator         TeamMember      @relation("Initiator", fields: [initiatorId], references: [id])
+  recipient         TeamMember?     @relation("Recipient", fields: [recipientId], references: [id])
+
+  // Learning events from this interaction
+  learningEvents    TeamLearningEvent[]
+
+  @@map("team_interactions")
+}
+
+// Team Learning Event model
+model TeamLearningEvent {
+  id                String          @id @default(uuid())
+  teamId            String
+  interactionId     String?
+  learnerId         String
+  learnerType       MemberType
+  teacherId         String?
+  teacherType       MemberType?
+
+  // Learning details
+  learningType      String
+  learningCategory  String?
+  beforeBehavior    String?
+  afterBehavior     String?
+  insightDescription String
+
+  // Impact
+  impactScope       String?         // individual, team, organization
+  estimatedImpact   Float?
+  measuredImpact    Float?
+
+  // Application
+  applied           Boolean         @default(false)
+  appliedAt         DateTime?
+  applicationNotes  String?
+
+  metadata          Json            @default("{}")
+  createdAt         DateTime        @default(now())
+
+  // Relations
+  team              HybridTeam      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  interaction       TeamInteraction? @relation(fields: [interactionId], references: [id])
+  learner           TeamMember      @relation("Learner", fields: [learnerId], references: [id])
+  teacher           TeamMember?     @relation("Teacher", fields: [teacherId], references: [id])
+
+  @@map("team_learning_events")
+}
+
+// Stage Transition history
+model StageTransition {
+  id                String     @id @default(uuid())
+  teamId            String
+  fromStage         TeamStage
+  toStage           TeamStage
+  transitionReason  String?
+  triggeredBy       String     // manual, automatic, threshold
+  metricsSnapshot   Json       @default("{}")
+  createdAt         DateTime   @default(now())
+
+  // Relations
+  team              HybridTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("stage_transitions")
+}
+
+// Team Blueprint (templates)
+model TeamBlueprint {
+  id                    String              @id @default(uuid())
+  sourceTeamId          String?
+  name                  String              @unique
+  displayName           String
+  description           String?
+  teamType              TeamType
+  domain                String?
+
+  // Success metrics
+  successMetrics        Json                @default("{}")
+  avgSynergyScore       Float               @default(0)
+  totalSuccessfulOutcomes Int               @default(0)
+
+  // Team composition
+  requiredRoles         Json                @default("[]")
+  optimalTeamSize       Int?
+
+  // Patterns
+  communicationProtocols Json               @default("{}")
+  workflowPatterns      Json                @default("{}")
+  learnedOptimizations  Json                @default("{}")
+  stageInsights         Json                @default("{}")
+  commonBottlenecks     Json                @default("[]")
+
+  // Usage
+  timesCloned           Int                 @default(0)
+  avgCloneSuccessRate   Float?
+
+  tags                  String[]            @default([])
+  visibility            BlueprintVisibility @default(private)
+  createdAt             DateTime            @default(now())
+  createdBy             String?
+
+  // Relations
+  sourceTeam            HybridTeam?         @relation("SourceTeam", fields: [sourceTeamId], references: [id])
+
+  @@map("team_blueprints")
+}
