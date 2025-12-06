@@ -40,6 +40,17 @@ from database.workflow_store import (
     migrate_from_memory_store
 )
 
+# MD-2063: Capability Registry Models
+from database.capability_models import (
+    CapabilityAgent,
+    Capability,
+    AgentCapability,
+    AgentQualityHistory,
+    CapabilityGroup,
+    AvailabilityStatus,
+    CapabilitySource,
+)
+
 __all__ = [
     # Config
     'DatabaseConfig',
@@ -71,6 +82,15 @@ __all__ = [
     # Workflow Store
     'DatabaseWorkflowContextStore',
     'migrate_from_memory_store',
+
+    # Capability Registry Models (MD-2063)
+    'CapabilityAgent',
+    'Capability',
+    'AgentCapability',
+    'AgentQualityHistory',
+    'CapabilityGroup',
+    'AvailabilityStatus',
+    'CapabilitySource',
 ]
 
 __version__ = '1.0.0'

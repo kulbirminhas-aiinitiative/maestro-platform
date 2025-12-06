@@ -1,0 +1,25 @@
+# Flake8 Configuration (MD-2149)
+# Note: flake8 doesn't read from pyproject.toml, so we use .flake8
+
+[flake8]
+max-line-length = 100
+# E501: line too long (handled by black)
+# W503: line break before binary operator (black style)
+# E203: whitespace before ':' (black style)
+extend-ignore = E501,W503,E203
+
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    maestro_ml/.venv,
+    node_modules,
+    generated_*,
+    docs,
+    build,
+    dist,
+    deprecated_code,
+
+per-file-ignores =
+    */__init__.py: F401
+    tests/*: S101

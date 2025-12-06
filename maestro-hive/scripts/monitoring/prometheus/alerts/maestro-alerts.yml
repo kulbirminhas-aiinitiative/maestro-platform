@@ -1,0 +1,124 @@
+# Maestro Alert Rules for Demo Server
+# MD-2030: Deploy Prometheus/Grafana Monitoring Stack
+
+groups:
+  # ============================================================================
+  # Service Health Alerts
+  # ============================================================================
+  - name: service_health
+    interval: 30s
+    rules:
+      - alert: ServiceDown
+        expr: up{job="maestro-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: maestro-backend
+        annotations:
+          summary: "Maestro Backend service is down"
+          description: "Maestro Backend on {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: ServiceHighLatency
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job="maestro-backend"}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: maestro-backend
+        annotations:
+          summary: "High latency detected on Maestro Backend"
+          description: "p99 latency is {{ $value }}s on {{ $labels.instance }}"
+
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{job="maestro-backend",status=~"5.."}[5m])) / sum(rate(http_requests_total{job="maestro-backend"}[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          service: maestro-backend
+        annotations:
+          summary: "High error rate on Maestro Backend"
+          description: "Error rate is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+
+      - alert: HighRequestRate
+        expr: sum(rate(http_requests_total{job="maestro-backend"}[5m])) > 1000
+        for: 5m
+        labels:
+          severity: info
+          service: maestro-backend
+        annotations:
+          summary: "High request rate on Maestro Backend"
+          description: "Request rate is {{ $value }}/s - consider scaling"
+
+  # ============================================================================
+  # System Resource Alerts
+  # ============================================================================
+  - name: system_resources
+    interval: 60s
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: DiskSpaceLow
+        expr: (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk space running low"
+          description: "Disk usage is {{ $value }}% on {{ $labels.mountpoint }} ({{ $labels.instance }})"
+
+      - alert: DiskSpaceCritical
+        expr: (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space critically low"
+          description: "Disk usage is {{ $value }}% on {{ $labels.mountpoint }} ({{ $labels.instance }})"
+
+  # ============================================================================
+  # Monitoring Infrastructure Alerts
+  # ============================================================================
+  - name: monitoring_health
+    interval: 30s
+    rules:
+      - alert: PrometheusTargetMissing
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus target is down"
+          description: "Target {{ $labels.job }} on {{ $labels.instance }} has been down for 5 minutes"
+
+      - alert: PrometheusConfigReloadFailed
+        expr: prometheus_config_last_reload_successful == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus config reload failed"
+          description: "Prometheus configuration reload has failed"
+
+      - alert: AlertmanagerDown
+        expr: up{job="alertmanager"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Alertmanager is down"
+          description: "Alertmanager has been down for more than 2 minutes"

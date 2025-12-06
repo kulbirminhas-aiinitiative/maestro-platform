@@ -131,7 +131,8 @@ class BDVIntegrationService:
         self,
         execution_id: str,
         contracts: List[Dict[str, Any]],
-        iteration_id: Optional[str] = None
+        iteration_id: Optional[str] = None,
+        correlation_id: Optional[str] = None  # MD-2024: Correlation ID for logging
     ) -> BDVValidationResult:
         """
         Validate contracts through BDV tests.
@@ -140,13 +141,19 @@ class BDVIntegrationService:
             execution_id: Execution identifier
             contracts: List of contracts to validate
             iteration_id: Optional iteration identifier
+            correlation_id: Optional correlation ID for log tracking (MD-2024)
 
         Returns:
             BDVValidationResult with test outcomes
         """
         iteration_id = iteration_id or f"iter-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        corr_prefix = f"[{correlation_id}] " if correlation_id else ""
 
-        logger.info(f"🧪 Validating {len(contracts)} contracts via BDV")
+        # MD-2024: Enhanced logging with context
+        logger.info(f"{corr_prefix}🧪 BDV validation starting")
+        logger.info(f"{corr_prefix}  Contracts: {len(contracts)}")
+        logger.info(f"{corr_prefix}  Execution ID: {execution_id}")
+        logger.info(f"{corr_prefix}  Iteration ID: {iteration_id}")
 
         # Generate feature files from contracts
         feature_files = []
@@ -168,6 +175,7 @@ class BDVIntegrationService:
 
         # Run BDV tests
         if feature_files:
+            logger.debug(f"{corr_prefix}Running BDV on {len(feature_files)} feature files")
             bdv_result = self.runner.run(
                 feature_files=feature_files,
                 iteration_id=iteration_id
@@ -175,7 +183,22 @@ class BDVIntegrationService:
 
             # Map results to contracts
             self._map_results_to_contracts(bdv_result, contract_mappings)
+
+            # MD-2024: Log detailed results for failures
+            for mapping in contract_mappings:
+                if mapping.failed > 0:
+                    logger.warning(f"{corr_prefix}⚠️ Contract '{mapping.contract_name}' ({mapping.contract_id}): "
+                                  f"{mapping.failed} scenarios failed out of {mapping.total}")
         else:
+            # MD-2024: Log reason for empty results
+            logger.warning(f"{corr_prefix}⚠️ BDV: No feature files generated - validation skipped")
+            if not contracts:
+                logger.warning(f"{corr_prefix}  Reason: No contracts provided")
+            else:
+                logger.warning(f"{corr_prefix}  Reason: Feature generation failed for all {len(contracts)} contracts")
+                for contract in contracts:
+                    criteria_count = len(contract.get('acceptance_criteria', []))
+                    logger.debug(f"{corr_prefix}    - {contract.get('name', 'Unknown')}: {criteria_count} acceptance criteria")
             bdv_result = None
 
         # Calculate totals
@@ -203,8 +226,12 @@ class BDVIntegrationService:
         # Save to file
         self._save_validation_result(result, iteration_id)
 
-        logger.info(f"✅ BDV validation complete: {contracts_fulfilled}/{len(contracts)} contracts fulfilled, "
-                   f"{total_passed}/{total_scenarios} scenarios passed")
+        # MD-2024: Enhanced completion logging
+        logger.info(f"{corr_prefix}✅ BDV validation complete:")
+        logger.info(f"{corr_prefix}  Contracts: {contracts_fulfilled}/{len(contracts)} fulfilled")
+        logger.info(f"{corr_prefix}  Scenarios: {total_passed}/{total_scenarios} passed ({result.overall_pass_rate:.1%})")
+        if total_failed > 0:
+            logger.warning(f"{corr_prefix}  ⚠️ {total_failed} scenarios failed - review required")
 
         return result
 
@@ -286,8 +313,13 @@ class BDVIntegrationService:
 
         # Generate scenarios from deliverables
         for deliverable in deliverables:
-            deliverable_name = deliverable.get('name', 'Deliverable')
-            deliverable_type = deliverable.get('type', 'file')
+            # Handle both string deliverables (filenames) and dict deliverables
+            if isinstance(deliverable, str):
+                deliverable_name = deliverable
+                deliverable_type = 'file'
+            else:
+                deliverable_name = deliverable.get('name', 'Deliverable')
+                deliverable_type = deliverable.get('type', 'file')
 
             lines.extend([
                 f"  @deliverable",
@@ -360,7 +392,11 @@ class BDVIntegrationService:
 
         deliverables = contract.get('deliverables', [])
         for deliverable in deliverables:
-            name = deliverable.get('name', 'Deliverable')
+            # Handle both string deliverables (filenames) and dict deliverables
+            if isinstance(deliverable, str):
+                name = deliverable
+            else:
+                name = deliverable.get('name', 'Deliverable')
             scenarios.append(f"Deliverable - {name}")
 
         return scenarios

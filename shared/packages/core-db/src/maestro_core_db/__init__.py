@@ -19,7 +19,7 @@ Usage:
     await db_manager.initialize()
 
     # Use in application
-    async with create_session() as session:
+    async with create_session(engine) as session:
         result = await session.execute(select(User))
         users = result.scalars().all()
 
@@ -27,54 +27,211 @@ Usage:
     class User(BaseModel):
         __tablename__ = "users"
 
-        id: Mapped[int] = mapped_column(Integer, primary_key=True)
         username: Mapped[str] = mapped_column(String(50), unique=True)
         email: Mapped[str] = mapped_column(String(255), unique=True)
 """
 
+# Manager
 from .manager import DatabaseManager
-from .base import BaseModel, BaseRepository
-from .session import create_session, get_session, SessionManager
-from .migrations import MigrationManager
-from .cache import QueryCache, CacheManager
-from .monitoring import DatabaseMonitor
-from .connection import ConnectionManager, ConnectionPool
+
+# Base models and repositories
+from .base import (
+    BaseModel,
+    BaseRepository,
+    TenantAwareRepository,
+    SoftDeleteRepository,
+    TenantMixin,
+    SoftDeleteMixin,
+    AuditMixin,
+    VersionMixin,
+    ModelT,
+)
+
+# Session management
+from .session import (
+    SessionManager,
+    SessionContext,
+    TenantSession,
+    create_session,
+    create_session_dependency,
+    create_tenant_session_dependency,
+    create_transactional_dependency,
+    execute_in_transaction,
+    execute_read_only,
+)
+
+# Migrations
+from .migrations import (
+    MigrationManager,
+    MigrationConfig,
+    MigrationInfo,
+)
+
+# Caching
+from .cache import (
+    QueryCache,
+    CacheManager,
+    CacheConfig,
+    CacheBackend,
+    MemoryCacheBackend,
+    RedisCacheBackend,
+)
+
+# Monitoring
+from .monitoring import (
+    DatabaseMonitor,
+    DatabaseMetrics,
+    QueryLogger,
+    PoolStats,
+    HealthStatus,
+    PrometheusExporter,
+)
+
+# Connection management
+from .connection import (
+    ConnectionManager,
+    ConnectionPool,
+    ConnectionConfig,
+    PoolStrategy,
+    ConnectionRole,
+    create_connection_config,
+    create_connection_config_from_env,
+)
+
+# Exceptions
 from .exceptions import (
+    # Base
     DatabaseException,
+    # Connection
     ConnectionException,
+    ConnectionPoolExhaustedException,
+    ConnectionTimeoutException,
+    ConnectionRefusedException,
+    ConnectionClosedException,
+    # Query
+    QueryException,
+    QueryTimeoutException,
+    QuerySyntaxException,
+    # Integrity
+    IntegrityException,
+    UniqueViolationException,
+    ForeignKeyViolationException,
+    NotNullViolationException,
+    CheckConstraintViolationException,
+    # Migration
     MigrationException,
-    QueryException
+    MigrationVersionConflict,
+    MigrationLockException,
+    MigrationNotFoundException,
+    # Multi-tenancy
+    TenantException,
+    TenantNotFoundException,
+    TenantMismatchException,
+    TenantRequiredException,
+    # Transaction
+    TransactionException,
+    TransactionRollbackException,
+    DeadlockException,
+    SerializationException,
+    # Cache
+    CacheException,
+    CacheConnectionException,
+    CacheSerializationException,
+    # Entity
+    EntityNotFoundException,
+    EntityExistsException,
+    # Health
+    HealthCheckException,
 )
 
 __version__ = "1.0.0"
 __all__ = [
-    # Core classes
+    # Manager
     "DatabaseManager",
+
+    # Base models and repositories
     "BaseModel",
     "BaseRepository",
+    "TenantAwareRepository",
+    "SoftDeleteRepository",
+    "TenantMixin",
+    "SoftDeleteMixin",
+    "AuditMixin",
+    "VersionMixin",
+    "ModelT",
 
     # Session management
-    "create_session",
-    "get_session",
     "SessionManager",
+    "SessionContext",
+    "TenantSession",
+    "create_session",
+    "create_session_dependency",
+    "create_tenant_session_dependency",
+    "create_transactional_dependency",
+    "execute_in_transaction",
+    "execute_read_only",
 
     # Migrations
     "MigrationManager",
+    "MigrationConfig",
+    "MigrationInfo",
 
     # Caching
     "QueryCache",
     "CacheManager",
+    "CacheConfig",
+    "CacheBackend",
+    "MemoryCacheBackend",
+    "RedisCacheBackend",
 
     # Monitoring
     "DatabaseMonitor",
+    "DatabaseMetrics",
+    "QueryLogger",
+    "PoolStats",
+    "HealthStatus",
+    "PrometheusExporter",
 
     # Connection management
     "ConnectionManager",
     "ConnectionPool",
+    "ConnectionConfig",
+    "PoolStrategy",
+    "ConnectionRole",
+    "create_connection_config",
+    "create_connection_config_from_env",
 
     # Exceptions
     "DatabaseException",
     "ConnectionException",
-    "MigrationException",
+    "ConnectionPoolExhaustedException",
+    "ConnectionTimeoutException",
+    "ConnectionRefusedException",
+    "ConnectionClosedException",
     "QueryException",
+    "QueryTimeoutException",
+    "QuerySyntaxException",
+    "IntegrityException",
+    "UniqueViolationException",
+    "ForeignKeyViolationException",
+    "NotNullViolationException",
+    "CheckConstraintViolationException",
+    "MigrationException",
+    "MigrationVersionConflict",
+    "MigrationLockException",
+    "MigrationNotFoundException",
+    "TenantException",
+    "TenantNotFoundException",
+    "TenantMismatchException",
+    "TenantRequiredException",
+    "TransactionException",
+    "TransactionRollbackException",
+    "DeadlockException",
+    "SerializationException",
+    "CacheException",
+    "CacheConnectionException",
+    "CacheSerializationException",
+    "EntityNotFoundException",
+    "EntityExistsException",
+    "HealthCheckException",
 ]

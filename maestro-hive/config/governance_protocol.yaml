@@ -1,0 +1,174 @@
+# Governance Protocol Schema (MD-2121)
+# Defines required documentation and validation rules for each phase gate
+
+version: "1.0"
+name: "Maestro Governance Protocol"
+description: "Enforces documentation and governance rules at phase gates"
+
+# Phase definitions with required artifacts
+phases:
+  requirements:
+    display_name: "Requirements Analysis"
+    required_documents:
+      - type: "requirements_spec"
+        name: "Requirements Specification"
+        template: "requirements_template"
+        required: true
+      - type: "stakeholder_analysis"
+        name: "Stakeholder Analysis"
+        required: false
+    required_approvals:
+      - role: "product_owner"
+        required: true
+      - role: "tech_lead"
+        required: false
+    validation_rules:
+      - rule: "has_acceptance_criteria"
+        description: "All requirements must have acceptance criteria"
+      - rule: "has_priority"
+        description: "All requirements must have priority assigned"
+
+  design:
+    display_name: "System Design"
+    required_documents:
+      - type: "design_doc"
+        name: "Design Document"
+        template: "design_template"
+        required: true
+      - type: "architecture_diagram"
+        name: "Architecture Diagram"
+        required: true
+      - type: "api_spec"
+        name: "API Specification"
+        required: false
+    required_approvals:
+      - role: "architect"
+        required: true
+      - role: "security_reviewer"
+        required: false
+    validation_rules:
+      - rule: "has_component_breakdown"
+        description: "Design must include component breakdown"
+      - rule: "has_data_flow"
+        description: "Design must include data flow diagram"
+
+  implementation:
+    display_name: "Implementation"
+    required_documents:
+      - type: "code_review"
+        name: "Code Review Checklist"
+        required: true
+      - type: "unit_tests"
+        name: "Unit Test Coverage"
+        required: true
+    required_approvals:
+      - role: "code_reviewer"
+        required: true
+    validation_rules:
+      - rule: "test_coverage_threshold"
+        description: "Code must meet test coverage threshold"
+        threshold: 80
+      - rule: "no_critical_issues"
+        description: "No critical code quality issues"
+
+  testing:
+    display_name: "Testing & QA"
+    required_documents:
+      - type: "test_plan"
+        name: "Test Plan"
+        required: true
+      - type: "test_results"
+        name: "Test Results Report"
+        required: true
+      - type: "bug_report"
+        name: "Bug Report"
+        required: false
+    required_approvals:
+      - role: "qa_lead"
+        required: true
+    validation_rules:
+      - rule: "all_tests_pass"
+        description: "All tests must pass"
+      - rule: "no_critical_bugs"
+        description: "No critical bugs open"
+
+  deployment:
+    display_name: "Deployment"
+    required_documents:
+      - type: "deployment_checklist"
+        name: "Deployment Checklist"
+        required: true
+      - type: "rollback_plan"
+        name: "Rollback Plan"
+        required: true
+      - type: "release_notes"
+        name: "Release Notes"
+        required: true
+    required_approvals:
+      - role: "devops_lead"
+        required: true
+      - role: "product_owner"
+        required: true
+    validation_rules:
+      - rule: "staging_validated"
+        description: "Staging environment validated"
+      - rule: "monitoring_configured"
+        description: "Monitoring and alerting configured"
+
+# Global governance rules
+global_rules:
+  audit_trail:
+    enabled: true
+    retention_days: 365
+
+  approval_expiry:
+    enabled: true
+    expiry_hours: 72
+
+  escalation:
+    enabled: true
+    escalation_hours: 24
+    escalation_to: "tech_lead"
+
+# Role definitions
+roles:
+  product_owner:
+    display_name: "Product Owner"
+    permissions:
+      - approve_requirements
+      - approve_deployment
+
+  tech_lead:
+    display_name: "Technical Lead"
+    permissions:
+      - approve_design
+      - approve_implementation
+      - escalation_target
+
+  architect:
+    display_name: "Solution Architect"
+    permissions:
+      - approve_design
+      - define_standards
+
+  code_reviewer:
+    display_name: "Code Reviewer"
+    permissions:
+      - approve_implementation
+
+  qa_lead:
+    display_name: "QA Lead"
+    permissions:
+      - approve_testing
+
+  devops_lead:
+    display_name: "DevOps Lead"
+    permissions:
+      - approve_deployment
+      - manage_environments
+
+  security_reviewer:
+    display_name: "Security Reviewer"
+    permissions:
+      - security_review
+      - approve_design

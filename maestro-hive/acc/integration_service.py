@@ -204,7 +204,8 @@ class ACCIntegrationService:
         self,
         execution_id: str,
         project_path: str,
-        custom_rules: Optional[List[Rule]] = None
+        custom_rules: Optional[List[Rule]] = None,
+        correlation_id: Optional[str] = None  # MD-2024: Correlation ID for logging
     ) -> ACCValidationResult:
         """
         Validate project architecture.
@@ -213,11 +214,17 @@ class ACCIntegrationService:
             execution_id: Execution identifier
             project_path: Path to project to analyze
             custom_rules: Optional custom rules to apply
+            correlation_id: Optional correlation ID for log tracking (MD-2024)
 
         Returns:
             ACCValidationResult with analysis outcomes
         """
-        logger.info(f"🏗️ Analyzing architecture for {project_path}")
+        corr_prefix = f"[{correlation_id}] " if correlation_id else ""
+
+        # MD-2024: Enhanced logging with context
+        logger.info(f"{corr_prefix}🏗️ ACC validation starting")
+        logger.info(f"{corr_prefix}  Project path: {project_path}")
+        logger.info(f"{corr_prefix}  Execution ID: {execution_id}")
 
         project_path = Path(project_path)
 
@@ -227,7 +234,11 @@ class ACCIntegrationService:
 
         # Build import graph
         graph_builder = ImportGraphBuilder(str(project_path))
-        dependencies = graph_builder.build_graph()
+        import_graph = graph_builder.build_graph()
+
+        # MD-2022: Use to_dependencies_dict() to convert ImportGraph to Dict[str, List[str]]
+        # This prevents "'ImportGraph' object is not iterable" errors in rule evaluation
+        dependencies: Dict[str, List[str]] = import_graph.to_dependencies_dict()
 
         # Calculate coupling metrics
         coupling_metrics = self._calculate_coupling_metrics(dependencies)
@@ -274,9 +285,29 @@ class ACCIntegrationService:
         # Save to file
         self._save_validation_result(result)
 
-        logger.info(f"✅ ACC validation complete: {'COMPLIANT' if is_compliant else 'NON-COMPLIANT'}, "
-                   f"score: {conformance_score:.2f}, "
-                   f"violations: {violation_summary.total} ({violation_summary.blocking} blocking)")
+        # MD-2024: Enhanced completion logging
+        logger.info(f"{corr_prefix}✅ ACC validation complete:")
+        logger.info(f"{corr_prefix}  Status: {'COMPLIANT' if is_compliant else 'NON-COMPLIANT'}")
+        logger.info(f"{corr_prefix}  Score: {conformance_score:.2f}")
+        logger.info(f"{corr_prefix}  Files analyzed: {len(dependencies)}")
+        logger.info(f"{corr_prefix}  Violations: {violation_summary.total} total ({violation_summary.blocking} blocking, "
+                   f"{violation_summary.warning} warning)")
+
+        if not is_compliant:
+            logger.warning(f"{corr_prefix}⚠️ Architecture non-compliant - deployment blocked")
+            # Log blocking violations
+            for v in eval_result.blocking_violations[:5]:  # Top 5 blocking
+                logger.warning(f"{corr_prefix}  BLOCKING: {v.message}")
+            if len(eval_result.blocking_violations) > 5:
+                logger.warning(f"{corr_prefix}  ... and {len(eval_result.blocking_violations) - 5} more blocking violations")
+
+        if cycles:
+            logger.warning(f"{corr_prefix}⚠️ Detected {len(cycles)} dependency cycles")
+            for cycle in cycles[:3]:  # Top 3 cycles
+                cycle_str = " -> ".join(cycle[:4])
+                if len(cycle) > 4:
+                    cycle_str += f" -> ... ({len(cycle)} modules)"
+                logger.debug(f"{corr_prefix}  Cycle: {cycle_str}")
 
         return result
 

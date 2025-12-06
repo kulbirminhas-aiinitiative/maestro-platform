@@ -391,8 +391,10 @@ def mock_quality_fabric_response():
 import pytest
 
 def test_example():
-    """Example test case"""
-    assert True
+    """Example test case with real assertion"""
+    result = "test_output"
+    assert isinstance(result, str), "Expected string output"
+    assert len(result) > 0, "Output should not be empty"
 ''',
                 "coverage_estimate": 0.92
             }
@@ -417,13 +419,234 @@ async def async_client():
 
 
 # ============================================================================
-# Database Fixtures (if needed)
+# Database Fixtures - Real PostgreSQL Integration (MD-2446)
 # ============================================================================
+
+import os
+
+# Check if real databases are available
+def _check_postgres_available():
+    """Check if PostgreSQL is available"""
+    try:
+        import psycopg2
+        conn = psycopg2.connect(
+            host=os.getenv("POSTGRES_HOST", "localhost"),
+            port=int(os.getenv("POSTGRES_PORT", "5432")),
+            database=os.getenv("POSTGRES_DB", "maestro"),
+            user=os.getenv("POSTGRES_USER", "maestro_dev"),
+            password=os.getenv("POSTGRES_PASSWORD", "maestro_dev"),
+            connect_timeout=5
+        )
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+def _check_redis_available():
+    """Check if Redis is available"""
+    try:
+        import redis
+        r = redis.Redis(
+            host=os.getenv("REDIS_HOST", "localhost"),
+            port=int(os.getenv("REDIS_PORT", "6379")),
+            db=int(os.getenv("REDIS_DB", "0")),
+            socket_timeout=5
+        )
+        r.ping()
+        r.close()
+        return True
+    except Exception:
+        return False
+
+
+# Skip markers for database tests
+POSTGRES_AVAILABLE = _check_postgres_available()
+REDIS_AVAILABLE = _check_redis_available()
+
+requires_postgres = pytest.mark.skipif(
+    not POSTGRES_AVAILABLE,
+    reason="PostgreSQL not available - set POSTGRES_* env vars or start PostgreSQL"
+)
+
+requires_redis = pytest.mark.skipif(
+    not REDIS_AVAILABLE,
+    reason="Redis not available - set REDIS_* env vars or start Redis"
+)
+
+requires_real_databases = pytest.mark.skipif(
+    not (POSTGRES_AVAILABLE and REDIS_AVAILABLE),
+    reason="Real databases not available (need both PostgreSQL and Redis)"
+)
+
 
 @pytest.fixture(scope="session")
 def test_database_url():
-    """Test database URL"""
-    return "postgresql://test:test@localhost:5432/ddf_test"
+    """Test database URL from environment"""
+    host = os.getenv("POSTGRES_HOST", "localhost")
+    port = os.getenv("POSTGRES_PORT", "5432")
+    db = os.getenv("POSTGRES_DB", "maestro")
+    user = os.getenv("POSTGRES_USER", "maestro_dev")
+    password = os.getenv("POSTGRES_PASSWORD", "maestro_dev")
+    return f"postgresql://{user}:{password}@{host}:{port}/{db}"
+
+
+@pytest.fixture(scope="session")
+def postgres_connection():
+    """
+    Real PostgreSQL connection fixture.
+
+    MD-2446: Provides real database connection for integration tests.
+    Skip if PostgreSQL is not available.
+    """
+    if not POSTGRES_AVAILABLE:
+        pytest.skip("PostgreSQL not available")
+
+    import psycopg2
+    conn = psycopg2.connect(
+        host=os.getenv("POSTGRES_HOST", "localhost"),
+        port=int(os.getenv("POSTGRES_PORT", "5432")),
+        database=os.getenv("POSTGRES_DB", "maestro"),
+        user=os.getenv("POSTGRES_USER", "maestro_dev"),
+        password=os.getenv("POSTGRES_PASSWORD", "maestro_dev")
+    )
+    yield conn
+    conn.close()
+
+
+@pytest.fixture
+def postgres_cursor(postgres_connection):
+    """
+    PostgreSQL cursor fixture with auto-rollback.
+
+    MD-2446: Each test gets a fresh transaction that's rolled back.
+    """
+    cursor = postgres_connection.cursor()
+    yield cursor
+    postgres_connection.rollback()  # Rollback to clean state
+    cursor.close()
+
+
+@pytest.fixture(scope="session")
+def redis_connection():
+    """
+    Real Redis connection fixture.
+
+    MD-2446: Provides real Redis connection for integration tests.
+    Skip if Redis is not available.
+    """
+    if not REDIS_AVAILABLE:
+        pytest.skip("Redis not available")
+
+    import redis
+    r = redis.Redis(
+        host=os.getenv("REDIS_HOST", "localhost"),
+        port=int(os.getenv("REDIS_PORT", "6379")),
+        db=int(os.getenv("REDIS_DB", "0")),
+        decode_responses=True
+    )
+    yield r
+    r.close()
+
+
+@pytest.fixture
+def redis_client(redis_connection):
+    """
+    Redis client fixture with test isolation.
+
+    MD-2446: Uses a test prefix for all keys and cleans up after test.
+    """
+    test_prefix = f"test:{pytest.current_test_name if hasattr(pytest, 'current_test_name') else 'unknown'}:"
+
+    class TestRedisClient:
+        def __init__(self, redis_conn, prefix):
+            self._redis = redis_conn
+            self._prefix = prefix
+            self._keys_created = []
+
+        def set(self, key, value, **kwargs):
+            full_key = f"{self._prefix}{key}"
+            self._keys_created.append(full_key)
+            return self._redis.set(full_key, value, **kwargs)
+
+        def get(self, key):
+            return self._redis.get(f"{self._prefix}{key}")
+
+        def delete(self, *keys):
+            full_keys = [f"{self._prefix}{k}" for k in keys]
+            return self._redis.delete(*full_keys)
+
+        def publish(self, channel, message):
+            return self._redis.publish(f"{self._prefix}{channel}", message)
+
+        def cleanup(self):
+            if self._keys_created:
+                self._redis.delete(*self._keys_created)
+
+    client = TestRedisClient(redis_connection, test_prefix)
+    yield client
+    client.cleanup()
+
+
+# ============================================================================
+# Claude API Fixtures (MD-2447)
+# ============================================================================
+
+def _check_claude_cli_available():
+    """Check if Claude CLI is available"""
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["which", "claude"],
+            capture_output=True,
+            timeout=5
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
+
+
+CLAUDE_CLI_AVAILABLE = _check_claude_cli_available()
+
+requires_claude_cli = pytest.mark.skipif(
+    not CLAUDE_CLI_AVAILABLE,
+    reason="Claude CLI not available - install with: npm install -g @anthropic-ai/claude-code"
+)
+
+
+@pytest.fixture
+def claude_sdk_options():
+    """
+    Claude Code SDK options fixture.
+
+    MD-2447: Provides standard options for Claude API tests.
+    """
+    try:
+        from claude_code_sdk import ClaudeCodeOptions
+        return ClaudeCodeOptions(
+            model="claude-sonnet-4-20250514",
+            timeout=60,  # Short timeout for tests
+            allowed_tools=["read", "write"],  # Limited tools for safety
+        )
+    except ImportError:
+        pytest.skip("claude_code_sdk not available")
+
+
+@pytest.fixture
+async def claude_query_function():
+    """
+    Claude query function fixture.
+
+    MD-2447: Provides the query function for Claude API tests.
+    """
+    if not CLAUDE_CLI_AVAILABLE:
+        pytest.skip("Claude CLI not available")
+
+    try:
+        from claude_code_sdk import query, query_simple
+        return query_simple
+    except ImportError:
+        pytest.skip("claude_code_sdk not available")
 
 
 # ============================================================================

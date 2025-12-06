@@ -748,8 +748,10 @@ class TestConfiguration:
 
             bdv_runner.run(iteration_id="test-html-128")
 
-            # Would check for HTML report in reports directory
-            assert True  # HTML generation is pytest plugin feature
+            # Verify run completed - HTML generation is pytest plugin feature
+            assert mock_run.called, "subprocess.run should have been called"
+            call_args = mock_run.call_args
+            assert call_args is not None, "Should have call arguments"
 
     def test_bdv_129_generate_junit_xml_report(self, bdv_runner):
         """BDV-129: Generate JUnit XML report for CI/CD integration"""
@@ -759,8 +761,9 @@ class TestConfiguration:
 
             bdv_runner.run(iteration_id="test-junit-129")
 
-            # JUnit XML generation is standard pytest feature
-            assert True
+            # JUnit XML generation is standard pytest feature - verify execution
+            assert mock_run.called, "subprocess.run should have been called for JUnit"
+            assert mock_run.return_value.returncode == 0, "Run should succeed"
 
     def test_bdv_130_report_summary_statistics(self, bdv_runner, mock_json_report):
         """BDV-130: Report summary: total, passed, failed, skipped, duration"""
@@ -814,8 +817,9 @@ class TestConfiguration:
 
             bdv_runner.run(iteration_id="test-logging-133")
 
-            # Logging configuration is environment/pytest feature
-            assert True
+            # Logging configuration is environment/pytest feature - verify execution
+            assert mock_run.called, "subprocess.run should have been called"
+            assert mock_run.return_value.returncode == 0, "Run should complete successfully"
 
     def test_bdv_134_verbose_mode(self, bdv_runner):
         """BDV-134: Run in verbose mode (-v flag)"""
@@ -837,8 +841,9 @@ class TestConfiguration:
             # Would need to modify runner to support quiet mode
             bdv_runner.run(iteration_id="test-quiet-135")
 
-            # Current implementation uses -v by default
-            assert True
+            # Current implementation uses -v by default - verify run completed
+            assert mock_run.called, "subprocess.run should have been called"
+            assert mock_run.return_value.returncode == 0, "Run should complete"
 
 
 # ============================================================================

@@ -580,12 +580,19 @@ type Item {
                     raise Exception(result.get('error', 'Unknown error'))
 
             else:
-                logger.warning("⚠️  Claude SDK not available, using fallback")
-                # Create placeholder files
-                files_created, deliverables = await self._fallback_execution(
-                    requirement,
-                    contract
-                )
+                # NO FALLBACK - Fail fast, fail loud
+                logger.error("="*70)
+                logger.error("❌ EXECUTION FAILED: Claude SDK not available")
+                logger.error("="*70)
+                logger.error("   The Claude SDK (claude_code_api_layer) is required for execution.")
+                logger.error("   Fallback mode is disabled - this is intentional for E2E validation.")
+                logger.error("   ")
+                logger.error("   To fix:")
+                logger.error("   1. Ensure claude_code_api_layer is installed and accessible")
+                logger.error("   2. Check PYTHONPATH includes maestro-platform directory")
+                logger.error("   3. Verify Claude CLI is properly configured")
+                logger.error("="*70)
+                raise RuntimeError("Claude SDK not available - execution cannot proceed without AI capabilities")
         
         except Exception as e:
             logger.error(f"❌ Execution failed: {e}")

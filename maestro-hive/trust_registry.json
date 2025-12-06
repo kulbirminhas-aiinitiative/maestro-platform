@@ -1,0 +1,79 @@
+{
+  "trusted_blocks": [
+    {
+      "name": "auth",
+      "version": "",
+      "verified_by": "team",
+      "verified_at": "2025-12-06T16:55:45.776354",
+      "evidence_type": "review"
+    },
+    {
+      "name": "trusted_0",
+      "version": "",
+      "verified_by": "team",
+      "verified_at": "2025-12-06T16:55:45.777921",
+      "evidence_type": ""
+    },
+    {
+      "name": "trusted_1",
+      "version": "",
+      "verified_by": "team",
+      "verified_at": "2025-12-06T16:55:45.778878",
+      "evidence_type": ""
+    },
+    {
+      "name": "trusted_2",
+      "version": "",
+      "verified_by": "team",
+      "verified_at": "2025-12-06T16:55:45.779980",
+      "evidence_type": ""
+    },
+    {
+      "name": "trusted_3",
+      "version": "",
+      "verified_by": "team",
+      "verified_at": "2025-12-06T16:55:45.781111",
+      "evidence_type": ""
+    },
+    {
+      "name": "trusted_4",
+      "version": "",
+      "verified_by": "team",
+      "verified_at": "2025-12-06T16:55:45.782245",
+      "evidence_type": ""
+    },
+    {
+      "name": "trusted_5",
+      "version": "",
+      "verified_by": "team",
+      "verified_at": "2025-12-06T16:55:45.783367",
+      "evidence_type": ""
+    },
+    {
+      "name": "trusted_6",
+      "version": "",
+      "verified_by": "team",
+      "verified_at": "2025-12-06T16:55:45.784528",
+      "evidence_type": ""
+    },
+    {
+      "name": "trusted_7",
+      "version": "",
+      "verified_by": "team",
+      "verified_at": "2025-12-06T16:55:45.785626",
+      "evidence_type": ""
+    },
+    {
+      "name": "trusted_8",
+      "version": "",
+      "verified_by": "team",
+      "verified_at": "2025-12-06T16:55:45.786807",
+      "evidence_type": ""
+    }
+  ],
+  "catalogued_blocks": [
+    {
+      "name": "api"
+    }
+  ]
+}

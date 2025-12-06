@@ -9,6 +9,7 @@ Features:
 - Calculate overall quality grade
 - Generate actionable recommendations
 - Gate deployments based on thresholds
+- MD-2023: DDE-BDV correlation support
 
 ML Integration Points:
 - Quality prediction from multi-modal signals
@@ -20,6 +21,13 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from enum import Enum
+
+# MD-2023: Import correlation service
+try:
+    from dde.correlation_service import get_correlation_service, CorrelationStatus
+    CORRELATION_AVAILABLE = True
+except ImportError:
+    CORRELATION_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -74,10 +82,12 @@ class QualityVerdict:
     weaknesses: List[str]
     recommendations: List[str]
     gate_results: Dict[str, bool]
+    # MD-2023: Correlation data
+    correlation_metrics: Optional[Dict[str, Any]] = None
     verdict_at: datetime = field(default_factory=datetime.now)
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        result = {
             'execution_id': self.execution_id,
             'overall_score': round(self.overall_score, 4),
             'grade': self.grade.value,
@@ -89,6 +99,10 @@ class QualityVerdict:
             'gate_results': self.gate_results,
             'verdict_at': self.verdict_at.isoformat()
         }
+        # MD-2023: Include correlation metrics if available
+        if self.correlation_metrics:
+            result['correlation'] = self.correlation_metrics
+        return result
 
 
 class VerdictAggregator:
@@ -145,7 +159,8 @@ class VerdictAggregator:
         execution_id: str,
         dde_metrics: Optional[Dict[str, Any]] = None,
         bdv_metrics: Optional[Dict[str, Any]] = None,
-        acc_metrics: Optional[Dict[str, Any]] = None
+        acc_metrics: Optional[Dict[str, Any]] = None,
+        include_correlation: bool = True  # MD-2023: Include DDE-BDV correlation
     ) -> QualityVerdict:
         """
         Generate unified quality verdict.
@@ -155,6 +170,7 @@ class VerdictAggregator:
             dde_metrics: DDE performance metrics
             bdv_metrics: BDV validation metrics
             acc_metrics: ACC conformance metrics
+            include_correlation: Whether to include DDE-BDV correlation (MD-2023)
 
         Returns:
             QualityVerdict with overall assessment
@@ -214,6 +230,19 @@ class VerdictAggregator:
             acc_metrics
         )
 
+        # MD-2023: Get DDE-BDV correlation metrics
+        correlation_metrics = None
+        if include_correlation and CORRELATION_AVAILABLE:
+            try:
+                correlation_service = get_correlation_service()
+                correlation_metrics = correlation_service.get_correlated_metrics_for_verdict(execution_id)
+                if correlation_metrics:
+                    logger.info(f"🔄 Correlation: {correlation_metrics['contracts_in_agreement']}/{correlation_metrics['total_contracts']} contracts in agreement")
+                    # Add correlation to gate results
+                    gate_results['dde_bdv_correlation'] = correlation_metrics.get('correlation_confidence', 0.0) >= 0.7
+            except Exception as e:
+                logger.debug(f"Could not get correlation metrics: {e}")
+
         verdict = QualityVerdict(
             execution_id=execution_id,
             overall_score=overall_score,
@@ -223,7 +252,8 @@ class VerdictAggregator:
             strengths=strengths,
             weaknesses=weaknesses,
             recommendations=recommendations,
-            gate_results=gate_results
+            gate_results=gate_results,
+            correlation_metrics=correlation_metrics  # MD-2023
         )
 
         # Store verdict
@@ -284,9 +314,16 @@ class VerdictAggregator:
                 is_available=False
             )
 
-        # Extract BDV metrics
-        pass_rate = metrics.get('bdv_pass_rate', 0.0)
-        fulfillment_rate = metrics.get('fulfillment_rate', 0.0)
+        # Extract BDV metrics - support both old and new key formats
+        pass_rate = metrics.get('bdv_pass_rate') or metrics.get('overall_pass_rate', 0.0)
+
+        # Calculate fulfillment rate from contracts if available
+        total_contracts = metrics.get('total_contracts', 0)
+        contracts_fulfilled = metrics.get('contracts_fulfilled', 0)
+        if total_contracts > 0:
+            fulfillment_rate = contracts_fulfilled / total_contracts
+        else:
+            fulfillment_rate = metrics.get('fulfillment_rate', 0.0)
 
         # Calculate composite score
         score = (
@@ -317,8 +354,8 @@ class VerdictAggregator:
                 is_available=False
             )
 
-        # Extract ACC metrics
-        conformance_score = metrics.get('acc_conformance_score', 0.0)
+        # Extract ACC metrics - support both old and new key formats
+        conformance_score = metrics.get('acc_conformance_score') or metrics.get('conformance_score', 0.0)
         is_compliant = metrics.get('is_compliant', False)
 
         # Calculate composite score

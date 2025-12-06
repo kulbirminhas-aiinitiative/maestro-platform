@@ -99,6 +99,7 @@ async def query(
             "node",
             CLAUDE_CLI_PATH,
             "--print",  # Non-interactive mode
+            "--verbose",  # Required for stream-json output format
             "--output-format", "stream-json",  # Structured output
             "--permission-mode", options.permission_mode,  # Auto-accept edits
         ]
@@ -163,9 +164,24 @@ async def query(
                                 role="assistant"
                             )
 
+                        elif msg_type == 'assistant':
+                            # Assistant message with content array
+                            message = data.get('message', {})
+                            content_items = message.get('content', [])
+                            for item in content_items:
+                                if item.get('type') == 'text':
+                                    content = item.get('text', '')
+                                    if content:
+                                        accumulated_output.append(content)
+                                        yield ClaudeMessage(
+                                            message_type="text",
+                                            content=content,
+                                            role="assistant"
+                                        )
+
                         elif msg_type == 'result':
-                            # Final result
-                            content = data.get('text', '')
+                            # Final result - content is in 'result' field
+                            content = data.get('result', '') or data.get('text', '')
                             if content:
                                 accumulated_output.append(content)
                                 yield ClaudeMessage(

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maestro Status Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1>Maestro Status Dashboard</h1>
+            <div class="header-right">
+                <span class="last-update" id="lastUpdate">Loading...</span>
+                <span class="update-indicator" id="updateIndicator"></span>
+                <a href="/logout" class="logout-btn">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Environment Cards -->
+        <section class="environments-grid" id="environmentsGrid">
+            <div class="loading">Loading environments...</div>
+        </section>
+
+        <!-- Health History -->
+        <section class="section">
+            <h2>Health Check History (Last 24h)</h2>
+            <div class="history-chart" id="historyChart">
+                <div class="loading">Loading history...</div>
+            </div>
+        </section>
+
+        <!-- Incident Timeline -->
+        <section class="section">
+            <h2>Recent Incidents</h2>
+            <div class="incidents-list" id="incidentsList">
+                <div class="loading">Loading incidents...</div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>Auto-refreshes every 30 seconds | Part of EPIC MD-1979</p>
+    </footer>
+
+    <script>
+        const API_BASE = '';
+        let refreshInterval = null;
+
+        // Status colors
+        const statusColors = {
+            healthy: '#10b981',
+            online: '#10b981',
+            degraded: '#f59e0b',
+            down: '#ef4444',
+            offline: '#ef4444',
+            timeout: '#f59e0b',
+            error: '#ef4444',
+            not_installed: '#6b7280'
+        };
+
+        // Format timestamp
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleTimeString();
+        }
+
+        function formatDateTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString();
+        }
+
+        // Render environment card
+        function renderEnvironmentCard(envKey, data) {
+            const statusColor = statusColors[data.overall_status] || '#6b7280';
+            const healthStatus = data.health_endpoint?.status || 'unknown';
+            const responseTime = data.health_endpoint?.response_time_ms;
+
+            let servicesHtml = '';
+            if (data.services && data.services.length > 0) {
+                servicesHtml = data.services.map(svc => `
+                    <div class="service-item">
+                        <span class="service-name">${svc.name}</span>
+                        <span class="service-status" style="color: ${statusColors[svc.status] || '#6b7280'}">
+                            ${svc.status}
+                        </span>
+                        ${svc.memory ? `<span class="service-metric">${svc.memory}</span>` : ''}
+                        ${svc.uptime ? `<span class="service-metric">${svc.uptime}</span>` : ''}
+                        ${svc.restarts > 0 ? `<span class="service-restarts">${svc.restarts} restarts</span>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                servicesHtml = '<div class="no-services">No PM2 services</div>';
+            }
+
+            return `
+                <div class="environment-card" data-status="${data.overall_status}">
+                    <div class="card-header">
+                        <h3>${data.name}</h3>
+                        <span class="status-badge" style="background-color: ${statusColor}">
+                            ${data.overall_status}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="health-info">
+                            <div class="health-status">
+                                <span class="label">Health Endpoint:</span>
+                                <span class="value" style="color: ${statusColors[healthStatus] || '#6b7280'}">
+                                    ${healthStatus}
+                                </span>
+                                ${responseTime ? `<span class="response-time">${responseTime}ms</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="services-list">
+                            <h4>Services</h4>
+                            ${servicesHtml}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <span class="last-check">Last check: ${formatTime(data.last_updated)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render incidents
+        function renderIncidents(incidents) {
+            if (!incidents || incidents.length === 0) {
+                return '<div class="no-incidents">No recent incidents</div>';
+            }
+
+            return incidents.slice(0, 10).map(inc => `
+                <div class="incident-item ${inc.type}">
+                    <div class="incident-time">${formatDateTime(inc.timestamp)}</div>
+                    <div class="incident-message">
+                        <span class="incident-type ${inc.type}">${inc.type}</span>
+                        ${inc.message}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render history chart (simplified text-based)
+        function renderHistoryChart(historyData) {
+            let html = '<div class="history-grid">';
+
+            for (const [env, history] of Object.entries(historyData)) {
+                const recentHistory = history.slice(-24);
+                const blocks = recentHistory.map(h => {
+                    const color = statusColors[h.status] || '#6b7280';
+                    return `<div class="history-block" style="background-color: ${color}" title="${formatTime(h.timestamp)}: ${h.status}"></div>`;
+                }).join('');
+
+                html += `
+                    <div class="history-row">
+                        <span class="history-env">${env}</span>
+                        <div class="history-blocks">${blocks || '<span class="no-data">No data</span>'}</div>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        // Fetch and update status
+        async function fetchStatus() {
+            try {
+                document.getElementById('updateIndicator').classList.add('updating');
+
+                const response = await fetch(`${API_BASE}/api/status`);
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login';
+                        return;
+                    }
+                    throw new Error('Failed to fetch status');
+                }
+
+                const data = await response.json();
+
+                // Update environments grid
+                const grid = document.getElementById('environmentsGrid');
+                let cardsHtml = '';
+                for (const [envKey, envData] of Object.entries(data.environments)) {
+                    cardsHtml += renderEnvironmentCard(envKey, envData);
+                }
+                grid.innerHTML = cardsHtml;
+
+                // Update last update time
+                document.getElementById('lastUpdate').textContent = `Last updated: ${formatTime(data.timestamp)}`;
+
+            } catch (error) {
+                console.error('Error fetching status:', error);
+                document.getElementById('lastUpdate').textContent = 'Update failed';
+            } finally {
+                document.getElementById('updateIndicator').classList.remove('updating');
+            }
+        }
+
+        // Fetch incidents
+        async function fetchIncidents() {
+            try {
+                const response = await fetch(`${API_BASE}/api/incidents`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('incidentsList').innerHTML = renderIncidents(data.incidents);
+                }
+            } catch (error) {
+                console.error('Error fetching incidents:', error);
+            }
+        }
+
+        // Fetch history for chart
+        async function fetchHistory() {
+            try {
+                const historyData = {};
+                for (const env of ['development', 'sandbox', 'demo']) {
+                    const response = await fetch(`${API_BASE}/api/history/${env}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        historyData[env] = data.history;
+                    }
+                }
+                document.getElementById('historyChart').innerHTML = renderHistoryChart(historyData);
+            } catch (error) {
+                console.error('Error fetching history:', error);
+            }
+        }
+
+        // Refresh all data
+        async function refreshAll() {
+            await fetchStatus();
+            await fetchIncidents();
+            await fetchHistory();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshAll();
+
+            // Auto-refresh every 30 seconds
+            refreshInterval = setInterval(refreshAll, 30000);
+        });
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>

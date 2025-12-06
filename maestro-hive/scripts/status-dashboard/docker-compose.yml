@@ -1,0 +1,28 @@
+# Status Dashboard Docker Compose
+# MD-2033: Web-Based Service Status Dashboard
+
+version: '3.8'
+
+services:
+  status-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: maestro-status-dashboard
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DEBUG=false
+      - SECRET_KEY=${SECRET_KEY:-maestro-status-dashboard-secret-2024}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-maestro_status_2024}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    network_mode: host
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

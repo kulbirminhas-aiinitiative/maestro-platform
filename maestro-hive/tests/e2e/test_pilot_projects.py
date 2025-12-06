@@ -28,10 +28,14 @@ from unittest.mock import Mock, AsyncMock, patch, MagicMock
 from dataclasses import dataclass, asdict
 
 # Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+# MD-2444/MD-2445: Fixed import paths - dag modules moved to src/maestro_hive/dag/
+project_root = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(project_root / "src"))
 
 # Import components under test
-from dag_workflow import (
+# DAG modules are in src/maestro_hive/dag/
+from maestro_hive.dag.dag_workflow import (
     WorkflowDAG,
     WorkflowNode,
     WorkflowContext,
@@ -39,8 +43,9 @@ from dag_workflow import (
     NodeType,
     ExecutionMode,
 )
-from dag_executor import DAGExecutor, WorkflowContextStore, ExecutionEvent, ExecutionEventType
-from contract_manager import ContractManager
+from maestro_hive.dag.dag_executor import DAGExecutor, WorkflowContextStore, ExecutionEvent, ExecutionEventType
+# MD-2444/MD-2445: Removed unused ContractManager import (has broken persistence dependency)
+# from contract_manager import ContractManager
 from dde.auditor import DDEAuditor, AuditReport, AuditResult, CompletenessMetrics, IntegrityMetrics
 from bdv.bdv_runner import BDVRunner, BDVResult, ScenarioResult
 from acc.rule_engine import RuleEngine, Rule, RuleType, Severity, EvaluationResult, Violation
@@ -210,8 +215,9 @@ async def test_e2e_001_simulate_complete_workflow(dog_marketplace_project, workf
         if i > 0:
             workflow.add_edge(dog_marketplace_project.expected_phases[i-1], phase_name)
 
-    # Execute workflow (disable contract validation to avoid policy gate failures)
-    executor = DAGExecutor(workflow, workflow_context_store, enable_contract_validation=False)
+    # Execute workflow
+    # MD-2444/MD-2445: Removed deprecated enable_contract_validation parameter
+    executor = DAGExecutor(workflow, workflow_context_store)
     context = await executor.execute(initial_context={
         'requirement': dog_marketplace_project.requirement,
         'project_id': dog_marketplace_project.project_id,
@@ -596,7 +602,7 @@ async def test_e2e_007_interface_first_scheduling(dog_marketplace_project, workf
     interface_node = WorkflowNode(
         node_id="api_interface",
         name="API Interface Definition",
-        node_type=NodeType.INTERFACE,
+        node_type=NodeType.CUSTOM,  # MD-2444: Changed from deprecated INTERFACE
         executor=interface_executor
     )
     workflow.add_node(interface_node)
@@ -606,7 +612,7 @@ async def test_e2e_007_interface_first_scheduling(dog_marketplace_project, workf
         impl_node = WorkflowNode(
             node_id=f"implementation_{i}",
             name=f"Implementation {i}",
-            node_type=NodeType.ACTION,
+            node_type=NodeType.PHASE,  # MD-2444: Changed from deprecated ACTION
             executor=implementation_executor,
             dependencies=["api_interface"]
         )
@@ -740,14 +746,15 @@ async def test_e2e_009_parallel_execution_and_dependencies(dog_marketplace_proje
         return {'status': 'completed'}
 
     # Root node
-    root = WorkflowNode(node_id="root", name="Root", node_type=NodeType.ACTION, executor=timed_executor)
+    # MD-2444: Changed node_type from deprecated ACTION to PHASE
+    root = WorkflowNode(node_id="root", name="Root", node_type=NodeType.PHASE, executor=timed_executor)
     workflow.add_node(root)
 
     # Parallel branches
     branch_a = WorkflowNode(
         node_id="branch_a",
         name="Branch A",
-        node_type=NodeType.ACTION,
+        node_type=NodeType.PHASE,  # MD-2444: Changed from deprecated ACTION
         executor=timed_executor,
         dependencies=["root"]
     )
@@ -757,7 +764,7 @@ async def test_e2e_009_parallel_execution_and_dependencies(dog_marketplace_proje
     branch_b = WorkflowNode(
         node_id="branch_b",
         name="Branch B",
-        node_type=NodeType.ACTION,
+        node_type=NodeType.PHASE,  # MD-2444: Changed from deprecated ACTION
         executor=timed_executor,
         dependencies=["root"]
     )
@@ -768,7 +775,7 @@ async def test_e2e_009_parallel_execution_and_dependencies(dog_marketplace_proje
     converge = WorkflowNode(
         node_id="converge",
         name="Converge",
-        node_type=NodeType.ACTION,
+        node_type=NodeType.PHASE,  # MD-2444: Changed from deprecated ACTION
         executor=timed_executor,
         dependencies=["branch_a", "branch_b"]
     )
@@ -1126,7 +1133,7 @@ async def test_e2e_014_contract_locking_after_validation(dog_marketplace_project
     interface_node = WorkflowNode(
         node_id="api_contract",
         name="API Contract",
-        node_type=NodeType.INTERFACE,
+        node_type=NodeType.CUSTOM,  # MD-2444: Changed from deprecated INTERFACE
         executor=validate_and_lock_contract
     )
     workflow.add_node(interface_node)

@@ -1,0 +1,141 @@
+# Dockerfile.hive - Maestro-Hive Production Container
+# Epic: MD-1895 - Maestro-Hive CI/CD Implementation
+# Task: MD-1899 - Dockerfile.hive for containerized deployment
+#
+# Multi-stage build with non-root user, health checks
+# Following maestro-engine-new patterns
+
+# =============================================================================
+# Stage 1: Builder - Install dependencies
+# =============================================================================
+FROM python:3.11-slim as builder
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    POETRY_VERSION=1.8.0 \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=true \
+    POETRY_VIRTUALENVS_CREATE=true \
+    PATH="/opt/poetry/bin:$PATH"
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    build-essential \
+    libpq-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 - && \
+    poetry --version
+
+# Set working directory
+WORKDIR /app
+
+# Copy poetry files
+COPY pyproject.toml poetry.lock* ./
+
+# Install dependencies (without dev dependencies for production)
+RUN poetry install --no-root --without dev --no-interaction || \
+    poetry install --no-root --no-interaction
+
+# Install test dependencies for health checks
+COPY requirements-test.txt ./
+RUN poetry run pip install pytest pytest-asyncio httpx
+
+# =============================================================================
+# Stage 2: Runtime - Lean production image
+# =============================================================================
+FROM python:3.11-slim as runtime
+
+# Labels for container metadata
+LABEL maintainer="Maestro Team <team@maestro.ai>" \
+      version="1.0.0" \
+      description="Maestro-Hive - AI Team Orchestration Engine" \
+      org.opencontainers.image.source="https://github.com/maestro/maestro-hive"
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app:$PYTHONPATH" \
+    # Application configuration
+    HIVE_ENV=production \
+    HIVE_LOG_LEVEL=INFO \
+    HIVE_PORT=8000
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user for security
+RUN useradd -m -u 1000 -s /bin/bash maestro && \
+    mkdir -p /app /app/logs /app/data /app/reports && \
+    chown -R maestro:maestro /app
+
+# Copy virtual environment from builder
+COPY --from=builder --chown=maestro:maestro /app/.venv /app/.venv
+
+# Set working directory
+WORKDIR /app
+
+# Copy application code
+COPY --chown=maestro:maestro tri_audit/ ./tri_audit/
+COPY --chown=maestro:maestro ics/ ./ics/
+COPY --chown=maestro:maestro infrastructure/ ./infrastructure/
+COPY --chown=maestro:maestro tests/tri_audit/ ./tests/tri_audit/
+COPY --chown=maestro:maestro pyproject.toml ./
+
+# Create necessary directories
+RUN mkdir -p /app/reports/tri-modal /app/data/performance && \
+    chown -R maestro:maestro /app
+
+# Switch to non-root user
+USER maestro
+
+# Expose port
+EXPOSE 8000
+
+# Health check - verify tri_audit module can be imported
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD python -c "import tri_audit; print('healthy')" || exit 1
+
+# Default command - run as a module or API server
+# Can be overridden in docker-compose or k8s
+CMD ["python", "-c", "from tri_audit import tri_modal_audit; print('Maestro-Hive ready')"]
+
+# =============================================================================
+# Development Stage (optional)
+# =============================================================================
+FROM runtime as development
+
+USER root
+
+# Install development dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    vim \
+    less \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy additional development files
+COPY --chown=maestro:maestro requirements-test.txt ./
+COPY --chown=maestro:maestro tests/ ./tests/
+
+# Install test dependencies
+RUN /app/.venv/bin/pip install -r requirements-test.txt
+
+USER maestro
+
+# Override health check for development
+HEALTHCHECK --interval=60s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import tri_audit; print('healthy')" || exit 1
+
+CMD ["python", "-m", "pytest", "tests/tri_audit/", "-v", "--tb=short"]

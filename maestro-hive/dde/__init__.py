@@ -9,6 +9,7 @@ Modules:
 - agent_registry: Agent profiles and capabilities (MD-883)
 - task_matcher: Task-agent matching service (MD-884)
 - execution_manifest: Execution plan definition (MD-885)
+- correlation_service: DDE-BDV result synchronization (MD-2023)
 - capability_matcher: Capability matching (existing)
 - artifact_stamper: Artifact traceability (existing)
 - api: DDE API endpoints (existing)
@@ -60,6 +61,29 @@ from dde.routing_engine import (
     RoutingStrategy
 )
 
+# MD-2023: DDE-BDV Correlation Service
+from dde.correlation_service import (
+    DDEBDVCorrelationService,
+    get_correlation_service,
+    ContractFulfillmentStatus,
+    CorrelatedValidationResult,
+    CorrelationStatus,
+    FulfillmentSource
+)
+
+# MD-2119: Bidirectional Status Sync (DDE ↔ JIRA)
+from dde.status_sync import (
+    StatusSyncService,
+    DDEStatus,
+    JIRAStatus,
+    SyncBinding,
+    StatusSyncEvent,
+    DDE_TO_JIRA_STATUS,
+    JIRA_TO_DDE_STATUS,
+    map_dde_to_jira,
+    map_jira_to_dde
+)
+
 __all__ = [
     # Performance Tracker
     'PerformanceTracker',
@@ -100,4 +124,23 @@ __all__ = [
     'get_routing_engine',
     'RoutingDecision',
     'RoutingStrategy',
+
+    # MD-2023: Correlation Service
+    'DDEBDVCorrelationService',
+    'get_correlation_service',
+    'ContractFulfillmentStatus',
+    'CorrelatedValidationResult',
+    'CorrelationStatus',
+    'FulfillmentSource',
+
+    # MD-2119: Status Sync
+    'StatusSyncService',
+    'DDEStatus',
+    'JIRAStatus',
+    'SyncBinding',
+    'StatusSyncEvent',
+    'DDE_TO_JIRA_STATUS',
+    'JIRA_TO_DDE_STATUS',
+    'map_dde_to_jira',
+    'map_jira_to_dde',
 ]

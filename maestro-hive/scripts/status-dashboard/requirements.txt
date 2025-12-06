@@ -1,0 +1,7 @@
+# Status Dashboard Requirements
+# MD-2033: Web-Based Service Status Dashboard
+
+flask>=2.3.0
+flask-cors>=4.0.0
+requests>=2.31.0
+gunicorn>=21.0.0

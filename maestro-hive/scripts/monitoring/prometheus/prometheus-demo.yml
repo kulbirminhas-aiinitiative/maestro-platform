@@ -1,0 +1,111 @@
+# Prometheus Configuration for Demo Server
+# MD-2030: Deploy Prometheus/Grafana Monitoring Stack to Demo Server
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'maestro-demo'
+    environment: 'demo'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Rule files
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  # ============================================================================
+  # Prometheus Self-Monitoring
+  # ============================================================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # ============================================================================
+  # Maestro Backend API (port 4100)
+  # Primary application metrics endpoint
+  # ============================================================================
+  - job_name: 'maestro-backend'
+    static_configs:
+      - targets: ['host.docker.internal:4100']
+        labels:
+          service: 'maestro-backend'
+          tier: 'api'
+    metrics_path: /metrics
+    scheme: http
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # ============================================================================
+  # Maestro Backend Health Endpoint
+  # ============================================================================
+  - job_name: 'maestro-health'
+    static_configs:
+      - targets: ['host.docker.internal:4100']
+        labels:
+          service: 'maestro-backend'
+          tier: 'api'
+    metrics_path: /health
+    scheme: http
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # ============================================================================
+  # Node Exporter - System Metrics
+  # ============================================================================
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node-exporter'
+          tier: 'infrastructure'
+
+  # ============================================================================
+  # Alertmanager
+  # ============================================================================
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
+        labels:
+          service: 'alertmanager'
+
+  # ============================================================================
+  # PostgreSQL (if postgres-exporter is deployed)
+  # ============================================================================
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['host.docker.internal:9187']
+        labels:
+          service: 'postgres'
+          tier: 'database'
+    scrape_interval: 30s
+
+  # ============================================================================
+  # Redis (if redis-exporter is deployed)
+  # ============================================================================
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['host.docker.internal:9121']
+        labels:
+          service: 'redis'
+          tier: 'cache'
+    scrape_interval: 30s
+
+  # ============================================================================
+  # Cadvisor - Container Metrics (optional)
+  # ============================================================================
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+        labels:
+          service: 'cadvisor'
+          tier: 'infrastructure'
+    scrape_interval: 30s

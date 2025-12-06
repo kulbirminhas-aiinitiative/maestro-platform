@@ -166,6 +166,16 @@ except ImportError as e:
     logging.warning(f"Blueprint system not available: {e}")
     BLUEPRINTS_AVAILABLE = False
 
+# BlueprintScorer - 4-dimensional scoring for blueprint-requirement matching (MD-2534)
+try:
+    from src.maestro_hive.teams.blueprint_scorer import BlueprintScorer
+    BLUEPRINT_SCORER_AVAILABLE = True
+    logging.info("✅ BlueprintScorer loaded")
+except ImportError as e:
+    BLUEPRINT_SCORER_AVAILABLE = False
+    BlueprintScorer = None
+    logging.warning(f"⚠️ BlueprintScorer not available: {e}")
+
 # Claude Code API Layer - Standalone package
 try:
     import sys
@@ -312,12 +322,19 @@ class ExecutionResult:
 class TeamComposerAgent:
     """
     AI agent that analyzes requirements and recommends team composition.
-    
+
     This replaces hardcoded keyword matching with intelligent analysis.
     """
-    
+
     def __init__(self):
         self.model = CLAUDE_CONFIG.get("model", "claude-3-5-sonnet-20241022")
+        # Initialize BlueprintScorer for dynamic scoring (MD-2534)
+        if BLUEPRINT_SCORER_AVAILABLE and BlueprintScorer:
+            self._scorer = BlueprintScorer()
+            logger.info("BlueprintScorer initialized for dynamic match scoring")
+        else:
+            self._scorer = None
+            logger.warning("BlueprintScorer not available, using fallback scoring")
     
     async def analyze_requirement(
         self,
@@ -549,10 +566,17 @@ Respond with ONLY the JSON, no other text."""
                 coord_mode = best_match.archetype.coordination.mode.value if hasattr(best_match.archetype.coordination.mode, 'value') else str(best_match.archetype.coordination.mode)
                 scale_strategy = best_match.archetype.scaling.value if hasattr(best_match.archetype.scaling, 'value') else str(best_match.archetype.scaling)
 
+                # Calculate match score using BlueprintScorer (MD-2534)
+                if self._scorer is not None:
+                    match_score = self._scorer.score(classification, best_match)
+                    logger.debug(f"BlueprintScorer calculated match_score={match_score:.2f}")
+                else:
+                    match_score = 0.85  # Fallback if scorer unavailable
+
                 recommendation = BlueprintRecommendation(
                     blueprint_id=best_match.id,
                     blueprint_name=best_match.name,
-                    match_score=0.85,  # TODO: Implement proper scoring
+                    match_score=match_score,
                     personas=personas,
                     rationale=f"Blueprint '{best_match.name}' matches {classification.parallelizability.value} work pattern",
                     alternatives=[m.id if hasattr(m, 'id') else str(m) for m in matching_blueprints[1:3]],  # Top 2 alternatives
@@ -561,15 +585,15 @@ Respond with ONLY the JSON, no other text."""
                     scaling_strategy=scale_strategy,
                     estimated_time_savings=0.4 if "parallel" in exec_mode.lower() else 0.0
                 )
-                
+
                 logger.info(f"  ✅ Selected: {recommendation.blueprint_name}")
                 logger.info(f"     Match score: {recommendation.match_score:.0%}")
                 logger.info(f"     Time savings: {recommendation.estimated_time_savings:.0%}")
-                
+
                 return recommendation
         except Exception as e:
             logger.error(f"Blueprint search failed: {e}")
-        
+
         return self._default_blueprint_recommendation()
     
     def _extract_personas_for_requirement(
@@ -626,11 +650,15 @@ Respond with ONLY the JSON, no other text."""
         return result
     
     def _default_blueprint_recommendation(self) -> BlueprintRecommendation:
-        """Fallback recommendation"""
+        """Fallback recommendation when blueprint system unavailable.
+
+        Note: match_score=0.6 is intentional for fallback - it's lower than
+        dynamic scores from BlueprintScorer to indicate reduced confidence.
+        """
         return BlueprintRecommendation(
             blueprint_id="sequential-basic",
             blueprint_name="Basic Sequential Team",
-            match_score=0.6,
+            match_score=0.6,  # Lower than dynamic scores - intentional fallback value
             personas=["requirement_analyst", "backend_developer", "frontend_developer", "qa_engineer"],
             rationale="Default sequential pattern (blueprint system unavailable)",
             alternatives=[],
@@ -1291,16 +1319,18 @@ class TeamExecutionEngineV2:
             try:
                 bdv_service = get_bdv_integration_service()
 
-                # Convert contracts for BDV validation
+                # MD-2021 FIX: Use original ContractSpecification objects which have
+                # full acceptance_criteria, not result dict which doesn't have 'contracts' key
                 contracts_for_bdv = []
-                for contract in result.get('contracts', []):
+                for contract in contracts:  # Use original contracts, not result.get('contracts', [])
                     contracts_for_bdv.append({
-                        'id': contract.get('id', 'unknown'),
-                        'name': contract.get('name', 'Unknown'),
-                        'description': contract.get('description', ''),
-                        'acceptance_criteria': contract.get('acceptance_criteria', []),
-                        'deliverables': contract.get('deliverables', [])
+                        'id': contract.id,
+                        'name': contract.name,
+                        'description': getattr(contract, 'description', ''),
+                        'acceptance_criteria': contract.acceptance_criteria,
+                        'deliverables': contract.deliverables
                     })
+                    logger.debug(f"BDV contract: {contract.name} with {len(contract.acceptance_criteria)} criteria")
 
                 if contracts_for_bdv:
                     bdv_result = bdv_service.validate_contracts(
@@ -1309,7 +1339,10 @@ class TeamExecutionEngineV2:
                         iteration_id=f"iter-{session.session_id}"
                     )
                     bdv_metrics = bdv_service.get_validation_metrics(session.session_id)
-                    logger.info(f"🧪 BDV validation: {bdv_result.contracts_fulfilled}/{bdv_result.total_contracts} contracts fulfilled")
+                    logger.info(f"🧪 BDV validation: {bdv_result.contracts_fulfilled}/{bdv_result.total_contracts} contracts fulfilled, "
+                               f"{bdv_result.scenarios_passed}/{bdv_result.total_scenarios} scenarios passed")
+                else:
+                    logger.warning("⚠️ BDV: No contracts to validate")
             except Exception as e:
                 logger.warning(f"⚠️ BDV validation failed: {e}")
 

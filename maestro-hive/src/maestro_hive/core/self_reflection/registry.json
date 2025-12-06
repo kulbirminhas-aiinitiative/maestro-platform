@@ -1,0 +1,296 @@
+{
+  "meta": {
+    "version": "2.0.0",
+    "description": "Comprehensive DNA of the Maestro AI Platform. Defines all 10 capabilities with sub-features required for 95% maturity.",
+    "last_updated": "2025-12-06",
+    "maturity_target": "95%"
+  },
+  "blocks": [
+    {
+      "id": "cap1.orchestration",
+      "name": "Orchestration & Workflow",
+      "category": "Core",
+      "criticality": "HIGH",
+      "weight": 0.12,
+      "description": "The nervous system of the platform - manages lifecycle, state, and execution.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/core/orchestrator.py",
+          "src/maestro_hive/core/block_interface.py",
+          "src/maestro_hive/core/state_manager.py"
+        ],
+        "capabilities": [
+          "lifecycle_management",
+          "state_persistence",
+          "rollback",
+          "parallel_execution",
+          "dag_dependency",
+          "scheduling",
+          "resource_allocation",
+          "multi_project",
+          "async_operations",
+          "event_bus"
+        ]
+      }
+    },
+    {
+      "id": "cap2.team_management",
+      "name": "Team & Persona Management",
+      "category": "Core",
+      "criticality": "HIGH",
+      "weight": 0.08,
+      "description": "The Manager layer - handles AI team composition and collaboration.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/personas/persona_registry.py",
+          "src/maestro_hive/personas/team_composer.py",
+          "src/maestro_hive/personas/collaboration_engine.py"
+        ],
+        "capabilities": [
+          "persona_definition",
+          "team_composition",
+          "role_assignment",
+          "contract_negotiation",
+          "collaboration_patterns",
+          "conflict_resolution",
+          "performance_tracking",
+          "dynamic_scaling",
+          "skill_matching",
+          "context_sharing"
+        ]
+      }
+    },
+    {
+      "id": "cap3.requirements",
+      "name": "Requirements Engineering",
+      "category": "Intelligence",
+      "criticality": "MEDIUM",
+      "weight": 0.08,
+      "description": "The Brain layer - ingests, analyzes, and decomposes requirements.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/requirements/ingestion.py",
+          "src/maestro_hive/requirements/decomposition.py",
+          "src/maestro_hive/requirements/analyzer.py"
+        ],
+        "capabilities": [
+          "jira_ingestion",
+          "decomposition",
+          "ambiguity_detection",
+          "acceptance_criteria",
+          "complexity_analysis",
+          "feasibility_check",
+          "prioritization",
+          "dependency_mapping",
+          "change_management",
+          "traceability"
+        ]
+      }
+    },
+    {
+      "id": "cap4.code_generation",
+      "name": "Code Generation",
+      "category": "Worker",
+      "criticality": "HIGH",
+      "weight": 0.10,
+      "description": "The Worker layer - generates production-quality code.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/codegen/generator.py",
+          "src/maestro_hive/codegen/templates.py",
+          "src/maestro_hive/codegen/refactoring.py"
+        ],
+        "capabilities": [
+          "scaffolding",
+          "logic_implementation",
+          "refactoring",
+          "documentation_gen",
+          "style_enforcement",
+          "security_practices",
+          "performance_optimization",
+          "api_design",
+          "db_schema_design",
+          "integration_logic"
+        ]
+      }
+    },
+    {
+      "id": "cap5.quality_assurance",
+      "name": "Quality Assurance",
+      "category": "Quality",
+      "criticality": "HIGH",
+      "weight": 0.10,
+      "description": "The Inspector layer - ensures code quality through testing and validation.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/quality/quality_fabric_client.py",
+          "src/maestro_hive/testing/harness.py",
+          "src/maestro_hive/testing/test_generator.py"
+        ],
+        "capabilities": [
+          "unit_test_gen",
+          "integration_test_gen",
+          "e2e_test_gen",
+          "test_execution",
+          "coverage_analysis",
+          "bug_detection",
+          "regression_testing",
+          "performance_testing",
+          "security_scanning",
+          "quality_gates"
+        ]
+      }
+    },
+    {
+      "id": "cap6.knowledge_learning",
+      "name": "Knowledge & Learning (RAG)",
+      "category": "Learning",
+      "criticality": "HIGH",
+      "weight": 0.12,
+      "description": "The Memory layer - learns from past executions and retrieves relevant context.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/learning/rag_client.py",
+          "src/maestro_hive/learning/vector_store.py",
+          "src/maestro_hive/learning/pattern_recognition.py"
+        ],
+        "capabilities": [
+          "context_retrieval",
+          "history_indexing",
+          "pattern_recognition",
+          "error_learning",
+          "external_search",
+          "internal_doc_search",
+          "codebase_understanding",
+          "feedback_loop",
+          "embedding_generation",
+          "knowledge_graph"
+        ]
+      }
+    },
+    {
+      "id": "cap7.compliance",
+      "name": "Compliance & Governance",
+      "category": "Governance",
+      "criticality": "MEDIUM",
+      "weight": 0.10,
+      "description": "The Auditor layer - enforces policies and maintains audit trails.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/compliance/audit_logger.py",
+          "src/maestro_hive/compliance/policy_enforcer.py",
+          "src/maestro_hive/compliance/cost_tracker.py"
+        ],
+        "capabilities": [
+          "jira_sync",
+          "confluence_reporting",
+          "audit_trails",
+          "policy_enforcement",
+          "license_checking",
+          "access_control",
+          "cost_estimation",
+          "risk_assessment",
+          "standardization",
+          "approval_workflows"
+        ]
+      }
+    },
+    {
+      "id": "cap8.devops",
+      "name": "DevOps & Infrastructure",
+      "category": "Infrastructure",
+      "criticality": "MEDIUM",
+      "weight": 0.10,
+      "description": "The Plumber layer - manages CI/CD, deployment, and infrastructure.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/devops/cicd_generator.py",
+          "src/maestro_hive/devops/terraform_generator.py",
+          "src/maestro_hive/devops/monitoring.py"
+        ],
+        "capabilities": [
+          "cicd_generation",
+          "containerization",
+          "iac_generation",
+          "env_management",
+          "monitoring",
+          "log_aggregation",
+          "alerting",
+          "scalability_planning",
+          "disaster_recovery",
+          "cloud_integration"
+        ]
+      }
+    },
+    {
+      "id": "cap9.self_reflection",
+      "name": "Self-Reflection",
+      "category": "Intelligence",
+      "criticality": "HIGH",
+      "weight": 0.08,
+      "description": "The Conscience layer - analyzes own performance and proposes improvements.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/core/self_reflection/gap_detector.py",
+          "src/maestro_hive/core/self_reflection/improvement_planner.py",
+          "src/maestro_hive/core/self_reflection/health_monitor.py"
+        ],
+        "capabilities": [
+          "gap_analysis",
+          "self_healing",
+          "roadmap_generation",
+          "process_optimization",
+          "resource_optimization",
+          "health_checks",
+          "metric_collection",
+          "anomaly_detection",
+          "auto_refactoring",
+          "evolutionary_architecture"
+        ]
+      }
+    },
+    {
+      "id": "cap10.user_interface",
+      "name": "User Interface",
+      "category": "Interface",
+      "criticality": "MEDIUM",
+      "weight": 0.12,
+      "description": "The Face layer - provides human interaction touchpoints.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/cli/main.py",
+          "src/maestro_hive/cli/interactive.py",
+          "src/maestro_hive/api/dashboard.py"
+        ],
+        "capabilities": [
+          "cli_usability",
+          "interactive_mode",
+          "dashboard",
+          "progress_indication",
+          "notifications",
+          "config_management",
+          "help_documentation",
+          "onboarding",
+          "feedback_collection",
+          "multi_modal"
+        ]
+      }
+    }
+  ],
+  "validation_rules": {
+    "minimum_capabilities_per_block": 5,
+    "required_file_extensions": [".py"],
+    "capability_detection_method": "keyword_search"
+  },
+  "maturity_calculation": {
+    "formula": "SUM(capability_score * weight)",
+    "levels": [
+      {"name": "Initial", "min": 0, "max": 19, "color": "red"},
+      {"name": "Managed", "min": 20, "max": 39, "color": "orange"},
+      {"name": "Defined", "min": 40, "max": 59, "color": "yellow"},
+      {"name": "Quantitatively Managed", "min": 60, "max": 79, "color": "light_green"},
+      {"name": "Optimizing", "min": 80, "max": 94, "color": "green"},
+      {"name": "World-Class", "min": 95, "max": 100, "color": "blue"}
+    ]
+  }
+}

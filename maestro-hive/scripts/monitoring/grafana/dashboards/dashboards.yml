@@ -1,0 +1,16 @@
+# Grafana Dashboard Provisioning
+# MD-2030: Deploy Prometheus/Grafana Monitoring Stack
+
+apiVersion: 1
+
+providers:
+  - name: 'Maestro Dashboards'
+    orgId: 1
+    folder: 'Maestro'
+    folderUid: 'maestro'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

@@ -64,6 +64,7 @@ class SuppressionEntry:
     expires: Optional[datetime] = None
     author: str = "unknown"
     justification: str = ""
+    adr_reference: str = ""  # MD-2086: Required ADR reference (e.g., "ADR-0023")
     created_at: datetime = field(default_factory=datetime.now)
     last_used: Optional[datetime] = None
     use_count: int = 0
@@ -109,6 +110,7 @@ class SuppressionEntry:
             'expires': self.expires.isoformat() if self.expires else None,
             'author': self.author,
             'justification': self.justification,
+            'adr_reference': self.adr_reference,  # MD-2086
             'created_at': self.created_at.isoformat(),
             'last_used': self.last_used.isoformat() if self.last_used else None,
             'use_count': self.use_count,
@@ -129,6 +131,7 @@ class SuppressionEntry:
             expires=datetime.fromisoformat(data['expires']) if data.get('expires') else None,
             author=data.get('author', 'unknown'),
             justification=data.get('justification', ''),
+            adr_reference=data.get('adr_reference', ''),  # MD-2086
             created_at=datetime.fromisoformat(data['created_at']) if data.get('created_at') else datetime.now(),
             last_used=datetime.fromisoformat(data['last_used']) if data.get('last_used') else None,
             use_count=data.get('use_count', 0),
@@ -570,9 +573,21 @@ class SuppressionManager:
 
         return metrics
 
-    def validate_suppression(self, suppression: SuppressionEntry) -> tuple[bool, Optional[str]]:
+    def validate_suppression(
+        self,
+        suppression: SuppressionEntry,
+        require_adr: bool = True,
+        adr_directory: str = "docs/adr"
+    ) -> tuple[bool, Optional[str]]:
         """
         Validate a suppression entry.
+
+        MD-2086: All suppressions require ADR reference.
+
+        Args:
+            suppression: Suppression entry to validate
+            require_adr: Whether to require ADR reference (default: True)
+            adr_directory: Directory containing ADR files
 
         Returns:
             Tuple of (is_valid, error_message)
@@ -603,6 +618,32 @@ class SuppressionManager:
         # Check justification for permanent suppressions
         if suppression.permanent and not suppression.justification:
             return False, "Justification required for permanent suppressions"
+
+        # MD-2086: Require ADR reference
+        if require_adr:
+            if not suppression.adr_reference:
+                return False, "ADR reference is required for all suppressions"
+
+            # Validate ADR exists
+            try:
+                from acc.adr_integration import ADRValidator
+                validator = ADRValidator(adr_directory=adr_directory)
+                result = validator.validate_adr(suppression.adr_reference)
+
+                if not result.valid:
+                    return False, f"Invalid ADR reference: {result.error_message}"
+
+                # Sync expiry with ADR review date if available
+                if result.adr_reference and result.adr_reference.review_date:
+                    if not suppression.expires:
+                        suppression.expires = result.adr_reference.review_date
+                    elif suppression.expires > result.adr_reference.review_date:
+                        logger.warning(
+                            f"Suppression {suppression.id} expires after ADR review date"
+                        )
+
+            except ImportError:
+                logger.warning("ADR integration module not available, skipping ADR validation")
 
         return True, None
 

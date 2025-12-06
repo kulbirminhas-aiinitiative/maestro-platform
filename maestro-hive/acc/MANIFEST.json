@@ -1,0 +1,133 @@
+{
+  "module": "acc",
+  "version": "2.0.0",
+  "epic": "MD-2046",
+  "status": "COMPLETED",
+  "completed_at": "2025-12-02T17:15:00Z",
+  "description": "Architectural Conformance Checking module for Maestro Platform",
+
+  "components": {
+    "import_graph_builder": {
+      "file": "import_graph_builder.py",
+      "version": "2.0.0",
+      "task": "MD-2081",
+      "features": [
+        "parallel_scanning",
+        "incremental_caching",
+        "dynamic_import_detection",
+        "star_import_handling",
+        "__all__exports_parsing",
+        "namespace_package_support"
+      ]
+    },
+    "architecture_diff": {
+      "file": "architecture_diff.py",
+      "version": "1.0.0",
+      "task": "MD-2085",
+      "features": [
+        "architecture_snapshots",
+        "diff_computation",
+        "historical_tracking",
+        "trend_analysis"
+      ]
+    },
+    "adr_integration": {
+      "file": "adr_integration.py",
+      "version": "1.0.0",
+      "task": "MD-2086",
+      "features": [
+        "adr_validation",
+        "adr_parsing",
+        "suppression_linking",
+        "review_date_sync"
+      ]
+    },
+    "suppression_system": {
+      "file": "suppression_system.py",
+      "version": "2.0.0",
+      "task": "MD-2086",
+      "features": [
+        "adr_required_suppressions",
+        "pattern_matching",
+        "expiry_management"
+      ]
+    },
+    "cycle_analyzer": {
+      "file": "cycle_analyzer.py",
+      "version": "1.0.0",
+      "task": "MD-2088",
+      "features": [
+        "cycle_classification",
+        "breaking_point_analysis",
+        "approval_workflow",
+        "severity_mapping"
+      ]
+    },
+    "autofix_engine": {
+      "file": "autofix_engine.py",
+      "version": "1.0.0",
+      "task": "MD-2089",
+      "features": [
+        "layer_violation_fixes",
+        "cycle_breaking_suggestions",
+        "coupling_reduction_patterns",
+        "code_change_templates"
+      ]
+    },
+    "persistence": {
+      "directory": "persistence/",
+      "version": "1.0.0",
+      "task": "MD-2087",
+      "files": [
+        "postgres_store.py",
+        "redis_cache.py"
+      ],
+      "features": [
+        "postgresql_storage",
+        "redis_caching",
+        "audit_trail",
+        "synced_store"
+      ]
+    }
+  },
+
+  "dependencies": {
+    "required": [
+      "networkx",
+      "pyyaml"
+    ],
+    "optional": [
+      "psycopg2-binary",
+      "redis",
+      "asyncpg"
+    ]
+  },
+
+  "api_endpoints": {
+    "rest": [
+      "GET /api/v1/acc/graph/{iteration_id}",
+      "GET /api/v1/acc/graph/{iteration_id}/violations",
+      "GET /api/v1/acc/graph/{iteration_id}/cycles",
+      "GET /api/v1/acc/graph/{iteration_id}/coupling",
+      "GET /api/v1/acc/manifests",
+      "POST /api/v1/acc/analysis/{iteration_id}/run"
+    ],
+    "websocket": [
+      "WS /api/v1/acc/analysis/{iteration_id}/stream"
+    ]
+  },
+
+  "validation": {
+    "script": "../scripts/verify_acc_epic.sh",
+    "last_validated": "2025-12-02T17:15:00Z",
+    "status": "PASSED"
+  },
+
+  "notes_for_agents": [
+    "DO NOT modify files without checking docs/ACC_EPIC_MD2046_CHANGELOG.md",
+    "Run scripts/verify_acc_epic.sh before making any changes",
+    "All suppressions now require ADR reference",
+    "Import graph builder uses parallel scanning by default",
+    "Snapshots are stored in reports/acc/snapshots/"
+  ]
+}

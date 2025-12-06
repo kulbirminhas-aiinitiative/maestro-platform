@@ -1,26 +1,139 @@
 [tool.poetry]
-name = "sdlc-team"
+name = "maestro-hive"
 version = "3.1.0"
 description = "Autonomous SDLC Engine with AI Team Orchestration"
 authors = ["SDLC Team"]
 readme = "README.md"
-packages = [{include = "."}]
+packages = [
+    {include = "observability"},
+    {include = "tri_audit"},
+    {include = "orchestrator"},
+    {include = "dde"},
+    {include = "bdv"},
+    {include = "acc"},
+    {include = "ics"},
+    {include = "utcp"},
+    {include = "contracts"},
+    {include = "services"},
+    {include = "database"},
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"
 httpx = "^0.28.1"
 anthropic = "^0.40.0"
-claude_team_sdk = {path = "../../", develop = true}
-maestro_core_api = {path = "../../../packages/core-api", develop = true}
+# claude_team_sdk = {path = "../../", develop = true}  # Disabled: path not found
+# maestro_core_api = {path = "../../../packages/core-api", develop = true}  # Disabled: path not found
 pydantic = "^2.11.10"
+
+# Observability (MD-1901 Epic)
+structlog = "^25.4.0"
+prometheus-client = "^0.23.1"
+opentelemetry-api = "^1.37.0"
+opentelemetry-sdk = "^1.37.0"
+opentelemetry-instrumentation-fastapi = "^0.58b0"
+opentelemetry-instrumentation-logging = "^0.58b0"
+opentelemetry-exporter-otlp-proto-grpc = "^1.37.0"
+psutil = "^7.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
 pytest-asyncio = "^0.23.0"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.12.0"
+
+# Code Quality Tools (MD-1884/MD-1892)
+black = "^24.0.0"
+isort = "^5.13.0"
+flake8 = "^7.0.0"
+mypy = "^1.8.0"
+bandit = "^1.7.0"
+safety = "^2.3.0"
+ruff = "^0.14.7"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry.scripts]
-sdlc-team = "team_execution:main"
+# [tool.poetry.scripts]
+# Entry point disabled until package restructuring is complete (MD-2148)
+# sdlc-team = "maestro_hive.team_execution:main"
+
+# =============================================================================
+# Code Quality Tool Configuration (MD-1884 Epic)
+# =============================================================================
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.mypy_cache
+  | \.pytest_cache
+  | \.venv
+  | __pycache__
+  | build
+  | dist
+  | docs
+  | generated_*
+  | maestro_ml/.venv
+  | node_modules
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+skip = [".venv", "maestro_ml/.venv", "node_modules", "generated_*"]
+known_first_party = ["maestro_hive", "observability", "tri_audit", "orchestrator"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = [
+    "generated_*",
+    "maestro_ml/.venv",
+    "node_modules",
+    "docs",
+    "tests/fixtures",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["observability", "tri_audit", "orchestrator"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/generated_*/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", "docs", "generated_*"]
+skips = ["B101"]  # Skip assert warnings in tests
