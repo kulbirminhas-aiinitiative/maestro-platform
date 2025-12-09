@@ -17,7 +17,9 @@
         "files": [
           "src/maestro_hive/core/orchestrator.py",
           "src/maestro_hive/core/block_interface.py",
-          "src/maestro_hive/core/state_manager.py"
+          "src/maestro_hive/core/state_manager.py",
+          "../../maestro-engine-new/src/orchestration/maestro_unified_orchestration_gateway.py",
+          "../../maestro-engine-new/src/workflow/workflow_engine.py"
         ],
         "capabilities": [
           "lifecycle_management",
@@ -29,9 +31,12 @@
           "resource_allocation",
           "multi_project",
           "async_operations",
-          "event_bus"
+          "event_bus",
+          "frontend_sync",
+          "sdlc_integration"
         ]
-      }
+      },
+      "roadmap_phase": "Phase 1: Foundation (Now)"
     },
     {
       "id": "cap2.team_management",
@@ -58,7 +63,8 @@
           "skill_matching",
           "context_sharing"
         ]
-      }
+      },
+      "roadmap_phase": "Phase 1: Foundation (Now)"
     },
     {
       "id": "cap3.requirements",
@@ -85,20 +91,25 @@
           "change_management",
           "traceability"
         ]
-      }
+      },
+      "roadmap_phase": "Phase 2: Intelligence (Next)"
     },
     {
       "id": "cap4.code_generation",
-      "name": "Code Generation",
+      "name": "Code Generation & Templates",
       "category": "Worker",
       "criticality": "HIGH",
-      "weight": 0.10,
+      "weight": 0.1,
       "description": "The Worker layer - generates production-quality code.",
       "requirements": {
         "files": [
           "src/maestro_hive/codegen/generator.py",
           "src/maestro_hive/codegen/templates.py",
-          "src/maestro_hive/codegen/refactoring.py"
+          "src/maestro_hive/codegen/refactoring.py",
+          "src/maestro_hive/blocks/templates/engine.py",
+          "src/maestro_hive/blocks/context_manager.py",
+          "src/maestro_hive/blocks/templates/evolution_engine.py",
+          "src/maestro_hive/blocks/templates/evolution/ab_testing.py"
         ],
         "capabilities": [
           "scaffolding",
@@ -110,36 +121,81 @@
           "performance_optimization",
           "api_design",
           "db_schema_design",
-          "integration_logic"
+          "integration_logic",
+          "atomic_assembly",
+          "context_persistence",
+          "evolutionary_learning",
+          "usage_analytics",
+          {
+            "name": "ab_testing_integration",
+            "description": "Leverage Conductor's A/B testing engine to serve different template versions and measure success."
+          }
         ]
-      }
+      },
+      "roadmap_phase": "Phase 2: Intelligence (Next)"
     },
     {
       "id": "cap5.quality_assurance",
       "name": "Quality Assurance",
       "category": "Quality",
       "criticality": "HIGH",
-      "weight": 0.10,
+      "weight": 0.1,
       "description": "The Inspector layer - ensures code quality through testing and validation.",
       "requirements": {
         "files": [
           "src/maestro_hive/quality/quality_fabric_client.py",
           "src/maestro_hive/testing/harness.py",
-          "src/maestro_hive/testing/test_generator.py"
+          "src/maestro_hive/testing/test_generator.py",
+          "quality-fabric-config.yaml"
         ],
         "capabilities": [
-          "unit_test_gen",
-          "integration_test_gen",
-          "e2e_test_gen",
-          "test_execution",
-          "coverage_analysis",
-          "bug_detection",
-          "regression_testing",
-          "performance_testing",
-          "security_scanning",
-          "quality_gates"
+          {
+            "name": "quality_fabric_configuration",
+            "description": "Define comprehensive test strategy (Unit, Integration, Contract) using the Conductor schema."
+          },
+          {
+            "name": "unit_test_gen",
+            "description": "Automatically generate unit tests for individual functions and classes using PyTest."
+          },
+          {
+            "name": "integration_test_gen",
+            "description": "Generate tests that verify interactions between multiple components or modules."
+          },
+          {
+            "name": "e2e_test_gen",
+            "description": "Generate end-to-end scenarios that validate full user workflows."
+          },
+          {
+            "name": "test_execution",
+            "description": "Execute test suites in a sandboxed environment and report results."
+          },
+          {
+            "name": "coverage_analysis",
+            "description": "Measure code coverage and identify untested code paths."
+          },
+          {
+            "name": "bug_detection",
+            "description": "Analyze code and test failures to identify potential bugs and root causes."
+          },
+          {
+            "name": "regression_testing",
+            "description": "Ensure new changes do not break existing functionality."
+          },
+          {
+            "name": "performance_testing",
+            "description": "Benchmark code execution time and resource usage."
+          },
+          {
+            "name": "security_scanning",
+            "description": "Scan code for common security vulnerabilities (SAST)."
+          },
+          {
+            "name": "quality_gates",
+            "description": "Enforce quality thresholds (e.g., 80% coverage) before allowing merges."
+          }
         ]
-      }
+      },
+      "roadmap_phase": "Phase 2: Intelligence (Next)"
     },
     {
       "id": "cap6.knowledge_learning",
@@ -166,14 +222,15 @@
           "embedding_generation",
           "knowledge_graph"
         ]
-      }
+      },
+      "roadmap_phase": "Phase 2: Intelligence (Next)"
     },
     {
       "id": "cap7.compliance",
       "name": "Compliance & Governance",
       "category": "Governance",
       "criticality": "MEDIUM",
-      "weight": 0.10,
+      "weight": 0.1,
       "description": "The Auditor layer - enforces policies and maintains audit trails.",
       "requirements": {
         "files": [
@@ -191,16 +248,19 @@
           "cost_estimation",
           "risk_assessment",
           "standardization",
-          "approval_workflows"
+          "approval_workflows",
+          "jira_ticketing_integration",
+          "confluence_documentation_sync"
         ]
-      }
+      },
+      "roadmap_phase": "Phase 2: Intelligence (Next)"
     },
     {
       "id": "cap8.devops",
       "name": "DevOps & Infrastructure",
       "category": "Infrastructure",
       "criticality": "MEDIUM",
-      "weight": 0.10,
+      "weight": 0.1,
       "description": "The Plumber layer - manages CI/CD, deployment, and infrastructure.",
       "requirements": {
         "files": [
@@ -220,7 +280,8 @@
           "disaster_recovery",
           "cloud_integration"
         ]
-      }
+      },
+      "roadmap_phase": "Phase 2: Intelligence (Next)"
     },
     {
       "id": "cap9.self_reflection",
@@ -228,7 +289,7 @@
       "category": "Intelligence",
       "criticality": "HIGH",
       "weight": 0.08,
-      "description": "The Conscience layer - analyzes own performance and proposes improvements.",
+      "description": "Future: The Conscience layer - analyzes own performance and proposes improvements.",
       "requirements": {
         "files": [
           "src/maestro_hive/core/self_reflection/gap_detector.py",
@@ -247,7 +308,8 @@
           "auto_refactoring",
           "evolutionary_architecture"
         ]
-      }
+      },
+      "roadmap_phase": "Phase 3: Autonomy (Future)"
     },
     {
       "id": "cap10.user_interface",
@@ -260,7 +322,9 @@
         "files": [
           "src/maestro_hive/cli/main.py",
           "src/maestro_hive/cli/interactive.py",
-          "src/maestro_hive/api/dashboard.py"
+          "src/maestro_hive/api/dashboard.py",
+          "../../maestro-frontend-production/frontend/src/App.tsx",
+          "../../maestro-frontend-production/frontend/src/components/WorkflowBuilder.tsx"
         ],
         "capabilities": [
           "cli_usability",
@@ -272,25 +336,442 @@
           "help_documentation",
           "onboarding",
           "feedback_collection",
-          "multi_modal"
+          "multi_modal",
+          "workflow_builder",
+          "genai_assistant",
+          "team_selection_ui",
+          "real_time_monitoring_ui"
         ]
-      }
+      },
+      "roadmap_phase": "Phase 1: Foundation (Now)"
+    },
+    {
+      "id": "cap10.rag_persona_flow",
+      "name": "RAG Persona Integration",
+      "category": "Interface",
+      "criticality": "HIGH",
+      "weight": 0.1,
+      "description": "Integration of RAG workflows into the Persona creation and testing lifecycle.",
+      "requirements": {
+        "files": [
+          "../../maestro-frontend-production/frontend/src/components/foundry/PersonaCreateModal.tsx",
+          "../../maestro-frontend-production/frontend/src/components/rag/KnowledgeBaseManager.tsx",
+          "../../maestro-frontend-production/frontend/src/components/agentTesting/AgentPlayground.tsx"
+        ],
+        "capabilities": [
+          "rag_enable_toggle",
+          "knowledge_base_selector",
+          "rag_context_testing"
+        ]
+      },
+      "roadmap_phase": "Phase 1: Foundation (Now)"
+    },
+    {
+      "id": "cap10.team_mission_flow",
+      "name": "Team & Mission Execution Flow",
+      "category": "Interface",
+      "criticality": "HIGH",
+      "weight": 0.1,
+      "description": "End-to-end flow for creating teams and executing missions.",
+      "requirements": {
+        "files": [
+          "../../maestro-frontend-production/frontend/src/pages/TeamBuilderPage.tsx",
+          "../../maestro-frontend-production/frontend/src/components/team-builder/TeamEditModal.tsx",
+          "../../maestro-frontend-production/frontend/src/components/team-builder/AddMemberModal.tsx",
+          "../../maestro-frontend-production/frontend/src/components/mission/CreateMissionModal.tsx"
+        ],
+        "capabilities": [
+          "team_creation_from_template",
+          "mixed_human_ai_selection",
+          "mission_execution_with_team"
+        ]
+      },
+      "roadmap_phase": "Phase 1: Foundation (Now)"
+    },
+    {
+      "id": "cap10.mission_execution_handoff",
+      "name": "Mission to Execution Handoff",
+      "category": "Interface",
+      "criticality": "HIGH",
+      "weight": 0.1,
+      "description": "Seamless transition from mission discussion to artifact publishing and workflow execution.",
+      "requirements": {
+        "files": [
+          "../../maestro-frontend-production/frontend/src/components/mission/MissionControlDashboard.tsx",
+          "src/maestro_hive/integrations/confluence_publisher.py",
+          "src/maestro_hive/core/orchestrator.py",
+          "../../maestro-frontend-production/frontend/src/services/websocket.ts"
+        ],
+        "capabilities": [
+          "confluence_artifact_publisher",
+          "sdlc_phase_deduction",
+          "workflow_execution_trigger",
+          "real_time_execution_updates"
+        ]
+      },
+      "roadmap_phase": "Phase 1: Foundation (Now)"
+    },
+    {
+      "id": "cap10.human_approval_flow",
+      "name": "Human-in-the-Loop Approval",
+      "category": "Interface",
+      "criticality": "HIGH",
+      "weight": 0.1,
+      "description": "Mechanisms for AI agents to request and wait for human approval before critical actions.",
+      "requirements": {
+        "files": [
+          "../../maestro-frontend-production/frontend/src/components/mission/ApprovalRequestModal.tsx",
+          "src/maestro_hive/core/approval_gate.py",
+          "src/maestro_hive/core/orchestrator.py"
+        ],
+        "capabilities": [
+          "workflow_suspension",
+          "approval_notification",
+          "human_decision_capture",
+          "workflow_resumption"
+        ]
+      },
+      "roadmap_phase": "Phase 1: Foundation (Now)"
+    },
+    {
+      "id": "cap11.external_gap_analysis",
+      "name": "External Project Gap Analysis",
+      "category": "Intelligence",
+      "criticality": "HIGH",
+      "weight": 0.1,
+      "description": "Ability to scan external repositories against a user-defined vision and generate JIRA tickets for gaps.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/external_scanner/repo_manager.py",
+          "src/maestro_hive/external_scanner/vision_analyzer.py",
+          "src/maestro_hive/external_scanner/gap_engine.py",
+          "../../maestro-frontend-production/frontend/src/pages/ProjectScannerPage.tsx"
+        ],
+        "capabilities": [
+          "external_git_cloning",
+          "vision_to_requirements_llm",
+          "comparative_gap_analysis",
+          "bulk_ticket_creation",
+          "project_import_wizard"
+        ]
+      },
+      "roadmap_phase": "Phase 2: Intelligence (Next)"
+    },
+    {
+      "id": "cap12.persona_evolution",
+      "name": "Persona Evolution & Learning",
+      "category": "Intelligence",
+      "criticality": "HIGH",
+      "weight": 0.12,
+      "description": "Future: Enables AI Agents to learn from interactions, adapt their style, and evolve their personality over time based on human feedback and environmental context.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/personas/evolution_engine.py",
+          "src/maestro_hive/personas/memory_store.py",
+          "src/maestro_hive/personas/style_adapter.py",
+          "../../maestro-frontend-production/frontend/src/components/foundry/PersonaEvolutionStats.tsx"
+        ],
+        "capabilities": [
+          "interaction_logging",
+          "feedback_sentiment_analysis",
+          "style_parameter_adaptation",
+          "long_term_memory_consolidation",
+          "skill_acquisition_tracking"
+        ]
+      },
+      "roadmap_phase": "Phase 3: Autonomy (Future)"
+    },
+    {
+      "id": "cap12.team_evolution",
+      "name": "Team Evolution & Optimization",
+      "category": "Intelligence",
+      "criticality": "HIGH",
+      "weight": 0.12,
+      "description": "Future: Tracks team performance, benchmarks success rates, and recommends optimal team compositions based on historical data and evolving persona capabilities.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/teams/performance_tracker.py",
+          "src/maestro_hive/teams/optimizer.py",
+          "src/maestro_hive/teams/benchmarking.py",
+          "../../maestro-frontend-production/frontend/src/components/team-builder/TeamRecommender.tsx"
+        ],
+        "capabilities": [
+          "team_performance_metrics",
+          "success_rate_tracking",
+          "optimal_composition_recommendation",
+          "team_versioning",
+          "skill_gap_analysis_team_level"
+        ]
+      },
+      "roadmap_phase": "Phase 3: Autonomy (Future)"
+    },
+    {
+      "id": "cap12.team_simulation",
+      "name": "Team Simulation & Benchmarking",
+      "category": "Intelligence",
+      "criticality": "HIGH",
+      "weight": 0.12,
+      "description": "Future: Background simulation and mathematical modeling of team performance to identify optimal compositions for specific tasks.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/teams/simulator.py",
+          "src/maestro_hive/teams/predictive_model.py",
+          "src/maestro_hive/teams/ab_testing_engine.py",
+          "../../maestro-frontend-production/frontend/src/pages/TeamSimulationPage.tsx"
+        ],
+        "capabilities": [
+          "background_simulation_runner",
+          "predictive_performance_modeling",
+          "team_ab_testing",
+          "optimal_path_discovery",
+          "quiet_period_scheduler"
+        ]
+      },
+      "roadmap_phase": "Phase 3: Autonomy (Future)"
+    },
+    {
+      "id": "cap12.persona_trait_management",
+      "name": "Persona Trait Evolution & Guidance",
+      "category": "Intelligence",
+      "criticality": "HIGH",
+      "weight": 0.12,
+      "description": "Future: Granular tracking of persona traits, skill usage/decay, and guided evolution plans to shape agent personality over time.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/personas/trait_manager.py",
+          "src/maestro_hive/personas/skill_decay_tracker.py",
+          "src/maestro_hive/personas/evolution_guide.py",
+          "../../maestro-frontend-production/frontend/src/components/foundry/TraitEvolutionDashboard.tsx"
+        ],
+        "capabilities": [
+          "role_based_trait_definition",
+          "longitudinal_trait_measurement",
+          "skill_usage_analytics",
+          "guided_evolution_plans",
+          "trait_decay_simulation"
+        ]
+      },
+      "roadmap_phase": "Phase 3: Autonomy (Future)"
+    },
+    {
+      "id": "cap12.persona_fusion",
+      "name": "Persona Fusion & Hybridization",
+      "category": "Intelligence",
+      "criticality": "MEDIUM",
+      "weight": 0.1,
+      "description": "Future: Ability to merge multiple personas to create a new hybrid agent that inherits and blends traits, skills, and memories from its parents.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/personas/fusion_engine.py",
+          "src/maestro_hive/personas/trait_blender.py",
+          "../../maestro-frontend-production/frontend/src/components/foundry/PersonaFusionLab.tsx"
+        ],
+        "capabilities": [
+          "multi_persona_trait_blending",
+          "skill_set_merging",
+          "hybrid_memory_consolidation",
+          "conflict_resolution_strategy_merging",
+          "fusion_preview_simulation"
+        ]
+      },
+      "roadmap_phase": "Phase 3: Autonomy (Future)"
+    },
+    {
+      "id": "cap12.skill_injection",
+      "name": "AI Skill Injection Marketplace",
+      "category": "Intelligence",
+      "criticality": "MEDIUM",
+      "weight": 0.1,
+      "description": "Future: Mechanism to instantly 'install' new capabilities (knowledge, tools, prompts) into a Persona from a curated marketplace.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/personas/skill_injector.py",
+          "src/maestro_hive/personas/skill_registry.py",
+          "../../maestro-frontend-production/frontend/src/components/foundry/SkillMarketplace.tsx"
+        ],
+        "capabilities": [
+          "skill_package_definition",
+          "vector_store_injection",
+          "tool_registration",
+          "system_prompt_patching",
+          "skill_dependency_resolution"
+        ]
+      },
+      "roadmap_phase": "Phase 3: Autonomy (Future)"
+    },
+    {
+      "id": "cap12.team_retrospective",
+      "name": "Autonomous Team Retrospective & Evaluation",
+      "category": "Intelligence",
+      "criticality": "HIGH",
+      "weight": 0.12,
+      "description": "Future: Post-mission analysis where an external Evaluator reviews team performance alongside agent self-reflection to codify process improvements.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/teams/retrospective_engine.py",
+          "src/maestro_hive/teams/process_improver.py",
+          "src/maestro_hive/teams/evaluator_persona.py",
+          "../../maestro-frontend-production/frontend/src/components/mission/RetrospectiveReport.tsx"
+        ],
+        "capabilities": [
+          "post_mission_analysis",
+          "external_evaluation_metrics",
+          "process_rule_codification",
+          "team_memory_update",
+          "conflict_pattern_detection"
+        ]
+      },
+      "roadmap_phase": "Phase 3: Autonomy (Future)"
+    },
+    {
+      "id": "cap13.workflow_optimization",
+      "name": "Workflow Optimization & Standardization",
+      "category": "Process",
+      "criticality": "HIGH",
+      "weight": 0.15,
+      "description": "The 'Proof in the Pudding' layer. Ensures execution excellence through standardized toolkits, shared libraries, enforced best practices, and RAG-driven error prevention.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/workflow/standard_library.py",
+          "src/maestro_hive/workflow/best_practices_enforcer.py",
+          "src/maestro_hive/workflow/shared_toolkit.py",
+          "src/maestro_hive/workflow/error_prevention_rag.py",
+          "../../maestro-frontend-production/frontend/src/components/workflow/OptimizationDashboard.tsx"
+        ],
+        "capabilities": [
+          "standardized_tool_registry",
+          "best_practice_linter",
+          "shared_component_library",
+          "anti_pattern_detection",
+          "historical_error_rag",
+          "automated_testing_framework_integration",
+          "execution_metric_benchmarking"
+        ]
+      },
+      "roadmap_phase": "Phase 1: Foundation (Now)"
+    },
+    {
+      "id": "cap13.execution_resilience",
+      "name": "Resilient Execution & Observability Grid",
+      "category": "Infrastructure",
+      "criticality": "HIGH",
+      "weight": 0.15,
+      "description": "Enterprise-grade execution environment ensuring fault tolerance, deep observability (tracing), and secure sandboxing for agent operations.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/execution/task_queue.py",
+          "src/maestro_hive/execution/agent_tracer.py",
+          "src/maestro_hive/execution/circuit_breaker.py",
+          "src/maestro_hive/execution/sandbox_manager.py",
+          "../../maestro-frontend-production/frontend/src/components/execution/TraceViewer.tsx"
+        ],
+        "capabilities": [
+          "distributed_task_scheduling",
+          "agent_thought_tracing",
+          "llm_circuit_breaking",
+          "automatic_retry_policies",
+          "secure_code_sandbox",
+          "execution_state_recovery"
+        ]
+      },
+      "roadmap_phase": "Phase 1: Foundation (Now)"
+    },
+    {
+      "id": "cap14.shadow_learning",
+      "name": "Shadow Learning & Action Replay",
+      "category": "Intelligence",
+      "criticality": "HIGH",
+      "weight": 0.12,
+      "description": "Future: The 'Watch & Learn' layer. Observes human developer actions, correlates edits with outcomes, and learns to autonomously replay successful patterns.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/learning/shadow_observer.py",
+          "src/maestro_hive/learning/action_replay_engine.py",
+          "src/maestro_hive/learning/behavioral_cloning.py",
+          "../../maestro-frontend-production/frontend/src/components/learning/ShadowModeDashboard.tsx"
+        ],
+        "capabilities": [
+          "ide_action_capture",
+          "terminal_command_logging",
+          "git_diff_correlation",
+          "behavioral_pattern_extraction",
+          "autonomous_replay_simulation",
+          "human_feedback_loop"
+        ]
+      },
+      "roadmap_phase": "Phase 3: Autonomy (Future)"
+    },
+    {
+      "id": "cap15.strategic_autonomy",
+      "name": "Strategic Autonomy & Goal Decomposition",
+      "category": "Strategy",
+      "criticality": "HIGH",
+      "weight": 0.15,
+      "description": "Future: The 'CEO' layer. Takes abstract business goals and autonomously decomposes them into technical roadmaps, epics, and executable JIRA tickets.",
+      "requirements": {
+        "files": [
+          "src/maestro_hive/strategy/goal_decomposer.py",
+          "src/maestro_hive/strategy/opportunity_scanner.py",
+          "src/maestro_hive/strategy/roadmap_generator.py",
+          "../../maestro-frontend-production/frontend/src/pages/StrategicCommandCenter.tsx"
+        ],
+        "capabilities": [
+          "abstract_goal_parsing",
+          "strategic_roadmap_generation",
+          "autonomous_ticket_creation",
+          "kpi_driven_prioritization",
+          "resource_allocation_planning"
+        ]
+      },
+      "roadmap_phase": "Phase 3: Autonomy (Future)"
     }
   ],
   "validation_rules": {
     "minimum_capabilities_per_block": 5,
-    "required_file_extensions": [".py"],
+    "required_file_extensions": [
+      ".py"
+    ],
     "capability_detection_method": "keyword_search"
   },
   "maturity_calculation": {
     "formula": "SUM(capability_score * weight)",
     "levels": [
-      {"name": "Initial", "min": 0, "max": 19, "color": "red"},
-      {"name": "Managed", "min": 20, "max": 39, "color": "orange"},
-      {"name": "Defined", "min": 40, "max": 59, "color": "yellow"},
-      {"name": "Quantitatively Managed", "min": 60, "max": 79, "color": "light_green"},
-      {"name": "Optimizing", "min": 80, "max": 94, "color": "green"},
-      {"name": "World-Class", "min": 95, "max": 100, "color": "blue"}
+      {
+        "name": "Initial",
+        "min": 0,
+        "max": 19,
+        "color": "red"
+      },
+      {
+        "name": "Managed",
+        "min": 20,
+        "max": 39,
+        "color": "orange"
+      },
+      {
+        "name": "Defined",
+        "min": 40,
+        "max": 59,
+        "color": "yellow"
+      },
+      {
+        "name": "Quantitatively Managed",
+        "min": 60,
+        "max": 79,
+        "color": "light_green"
+      },
+      {
+        "name": "Optimizing",
+        "min": 80,
+        "max": 94,
+        "color": "green"
+      },
+      {
+        "name": "World-Class",
+        "min": 95,
+        "max": 100,
+        "color": "blue"
+      }
     ]
   }
 }

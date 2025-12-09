@@ -33,11 +33,30 @@ from datetime import datetime
 import requests
 from base64 import b64encode
 
+import hashlib
+
 # Import the GapDetector
-from gap_detector import GapDetector, Gap
+try:
+    from .gap_detector import GapDetector, Gap
+except ImportError:
+    from gap_detector import GapDetector, Gap
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+def get_gap_hash(gap: Gap) -> str:
+    """Generate a deterministic hash for a gap."""
+    # Use block_id and gap_type as the primary identity
+    unique_str = f"{gap.block_id}|{gap.gap_type}"
+    
+    # If metadata has specific capability/file info, include it to avoid collisions
+    if gap.metadata:
+        if 'capability' in gap.metadata:
+            unique_str += f"|{gap.metadata['capability']}"
+        elif 'file' in gap.metadata:
+            unique_str += f"|{gap.metadata['file']}"
+            
+    return hashlib.md5(unique_str.encode()).hexdigest()
 
 
 @dataclass
@@ -134,7 +153,6 @@ class GapToJira:
         self._auth = b64encode(f"{config.email}:{config.api_token}".encode()).decode()
         self._headers = {
             "Authorization": f"Basic {self._auth}",
-            "Content-Type": "application/json",
             "Accept": "application/json"
         }
 
@@ -147,7 +165,7 @@ class GapToJira:
         Fetch all open tickets created by GapDetector.
         
         Returns:
-            Dictionary mapping block_id -> ticket details
+            Dictionary mapping gap_hash -> ticket details
         """
         jql = (
             f'project = {self.config.project_key} AND '
@@ -158,23 +176,23 @@ class GapToJira:
         url = self._api_url("search/jql")
         payload = {
             "jql": jql,
-            "maxResults": 100,  # Adjust pagination if needed
+            "maxResults": 100,
             "fields": ["summary", "status", "labels"]
         }
         
         mapping = {}
-        start_at = 0
+        next_page_token = None
         
         while True:
             try:
-                # Rate limiting
                 time.sleep(0.2)
+                if next_page_token:
+                    payload["nextPageToken"] = next_page_token
                 
-                payload["startAt"] = start_at
                 response = requests.post(url, headers=self._headers, json=payload)
                 
                 if response.status_code != 200:
-                    logger.error(f"Failed to fetch open tickets: {response.status_code}")
+                    logger.error(f"Failed to fetch open tickets: {response.status_code} - {response.text}")
                     break
                     
                 data = response.json()
@@ -184,22 +202,31 @@ class GapToJira:
                     break
                     
                 for issue in issues:
-                    # Extract block_id from labels
-                    block_id = None
+                    # Extract gap_hash from labels
+                    gap_hash = None
                     for label in issue["fields"]["labels"]:
-                        if label.startswith("gap-") and label != "gap-detector" and not label.startswith("gap-missing-"):
-                            block_id = label[4:]  # Remove 'gap-' prefix
+                        if label.startswith("gap-hash-"):
+                            gap_hash = label[9:]  # Remove 'gap-hash-' prefix
                             break
                     
-                    if block_id:
-                        mapping[block_id] = {
+                    # Fallback for legacy tickets using block_id
+                    if not gap_hash:
+                        for label in issue["fields"]["labels"]:
+                            if label.startswith("gap-") and label != "gap-detector" and not label.startswith("gap-missing-"):
+                                # This is a legacy ticket, we can't easily map it to a hash without calculating it
+                                # For now, we might skip or handle separately. 
+                                # Let's assume we only care about new hash-based tickets for robust sync.
+                                pass
+
+                    if gap_hash:
+                        mapping[gap_hash] = {
                             "key": issue["key"],
                             "summary": issue["fields"]["summary"],
                             "status": issue["fields"]["status"]["name"]
                         }
                 
-                start_at += len(issues)
-                if start_at >= data.get("total", 0):
+                next_page_token = data.get("nextPageToken")
+                if not next_page_token:
                     break
                     
             except Exception as e:
@@ -221,11 +248,13 @@ class GapToJira:
             True if successful
         """
         prefix = "**REVIEW** "
-        new_summary = current_summary
         
-        # Avoid double prefixing
-        if not current_summary.startswith(prefix):
-            new_summary = f"{prefix}{current_summary}"
+        # Optimization: If already marked, skip
+        if current_summary.startswith(prefix):
+            logger.info(f"Ticket {issue_key} already marked for review. Skipping update.")
+            return True
+
+        new_summary = f"{prefix}{current_summary}"
             
         # 1. Update Summary
         url = self._api_url(f"issue/{issue_key}")
@@ -236,7 +265,7 @@ class GapToJira:
         }
         
         try:
-            time.sleep(0.5) # Rate limiting
+            time.sleep(0.1) # Reduced rate limiting
             response = requests.put(url, headers=self._headers, json=payload)
             if response.status_code != 204:
                 logger.warning(f"Failed to update summary for {issue_key}: {response.status_code}")
@@ -263,7 +292,7 @@ class GapToJira:
         }
         
         try:
-            time.sleep(0.5)
+            time.sleep(0.1)
             response = requests.post(comment_url, headers=self._headers, json=comment_payload)
             if response.status_code == 201:
                 logger.info(f"Marked {issue_key} for review")
@@ -291,7 +320,7 @@ class GapToJira:
             f'(summary ~ "{gap.block_id}" OR labels = "gap-{gap.block_id}")'
         )
 
-        url = self._api_url("search/jql")
+        url = self._api_url("search")
         payload = {
             "jql": jql,
             "maxResults": 10,
@@ -307,7 +336,7 @@ class GapToJira:
 
         return []
 
-    def get_last_closed_ticket(self, gap_id: str) -> Optional[Dict[str, Any]]:
+    def get_last_closed_ticket(self, gap_hash: str) -> Optional[Dict[str, Any]]:
         """
         Check if this gap was previously closed/resolved.
         
@@ -316,8 +345,8 @@ class GapToJira:
         """
         jql = (
             f'project = {self.config.project_key} AND '
-            f'labels = "gap-{gap_id}" AND '
-            f'statusCategory = Done'
+            f'labels = "gap-hash-{gap_hash}" AND '
+            f'statusCategory = Done ORDER BY resolutiondate DESC'
         )
         
         # Sort by resolution date desc to get latest decision
@@ -325,8 +354,7 @@ class GapToJira:
         payload = {
             "jql": jql,
             "maxResults": 1,
-            "fields": ["summary", "status", "resolution", "resolutiondate"],
-            "orderBy": "resolutiondate DESC"
+            "fields": ["summary", "status", "resolution", "resolutiondate"]
         }
         
         try:
@@ -337,11 +365,11 @@ class GapToJira:
                 if issues:
                     return issues[0]
         except Exception as e:
-            logger.warning(f"Failed to check history for gap {gap_id}: {e}")
+            logger.warning(f"Failed to check history for gap {gap_hash}: {e}")
             
         return None
 
-    def create_ticket(self, gap: Gap, dry_run: bool = False, prefix: str = "") -> Optional[str]:
+    def create_ticket(self, gap: Gap, dry_run: bool = False, prefix: str = "", previous_ticket: str = None) -> Optional[str]:
         """
         Create a JIRA ticket for a gap.
 
@@ -349,12 +377,15 @@ class GapToJira:
             gap: The gap to create a ticket for
             dry_run: If True, don't actually create the ticket
             prefix: Optional prefix for the summary (e.g. "[REGRESSION]")
+            previous_ticket: Optional key of a previous ticket to link
 
         Returns:
             Created ticket key or None
         """
         # Build ticket data
-        summary = f"{prefix}[{gap.gap_type}] {gap.block_name}: {gap.description[:100]}"
+        summary_desc = gap.description.split('\n')[0][:100]
+        summary = f"{prefix}[{gap.gap_type}] {gap.block_name}: {summary_desc}"
+        gap_hash = get_gap_hash(gap)
 
         description = {
             "version": 1,
@@ -437,12 +468,28 @@ class GapToJira:
                 }
             ]
         }
+        
+        # Add link to previous ticket if exists
+        if previous_ticket:
+            description["content"].insert(0, {
+                "type": "panel",
+                "attrs": {"panelType": "warning"},
+                "content": [{
+                    "type": "paragraph",
+                    "content": [
+                        {"type": "text", "text": f"This is a re-occurrence of gap previously tracked in "},
+                        {"type": "text", "text": previous_ticket, "marks": [{"type": "strong"}]},
+                        {"type": "text", "text": "."}
+                    ]
+                }]
+            })
 
         labels = [
             "auto-generated",
             "gap-detector",
             self.GAP_TYPE_TO_LABEL.get(gap.gap_type, "gap-unknown"),
-            f"gap-{gap.block_id}"
+            f"gap-{gap.block_id}",
+            f"gap-hash-{gap_hash}"
         ]
 
         payload = {
@@ -516,45 +563,50 @@ class GapToJira:
         logger.info(f"Found {len(existing_tickets)} open gap tickets")
         
         # 2. Process current gaps (Create or Skip)
-        current_gap_ids = set()
+        current_gap_hashes = set()
         for gap in gaps:
-            current_gap_ids.add(gap.block_id)
+            gap_hash = get_gap_hash(gap)
+            current_gap_hashes.add(gap_hash)
             
-            if gap.block_id in existing_tickets:
-                ticket = existing_tickets[gap.block_id]
+            # Check if we have an OPEN ticket for this hash
+            if gap_hash in existing_tickets:
+                ticket = existing_tickets[gap_hash]
                 results["tickets_skipped"] += 1
                 results["skipped_reasons"].append({
                     "gap": gap.block_id,
-                    "reason": f"Existing ticket: {ticket['key']}"
+                    "reason": f"Existing open ticket: {ticket['key']}"
                 })
-                # logger.info(f"Skipping gap '{gap.block_id}' - existing ticket: {ticket['key']}")
                 continue
                 
-            # Check history for closed tickets
-            last_closed = self.get_last_closed_ticket(gap.block_id)
+            # No open ticket. Check history for CLOSED tickets.
+            last_closed = self.get_last_closed_ticket(gap_hash)
+            
             if last_closed:
                 resolution = last_closed["fields"].get("resolution")
                 resolution_name = resolution["name"] if resolution else "Done"
+                previous_key = last_closed['key']
                 
                 # Case 1: Explicitly marked as Won't Do / Out of Scope
                 if resolution_name in ["Won't Do", "Won't Fix", "Declined", "Out of Scope", "Not A Bug"]:
-                    results["tickets_skipped"] += 1
-                    results["skipped_reasons"].append({
-                        "gap": gap.block_id,
-                        "reason": f"Previously resolved as '{resolution_name}' in {last_closed['key']}"
-                    })
+                    # User requested: "if open then fine, else create a new ticket"
+                    # So even if Won't Fix, we create a new one to challenge/remind.
+                    logger.info(f"Gap {gap.block_id} persists despite being marked '{resolution_name}' in {previous_key}. Creating new ticket.")
+                    key = self.create_ticket(gap, dry_run=dry_run, prefix="[PERSISTENT] ", previous_ticket=previous_key)
+                    if key:
+                        results["tickets_created"] += 1
+                        results["created_keys"].append(key)
                     continue
                     
                 # Case 2: Marked as Done/Fixed, but gap reappeared -> REGRESSION
                 if resolution_name in ["Done", "Fixed", "Resolved", "Complete"]:
-                    logger.warning(f"Gap {gap.block_id} reappeared after being fixed in {last_closed['key']}!")
-                    key = self.create_ticket(gap, dry_run=dry_run, prefix="[REGRESSION] ")
+                    logger.warning(f"Gap {gap.block_id} reappeared after being fixed in {previous_key}!")
+                    key = self.create_ticket(gap, dry_run=dry_run, prefix="[REGRESSION] ", previous_ticket=previous_key)
                     if key:
                         results["tickets_created"] += 1
                         results["created_keys"].append(key)
                     continue
 
-            # Create new ticket (Standard)
+            # Create new ticket (Standard - No history found)
             key = self.create_ticket(gap, dry_run=dry_run)
             if key:
                 results["tickets_created"] += 1
@@ -563,15 +615,15 @@ class GapToJira:
                 results["tickets_failed"] += 1
                 
         # 3. Identify Resolved Gaps (Tickets that exist but gap is gone)
-        for block_id, ticket in existing_tickets.items():
-            if block_id not in current_gap_ids:
+        for gap_hash, ticket in existing_tickets.items():
+            if gap_hash not in current_gap_hashes:
                 # This gap is no longer detected!
                 if dry_run:
-                    logger.info(f"[DRY RUN] Would mark {ticket['key']} for REVIEW (Gap {block_id} resolved)")
+                    logger.info(f"[DRY RUN] Would mark {ticket['key']} for REVIEW (Gap {gap_hash} resolved)")
                     results["tickets_marked_review"] += 1
                     results["review_keys"].append(ticket['key'])
                 else:
-                    if self.mark_ticket_for_review(ticket['key'], ticket['summary'], f"Gap '{block_id}' no longer detected"):
+                    if self.mark_ticket_for_review(ticket['key'], ticket['summary'], f"Gap no longer detected"):
                         results["tickets_marked_review"] += 1
                         results["review_keys"].append(ticket['key'])
                         
@@ -612,6 +664,11 @@ def main():
         help="Parent EPIC key to link tickets to (e.g., MD-2481)"
     )
     parser.add_argument(
+        "--scope",
+        default=None,
+        help="Filter scan by scope (e.g., 'templates', 'quality', 'cap5')"
+    )
+    parser.add_argument(
         "--output",
         default=None,
         help="Output file for results (JSON format)"
@@ -638,7 +695,7 @@ def main():
     # Run gap detection
     logger.info(f"Scanning workspace: {workspace_root}")
     detector = GapDetector(str(workspace_root), str(registry_path))
-    gaps = detector.scan()
+    gaps = detector.scan(scope=args.scope)
 
     if not gaps:
         logger.info("No gaps detected. System is healthy!")

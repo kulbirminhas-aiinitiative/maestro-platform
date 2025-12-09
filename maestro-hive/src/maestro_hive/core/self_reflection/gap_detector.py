@@ -22,6 +22,7 @@ class Gap:
     description: str
     severity: str
     remediation: str
+    metadata: Optional[Dict[str, Any]] = None
 
 class GapDetector:
     def __init__(self, workspace_root: str, registry_path: str):
@@ -36,12 +37,29 @@ class GapDetector:
         with open(self.registry_path, 'r') as f:
             return json.load(f)
 
-    def scan(self) -> List[Gap]:
-        """Run the full self-reflection scan."""
+    def scan(self, scope: Optional[str] = None) -> List[Gap]:
+        """
+        Run the full self-reflection scan.
+        
+        Args:
+            scope: Optional filter string. If provided, only blocks matching
+                   the scope (by ID, name, or category) will be scanned.
+        """
         print(f"🔍 Starting Self-Reflection Scan on {self.workspace_root}...")
+        if scope:
+            print(f"   Filtering by scope: '{scope}'")
+            
         self.gaps = []
         
         for block in self.registry.get('blocks', []):
+            # Apply scope filter if provided
+            if scope:
+                s = scope.lower()
+                if (s not in block['id'].lower() and 
+                    s not in block['name'].lower() and 
+                    s != block.get('category', '').lower()):
+                    continue
+            
             self._check_block_structure(block)
             self._check_block_capabilities(block)
             
@@ -88,19 +106,32 @@ class GapDetector:
             except Exception:
                 continue
 
-        for cap in capabilities:
+        for cap_entry in capabilities:
+            # Handle both string and dict capabilities
+            if isinstance(cap_entry, dict):
+                cap_name = cap_entry['name']
+                cap_desc = cap_entry.get('description', '')
+            else:
+                cap_name = cap_entry
+                cap_desc = ''
+
             # Normalize capability to a keyword (e.g., "rollback" -> "rollback")
-            keyword = cap.lower().replace("_", " ")
-            keyword_variant = cap.lower().replace("_", "")
+            keyword = cap_name.lower().replace("_", " ")
+            keyword_variant = cap_name.lower().replace("_", "")
             
             if keyword not in combined_content and keyword_variant not in combined_content:
+                description = f"Capability '{cap_name}' not detected in implementation."
+                if cap_desc:
+                    description += f"\n\n**Definition:** {cap_desc}"
+
                 self.gaps.append(Gap(
                     block_id=block['id'],
                     block_name=block['name'],
                     gap_type="MISSING_CAPABILITY",
-                    description=f"Capability '{cap}' not detected in implementation.",
+                    description=description,
                     severity="MEDIUM", # Capabilities are usually less critical than the file itself
-                    remediation=f"Implement '{cap}' logic in {existing_files[0]}."
+                    remediation=f"Implement '{cap_name}' logic in {existing_files[0]}.",
+                    metadata={"capability": cap_name}
                 ))
 
     def generate_report(self, output_format: str = 'text') -> str:

@@ -46,6 +46,7 @@ class PilotProject:
     expected_artifacts: List[str]
     success_criteria: Dict[str, Any]
     config: Dict[str, Any]
+    test_scope: Dict[str, Any] = None  # New: Explicit Test Scope for TaaS
 
 # Pilot 1: API Gateway Microservice
 PILOT_1_API_GATEWAY = PilotProject(
@@ -86,6 +87,51 @@ PILOT_1_API_GATEWAY = PilotProject(
         "contract_validation": True,
         "enable_bdv": True,
         "enable_acc": True
+    },
+    test_scope={
+        "project_id": "pilot-001",
+        "scope_id": "scope-pilot-001-v2",
+        "environment": {
+            "type": "docker",
+            "image": "node:18-alpine",
+            "dependencies": ["redis"]
+        },
+        "lifecycle": {
+            "setup": ["npm install", "docker-compose up -d redis"],
+            "teardown": ["docker-compose down"]
+        },
+        "scenarios": [
+            {
+                "id": "API-001",
+                "name": "Health Check",
+                "description": "Verify /health endpoint returns 200 OK and status: up",
+                "test_type": "integration",
+                "target_component": "gateway",
+                "execution": {
+                    "command": "curl -f http://localhost:3000/health"
+                }
+            },
+            {
+                "id": "API-002",
+                "name": "Rate Limiting",
+                "description": "Verify 429 Too Many Requests after 100 req/min",
+                "test_type": "e2e",
+                "target_component": "gateway",
+                "execution": {
+                    "command": "ab -n 101 -c 10 http://localhost:3000/api/test"
+                }
+            },
+            {
+                "id": "SEC-001",
+                "name": "JWT Auth",
+                "description": "Verify 401 Unauthorized for missing header",
+                "test_type": "security",
+                "target_component": "gateway",
+                "execution": {
+                    "command": "curl -I http://localhost:3000/api/protected"
+                }
+            }
+        ]
     }
 )
 

@@ -1,0 +1,49 @@
+"""
+AI Persona Foundry - Constants
+Platform-wide constants and configuration defaults.
+"""
+
+# Version
+VERSION = "1.0.0"
+
+# Default configuration values
+DEFAULT_EMBEDDING_MODEL = "text-embedding-ada-002"
+DEFAULT_RETRIEVAL_TOP_K = 10
+DEFAULT_MAX_TOKENS = 4096
+DEFAULT_TEMPERATURE = 0.7
+
+# Rate limits
+MAX_EXECUTIONS_PER_MINUTE = 100
+MAX_TOOL_INVOCATIONS_PER_EXECUTION = 50
+MAX_KNOWLEDGE_BATCH_SIZE = 100
+
+# Timeouts (seconds)
+EXECUTION_TIMEOUT = 300
+TOOL_INVOCATION_TIMEOUT = 60
+KNOWLEDGE_RETRIEVAL_TIMEOUT = 30
+
+# Collaboration
+MAX_PERSONAS_PER_SESSION = 10
+MAX_MESSAGES_PER_SESSION = 1000
+SESSION_TIMEOUT_HOURS = 24
+
+# Learning
+EVOLUTION_FEEDBACK_THRESHOLD = 100
+MIN_PERFORMANCE_SCORE = 0.5
+EVOLUTION_IMPROVEMENT_THRESHOLD = 0.1
+
+# Innovation
+PATTERN_MIN_FREQUENCY = 5
+PATTERN_MIN_CONFIDENCE = 0.7
+
+# Domain defaults
+SUPPORTED_DOMAINS = ["sdlc", "engineering", "business", "creative"]
+DEFAULT_DOMAIN = "sdlc"
+
+# Health check
+HEALTH_CHECK_INTERVAL_SECONDS = 30
+HEALTH_CHECK_TIMEOUT_SECONDS = 5
+
+# Logging
+LOG_LEVEL = "INFO"
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

@@ -1,5 +1,5 @@
 {
-  "test_date": "2025-12-06T23:52:37.136078",
+  "test_date": "2025-12-09T12:37:55.962534",
   "total_scenarios": 12,
   "overall_coverage_score": 0.0,
   "scenarios_well_covered": 0,
@@ -135,21 +135,21 @@
   },
   "category_usage": {},
   "missing_categories": [
-    "iot",
-    "infrastructure",
-    "testing",
-    "background-processing",
-    "logging",
-    "security",
     "real_time",
-    "authentication",
+    "background-processing",
+    "frontend",
+    "api",
     "error-handling",
+    "logging",
+    "iot",
     "integration",
     "authorization",
-    "frontend",
+    "infrastructure",
+    "testing",
+    "authentication",
+    "architecture",
     "database",
-    "api",
-    "architecture"
+    "security"
   ],
   "critical_gaps": [
     "Personas with ZERO templates: requirement_analyst, solution_architect, frontend_developer, backend_developer, database_specialist, security_specialist, qa_engineer, devops_engineer",

@@ -336,6 +336,24 @@ services:
       - dev
     restart: unless-stopped
 
+  # ============================================================================
+  # Portainer (Management UI)
+  # ============================================================================
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: always
+    command: --admin-password '$$2b$$12$$kBslUxK1MwLUUxTD6.J/HOaEps3nZZz55Sv/kU3dOnMZ.k89i.Q0S'
+    ports:
+      - "18000:8000"
+      - "9443:9443"
+      - "19000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - trimodal-network
+
 networks:
   trimodal-network:
     driver: bridge
@@ -352,3 +370,4 @@ volumes:
   timescaledb-data:
   prometheus-data:
   grafana-data:
+  portainer_data:
