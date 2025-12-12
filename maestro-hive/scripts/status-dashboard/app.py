@@ -26,6 +26,15 @@ app.secret_key = os.environ.get('SECRET_KEY', 'maestro-status-dashboard-secret-2
 CORS(app)
 
 # Configuration
+# MD-3054 FIX: Configurable PM2 service filter prefixes
+# Can be overridden via PM2_SERVICE_PREFIXES environment variable (comma-separated)
+DEFAULT_PM2_PREFIXES = ['maestro', 'dev-', 'sandbox-', 'demo-', 'gateway', 'quality-fabric', 'llm-', 'rag-']
+PM2_SERVICE_PREFIXES = os.environ.get('PM2_SERVICE_PREFIXES', '').split(',') if os.environ.get('PM2_SERVICE_PREFIXES') else DEFAULT_PM2_PREFIXES
+
+# If empty (shows all) is explicitly configured
+if os.environ.get('PM2_SHOW_ALL', '').lower() == 'true':
+    PM2_SERVICE_PREFIXES = []  # Empty list = show all
+
 ENVIRONMENTS = {
     'development': {
         'name': 'Development',
@@ -127,9 +136,26 @@ def check_health_endpoint(host: str, port: int, timeout: int = 5) -> dict:
         return {'status': 'error', 'error': str(e)}
 
 
-def get_pm2_status() -> List[ServiceStatus]:
-    """Get PM2 process status."""
+def get_pm2_status(env_key: str = None) -> List[ServiceStatus]:
+    """Get PM2 process status, optionally filtered by environment.
+
+    Args:
+        env_key: Environment key to filter services (e.g., 'sandbox', 'development', 'demo')
+                 If provided, only services matching the environment prefix are returned.
+    """
     services = []
+
+    # MD-3090 FIX: Environment-specific service prefix mapping
+    # Each environment should only show its own services
+    ENV_SERVICE_PREFIXES = {
+        'development': ['dev-', 'development-'],
+        'sandbox': ['sandbox-'],
+        'demo': ['demo-', 'maestro-'],  # demo uses maestro- prefix or demo-
+    }
+
+    # Get the prefixes for this environment
+    env_prefixes = ENV_SERVICE_PREFIXES.get(env_key, []) if env_key else []
+
     try:
         result = subprocess.run(
             ['pm2', 'jlist'],
@@ -140,10 +166,17 @@ def get_pm2_status() -> List[ServiceStatus]:
         if result.returncode == 0:
             pm2_list = json.loads(result.stdout)
             for proc in pm2_list:
-                # Filter to maestro-related processes
                 name = proc.get('name', '')
-                if not name.startswith('maestro'):
-                    continue
+
+                # MD-3090 FIX: Filter by environment-specific prefix
+                # If env_key is provided, only show services for that environment
+                if env_prefixes:
+                    if not any(name.startswith(prefix) for prefix in env_prefixes):
+                        continue
+                else:
+                    # Fallback to global prefix filter if no env_key specified
+                    if PM2_SERVICE_PREFIXES and not any(name.startswith(prefix) for prefix in PM2_SERVICE_PREFIXES):
+                        continue
 
                 pm2_env = proc.get('pm2_env', {})
                 monit = proc.get('monit', {})
@@ -227,10 +260,10 @@ def get_environment_status(env_key: str) -> EnvironmentStatus:
         config.get('health_port', 4100)
     )
 
-    # Get PM2 services if enabled
+    # Get PM2 services if enabled - MD-3090 FIX: pass env_key for filtering
     services = []
     if config.get('pm2_enabled', False):
-        services = get_pm2_status()
+        services = get_pm2_status(env_key)
 
     # Determine overall status
     if health_status['status'] == 'healthy' and all(s.status == 'online' for s in services):

@@ -88,6 +88,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 # Core imports
 from config import CLAUDE_CONFIG, OUTPUT_CONFIG
 from session_manager import SessionManager, SDLCSession
+from orchestrator.event_bus import EventBus, EventType
+from personas import SDLCPersonas, MAESTRO_ENGINE_AVAILABLE
 
 # DDE - Dependency-Driven Execution modules
 try:
@@ -186,13 +188,25 @@ except ImportError as e:
 
 # Claude Code API Layer - Standalone package
 try:
-    import sys
-    sys.path.insert(0, '/home/ec2-user/projects/maestro-platform')
-    from claude_code_api_layer import ClaudeCLIClient
+    # MD-3054: Use local adapter with stdin fix instead of external package
+    try:
+        from claude_client_adapter import ClaudeCLIClient
+    except ImportError:
+        from .claude_client_adapter import ClaudeCLIClient
+        
     CLAUDE_SDK_AVAILABLE = True
-except ImportError:
-    CLAUDE_SDK_AVAILABLE = False
-    logging.error("claude_code_api_layer not available")
+    logging.info("✅ Claude SDK loaded (Local Adapter)")
+except ImportError as e:
+    logging.warning(f"⚠️ Local Claude adapter not found, trying external: {e}")
+    try:
+        import sys
+        sys.path.insert(0, '/home/ec2-user/projects/maestro-platform')
+        from claude_code_api_layer import ClaudeCLIClient
+        CLAUDE_SDK_AVAILABLE = True
+        logging.info("✅ Claude SDK loaded (External)")
+    except ImportError:
+        CLAUDE_SDK_AVAILABLE = False
+        logging.error("claude_code_api_layer not available")
 
 # RAG Template Client for template recommendations
 try:
@@ -203,6 +217,27 @@ except ImportError:
     logging.warning("RAG template client not available")
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# EXCEPTIONS (MD-3123 - Governance-Aware V3)
+# =============================================================================
+
+class GovernanceViolation(Exception):
+    """
+    Raised when a tool call violates governance policy (MD-3123 AC-1).
+
+    This exception is thrown when the Enforcer detects an action that
+    violates policy.yaml constraints, such as:
+    - Attempting to modify protected files (.env, secrets, etc.)
+    - Forbidden tool usage based on role
+    - Budget exceeded
+    - Insufficient permissions
+    """
+    def __init__(self, message: str, violation_type: str = "policy_violation", persona_id: str = ""):
+        super().__init__(message)
+        self.violation_type = violation_type
+        self.persona_id = persona_id
 
 
 # =============================================================================
@@ -343,6 +378,22 @@ class TeamComposerAgent:
         else:
             self._scorer = None
             logger.warning("BlueprintScorer not available, using fallback scoring")
+
+    def _read_file_safe(self, file_path: str) -> str:
+        """Safely read file content for Quality Fabric validation."""
+        try:
+            path = Path(file_path)
+            if path.exists() and path.is_file():
+                return path.read_text(errors='replace')
+            # Try relative to output dir if absolute fails
+            if hasattr(self, 'output_dir') and self.output_dir:
+                path = self.output_dir / file_path
+                if path.exists() and path.is_file():
+                    return path.read_text(errors='replace')
+            return ""
+        except Exception as e:
+            logger.warning(f"Failed to read file {file_path}: {e}")
+            return ""
     
     async def analyze_requirement(
         self,
@@ -992,6 +1043,28 @@ class TeamExecutionEngineV2:
         self.team_composer = TeamComposerAgent()
         self.contract_designer = ContractDesignerAgent()
 
+        # Initialize Event Bus (MD-3125)
+        # Use the get_event_bus() singleton for consistent event handling across components
+        from orchestrator.event_bus import get_event_bus
+        self.event_bus = get_event_bus()
+        logger.info("✅ Event Bus initialized")
+
+        # Initialize Enforcer Middleware (MD-3123 - Governance-Aware V3)
+        # The Enforcer validates all tool calls against policy.yaml
+        self.enforcer = None
+        try:
+            from maestro_hive.governance.enforcer import Enforcer, AgentContext, PermissionDeniedError
+            policy_path = Path(__file__).parent.parent.parent.parent / "config" / "governance" / "policy.yaml"
+            if policy_path.exists():
+                self.enforcer = Enforcer(str(policy_path))
+                logger.info("✅ Enforcer Middleware initialized (Governance-Aware V3)")
+            else:
+                logger.info("  ℹ️  No policy.yaml found - Enforcer disabled")
+        except ImportError as e:
+            logger.warning(f"Enforcer not available: {e}")
+        except Exception as e:
+            logger.warning(f"Failed to initialize Enforcer: {e}")
+
         # RAG Client for template recommendations
         self.rag_client = None
         if RAG_CLIENT_AVAILABLE:
@@ -1013,7 +1086,99 @@ class TeamExecutionEngineV2:
         logger.info(f"   Blueprints available: {BLUEPRINTS_AVAILABLE}")
         logger.info(f"   Claude SDK available: {CLAUDE_SDK_AVAILABLE}")
         logger.info(f"   RAG Client available: {self.rag_client is not None}")
-    
+        logger.info(f"   Enforcer available: {self.enforcer is not None}")
+
+    def validate_tool_call(
+        self,
+        tool_name: str,
+        target_path: Optional[str] = None,
+        persona_id: str = "anonymous",
+        action: str = "execute"
+    ) -> bool:
+        """
+        Validate a tool call through the Enforcer (MD-3123 AC-1, AC-3).
+
+        This method wraps all tool execution with governance policy checking.
+        Every tool call MUST be associated with a persona_id (AC-3).
+
+        Args:
+            tool_name: The tool being called (e.g., "write_file", "run_terminal")
+            target_path: Optional path being accessed (e.g., ".env", "src/main.py")
+            persona_id: The agent making the call (AC-3 - Identity requirement)
+            action: The action type (default: "execute")
+
+        Returns:
+            True if allowed, raises GovernanceViolation if blocked
+
+        Raises:
+            GovernanceViolation: If the action violates policy.yaml (AC-1)
+        """
+        if not self.enforcer:
+            # No enforcer configured - allow all (backward compatible AC-4)
+            return True
+
+        try:
+            from maestro_hive.governance.enforcer import AgentContext
+
+            # Create agent context with persona identity (AC-3)
+            agent_context = AgentContext(
+                agent_id=persona_id,
+                role="developer_agent",  # Default role
+                reputation=50,
+                budget_remaining=100.0
+            )
+
+            # Check policy (AC-1)
+            result = self.enforcer.check(
+                agent=agent_context,
+                tool_name=tool_name,
+                target_path=target_path,
+                action=action
+            )
+
+            if not result.allowed:
+                # Try to emit violation event (best effort)
+                try:
+                    if self.event_bus:
+                        from orchestrator.event_bus import Event, EventType
+                        # Use WORKFLOW_FAILED for governance violations
+                        try:
+                            asyncio.get_event_loop().create_task(
+                                self.event_bus.emit_async(Event(
+                                    type=EventType.WORKFLOW_FAILED,
+                                    workflow_id="governance",
+                                    payload={
+                                        "event_type": "governance_violation",
+                                        "persona_id": persona_id,
+                                        "tool_name": tool_name,
+                                        "target_path": target_path,
+                                        "violation_type": result.violation_type.value if result.violation_type else "unknown",
+                                        "message": result.message
+                                    }
+                                ))
+                            )
+                        except RuntimeError:
+                            # No event loop running - skip event emission in sync context
+                            pass
+                except Exception as event_err:
+                    logger.debug(f"Could not emit violation event: {event_err}")
+
+                # Raise GovernanceViolation (AC-1) - this MUST happen
+                violation_type = result.violation_type.value if result.violation_type else "policy_violation"
+                raise GovernanceViolation(
+                    message=result.message or f"Tool '{tool_name}' blocked by policy for path '{target_path}'",
+                    violation_type=violation_type,
+                    persona_id=persona_id
+                )
+
+            return True
+
+        except GovernanceViolation:
+            raise  # Re-raise our exception - CRITICAL
+        except Exception as e:
+            logger.warning(f"Enforcer check failed (allowing action): {e}")
+            return True  # Fail-open for backward compatibility (AC-4)
+
     async def execute(
         self,
         requirement: str,
@@ -1033,10 +1198,47 @@ class TeamExecutionEngineV2:
         logger.info(f"📝 Requirement: {requirement[:100]}...")
         logger.info("="*80)
 
+        # Initialize Personas (MD-3126)
+        # Ensure personas are loaded before execution begins
+        if MAESTRO_ENGINE_AVAILABLE:
+            try:
+                logger.info("   🔄 Initializing persona system...")
+                adapter = SDLCPersonas._get_adapter()
+                if adapter:
+                    await adapter.ensure_loaded()
+                    logger.info("   ✅ Persona system initialized")
+            except Exception as e:
+                logger.error(f"   ❌ Failed to initialize persona system: {e}")
+                # Continue, as fallback might work or it might fail later
+
+        # Generate session_id early for event tracking (MD-3125)
+        # Session object is created later, but we need session_id for events now
+        workflow_session_id = session_id or str(uuid.uuid4())
+
+        # Emit Workflow Started Event (MD-3125)
+        if self.event_bus:
+            from orchestrator.event_bus import Event, EventType
+            await self.event_bus.emit_async(Event(
+                type=EventType.WORKFLOW_STARTED,
+                workflow_id=workflow_session_id,
+                payload={
+                    "requirement": requirement[:500],  # Truncate for payload size
+                    "constraints": constraints or {}
+                }
+            ))
+            logger.info(f"   📡 Event emitted: workflow.started (session={workflow_session_id[:8]}...)")
+
         # Phase timing helper
         phase_times = {}
-        def log_phase_time(phase_name: str, phase_start: datetime):
-            elapsed = (datetime.now() - phase_start).total_seconds()
+        def log_phase_time(phase_name: str, phase_start):
+            """Log phase timing - handles both datetime and float (time.time()) inputs."""
+            import time
+            if isinstance(phase_start, (int, float)):
+                # Handle time.time() style timestamps
+                elapsed = time.time() - phase_start
+            else:
+                # Handle datetime objects
+                elapsed = (datetime.now() - phase_start).total_seconds()
             phase_times[phase_name] = elapsed
             logger.info(f"   ⏱️  Phase completed in {elapsed:.1f}s")
 
@@ -1072,6 +1274,14 @@ class TeamExecutionEngineV2:
         logger.info("\n📊 Step 1: AI Requirement Analysis")
         step1_start = datetime.now()
 
+        # Emit Phase Started Event (MD-3125)
+        if self.event_bus:
+            await self.event_bus.emit_async(Event(
+                type=EventType.PHASE_STARTED,
+                workflow_id=workflow_session_id,
+                phase="requirement_analysis"
+            ))
+
         # Build context with RAG information for better classification
         classification_context = constraints.copy() if constraints else {}
         if template_package:
@@ -1089,21 +1299,56 @@ class TeamExecutionEngineV2:
 
         classification = await self.team_composer.analyze_requirement(requirement, classification_context)
         log_phase_time("Requirement Analysis", step1_start)
-        
+
+        # Emit Phase Completed Event (MD-3125)
+        if self.event_bus:
+            await self.event_bus.emit_async(Event(
+                type=EventType.PHASE_COMPLETED,
+                workflow_id=workflow_session_id,
+                phase="requirement_analysis",
+                payload={"duration_seconds": (datetime.now() - step1_start).total_seconds()}
+            ))
+
         # Step 2: AI recommends blueprint
         logger.info("\n🎯 Step 2: Blueprint Selection")
         step2_start = datetime.now()
+
+        # Emit Phase Started Event (MD-3125)
+        if self.event_bus:
+            await self.event_bus.emit_async(Event(
+                type=EventType.PHASE_STARTED,
+                workflow_id=workflow_session_id,
+                phase="blueprint_selection"
+            ))
+
         blueprint_rec = await self.team_composer.recommend_blueprint(
             classification,
             constraints
         )
         log_phase_time("Blueprint Selection", step2_start)
 
+        # Emit Phase Completed Event (MD-3125)
+        if self.event_bus:
+            await self.event_bus.emit_async(Event(
+                type=EventType.PHASE_COMPLETED,
+                workflow_id=workflow_session_id,
+                phase="blueprint_selection",
+                payload={"duration_seconds": (datetime.now() - step2_start).total_seconds()}
+            ))
+
         # Step 3: AI designs contracts
         logger.info("\n📝 Step 3: Contract Design")
         step3_start = datetime.now()
 
-        # ✅ FIXED: Extract previous phase contracts from constraints if present
+        # Emit Phase Started Event (MD-3125)
+        if self.event_bus:
+            await self.event_bus.emit_async(Event(
+                type=EventType.PHASE_STARTED,
+                workflow_id=workflow_session_id,
+                phase="contract_design"
+            ))
+
+        # Extract previous phase contracts from constraints if present
         previous_phase_contracts = None
         if constraints and "previous_phase_contracts" in constraints:
             previous_phase_contracts = constraints["previous_phase_contracts"]
@@ -1112,9 +1357,18 @@ class TeamExecutionEngineV2:
             requirement,
             classification,
             blueprint_rec,
-            previous_phase_contracts  # ✅ NEW: Pass previous contracts
+            previous_phase_contracts
         )
         log_phase_time("Contract Design", step3_start)
+
+        # Emit Phase Completed Event (MD-3125)
+        if self.event_bus:
+            await self.event_bus.emit_async(Event(
+                type=EventType.PHASE_COMPLETED,
+                workflow_id=workflow_session_id,
+                phase="contract_design",
+                payload={"duration_seconds": (datetime.now() - step3_start).total_seconds()}
+            ))
 
         # Step 4: Create session
         logger.info("\n💾 Step 4: Session Creation")
@@ -1122,7 +1376,7 @@ class TeamExecutionEngineV2:
         session = self.session_manager.create_session(
             requirement=requirement,
             output_dir=self.output_dir,
-            session_id=session_id
+            session_id=workflow_session_id  # Use pre-generated session_id for consistency
         )
         logger.info(f"   Session ID: {session.session_id}")
         log_phase_time("Session Creation", step4_start)
@@ -1130,6 +1384,15 @@ class TeamExecutionEngineV2:
         # Step 5: Execute team
         logger.info("\n🎬 Step 5: Team Execution")
         step5_start = datetime.now()
+
+        # Emit Phase Started Event (MD-3125)
+        if self.event_bus:
+            await self.event_bus.emit_async(Event(
+                type=EventType.PHASE_STARTED,
+                workflow_id=workflow_session_id,
+                phase="team_execution"
+            ))
+
         logger.info(f"   Team: {', '.join(blueprint_rec.personas)}")
         logger.info(f"   Pattern: {blueprint_rec.blueprint_name}")
         logger.info(f"   Contracts: {len(contracts)}")
@@ -1172,10 +1435,28 @@ class TeamExecutionEngineV2:
             )
         log_phase_time("Team Execution", step5_start)
 
+        # Emit Phase Completed Event (MD-3125)
+        if self.event_bus:
+            await self.event_bus.emit_async(Event(
+                type=EventType.PHASE_COMPLETED,
+                workflow_id=workflow_session_id,
+                phase="team_execution",
+                payload={"duration_seconds": (datetime.now() - step5_start).total_seconds()}
+            ))
+
         # =====================================================================
         # STEP 6: Quality Fabric Validation (TaaS)
         # =====================================================================
-        step6_start = time.time()
+        step6_start = datetime.now()
+
+        # Emit Phase Started Event (MD-3125)
+        if self.event_bus:
+            await self.event_bus.emit_async(Event(
+                type=EventType.PHASE_STARTED,
+                workflow_id=workflow_session_id,
+                phase="quality_validation"
+            ))
+
         qf_validations = {}
         qf_phase_gate = None
 
@@ -1210,10 +1491,10 @@ class TeamExecutionEngineV2:
 
                     # Prepare artifacts for Quality Fabric
                     output = {
-                        "code_files": [{"name": f, "content": ""} for f in persona_result.files_created if f.endswith(('.py', '.ts', '.js', '.java'))],
-                        "test_files": [{"name": f, "content": ""} for f in persona_result.files_created if 'test' in f.lower()],
-                        "documentation": [{"name": f, "content": ""} for f in persona_result.files_created if f.endswith(('.md', '.rst', '.txt'))],
-                        "config_files": [{"name": f, "content": ""} for f in persona_result.files_created if f.endswith(('.yaml', '.yml', '.json', '.toml'))],
+                        "code_files": [{"name": f, "content": self._read_file_safe(f)} for f in persona_result.files_created if f.endswith(('.py', '.ts', '.js', '.java'))],
+                        "test_files": [{"name": f, "content": self._read_file_safe(f)} for f in persona_result.files_created if 'test' in f.lower()],
+                        "documentation": [{"name": f, "content": self._read_file_safe(f)} for f in persona_result.files_created if f.endswith(('.md', '.rst', '.txt'))],
+                        "config_files": [{"name": f, "content": self._read_file_safe(f)} for f in persona_result.files_created if f.endswith(('.yaml', '.yml', '.json', '.toml'))],
                         "metadata": {
                             "quality_score": persona_result.quality_score,
                             "completeness_score": persona_result.completeness_score,
@@ -1278,6 +1559,17 @@ class TeamExecutionEngineV2:
                     logger.error("   Action: Address quality issues before proceeding")
                     logger.error("="*80)
 
+                    # Emit Workflow Failed Event (MD-3125)
+                    if self.event_bus:
+                        await self.event_bus.emit_async(Event(
+                            type=EventType.WORKFLOW_FAILED,
+                            workflow_id=workflow_session_id,
+                            payload={
+                                "error": "Phase gate blocked - quality threshold not met",
+                                "blockers": blockers
+                            }
+                        ))
+
                     # Return early with failure - don't proceed past blocked gate
                     return {
                         "success": False,
@@ -1318,6 +1610,15 @@ class TeamExecutionEngineV2:
 
         log_phase_time("Quality Fabric Validation", step6_start)
 
+        # Emit Phase Completed Event (MD-3125)
+        if self.event_bus:
+            await self.event_bus.emit_async(Event(
+                type=EventType.PHASE_COMPLETED,
+                workflow_id=workflow_session_id,
+                phase="quality_validation",
+                payload={"duration_seconds": (datetime.now() - step6_start).total_seconds()}
+            ))
+
         # Build result
         end_time = datetime.now()
         duration = (end_time - start_time).total_seconds()
@@ -1331,6 +1632,26 @@ class TeamExecutionEngineV2:
         logger.info(f"   TOTAL: {duration:.1f}s")
         logger.info("="*80)
         
+        # Emit Workflow Completed Event (MD-3125)
+        if self.event_bus:
+            # Aggregate files created from all personas
+            # MD-3130: Add hasattr check to handle different result types
+            all_files_created = []
+            if execution_result.persona_results:
+                for res in execution_result.persona_results.values():
+                    if hasattr(res, 'files_created'):
+                        all_files_created.extend(res.files_created)
+
+            await self.event_bus.emit_async(Event(
+                type=EventType.WORKFLOW_COMPLETED,
+                workflow_id=workflow_session_id,
+                payload={
+                    "status": "success" if execution_result.success else "failed",
+                    "quality_score": qf_phase_gate.get("overall_quality_score", 0) if qf_phase_gate else 0,
+                    "artifacts_count": len(all_files_created)
+                }
+            ))
+
         result = {
             "success": execution_result.success,
             "session_id": session.session_id,
@@ -1631,6 +1952,28 @@ class TeamExecutionEngineV2:
                 logger.error(f"[{correlation_id}] ❌ Verdict generation failed: {e}")
                 import traceback
                 logger.debug(f"[{correlation_id}] Verdict traceback: {traceback.format_exc()}")
+
+        # Emit Final Workflow Completed Event (MD-3125)
+        # This is emitted after trimodal validation is complete
+        if self.event_bus:
+            # Aggregate files created from all personas
+            # MD-3130: Add hasattr check to handle different result types
+            all_files_created_final = []
+            if execution_result.persona_results:
+                for res in execution_result.persona_results.values():
+                    if hasattr(res, 'files_created'):
+                        all_files_created_final.extend(res.files_created)
+
+            await self.event_bus.emit_async(Event(
+                type=EventType.WORKFLOW_COMPLETED,
+                workflow_id=workflow_session_id,
+                payload={
+                    "status": "success" if result.get("success", False) else "failed",
+                    "quality_score": result.get("quality", {}).get("overall_quality_score", 0),
+                    "artifacts_count": len(all_files_created_final),
+                    "verdict": result.get("verdict", {}).get("grade", "N/A") if result.get("verdict") else "N/A"
+                }
+            ))
 
         return result
 

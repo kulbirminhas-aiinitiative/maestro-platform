@@ -1,0 +1,37 @@
+MD-3018 Validation Report
+=========================
+
+EPIC: MD-3018 - Persona Trait Evolution & Guidance
+Status: Done (in JIRA)
+Actual Status: **Partially Complete / Fake Done**
+
+Summary
+-------
+The Epic is marked as "Done", but the frontend component is missing. The backend implementation appears complete.
+There are 4 child tasks (MD-2936 to MD-2939) which were auto-generated as "Missing File" tasks. 3 of these files actually exist now, but the tasks remain in "To Do".
+
+Detailed Findings
+-----------------
+
+### 1. Backend Implementation (Found)
+| Task | File | Status | Finding |
+| :--- | :--- | :--- | :--- |
+| MD-2936 | `src/maestro_hive/personas/trait_manager.py` | ✅ **Exists** | Implemented (637 lines). |
+| MD-2937 | `src/maestro_hive/personas/skill_decay_tracker.py` | ✅ **Exists** | Implemented (528 lines). |
+| MD-2938 | `src/maestro_hive/personas/evolution_guide.py` | ✅ **Exists** | Implemented (743 lines). |
+
+### 2. Frontend Implementation (Missing)
+| Task | File | Status | Finding |
+| :--- | :--- | :--- | :--- |
+| MD-2939 | `frontend/src/components/foundry/TraitEvolutionDashboard.tsx` | ❌ **Missing** | File does not exist. |
+
+### 3. Conclusion
+The backend work is done, but the frontend work is not. The Epic should not be "Done".
+The child tasks MD-2936, MD-2937, MD-2938 should be closed as "Done".
+MD-2939 should remain "To Do".
+
+Recommendation
+--------------
+1.  **Reopen MD-3018 (EPIC)**.
+2.  **Close MD-2936, MD-2937, MD-2938** (Mark as Done).
+3.  **Keep MD-2939 Open**.

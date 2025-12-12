@@ -82,6 +82,15 @@ from conversation_manager import ConversationHistory
 from collaborative_executor import CollaborativeExecutor
 from structured_output_extractor import StructuredOutputExtractor
 
+# MD-3096: Proactive Constraint Injection (BDV/ACC in prompts)
+try:
+    from constraint_injector import get_constraint_injector, InjectorConfig
+    CONSTRAINT_INJECTOR_AVAILABLE = True
+    logger.info("✅ ConstraintInjector loaded (MD-3096)")
+except ImportError:
+    CONSTRAINT_INJECTOR_AVAILABLE = False
+    logger.warning("⚠️ ConstraintInjector not available")
+
 # Claude Code SDK
 try:
     from claude_code_sdk import query, ClaudeCodeOptions
@@ -2592,6 +2601,38 @@ Your work will be validated. Requirements:
    - Meaningful error messages
 
 """
+
+        # MD-3096: Proactive Constraint Injection (BDV/ACC/Security)
+        # Inject constraints INTO prompts BEFORE code generation
+        if CONSTRAINT_INJECTOR_AVAILABLE and persona_id:
+            try:
+                injector = get_constraint_injector()
+
+                # Get contracts if available (for BDV scenarios)
+                contracts = getattr(self, '_current_contracts', [])
+
+                # Project context for ACC rules
+                project_context = {
+                    "output_dir": str(self.output_dir),
+                    "project_name": self.output_dir.name if self.output_dir else "unknown"
+                }
+
+                # Inject constraints
+                prompt, injection_result = injector.inject_constraints(
+                    base_prompt=prompt,
+                    persona_id=persona_id,
+                    requirement=requirement,
+                    contracts=contracts,
+                    project_context=project_context
+                )
+
+                if injection_result.total_constraints_injected > 0:
+                    logger.info(f"✅ Constraints injected for {persona_id}: "
+                               f"BDV={injection_result.bdv_scenarios_injected}, "
+                               f"ACC={injection_result.acc_rules_injected}, "
+                               f"Security={injection_result.security_constraints_injected}")
+            except Exception as e:
+                logger.warning(f"⚠️ Constraint injection failed for {persona_id}: {e}")
 
         return prompt
 

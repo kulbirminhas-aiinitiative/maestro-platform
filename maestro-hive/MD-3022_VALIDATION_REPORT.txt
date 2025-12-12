@@ -1,0 +1,30 @@
+MD-3022 Validation Report
+=========================
+
+EPIC: MD-3022 - External Project Gap Analysis Scanner
+Status: Done (in JIRA)
+Actual Status: **Not Started / Missing**
+
+Summary
+-------
+The Epic is marked as "Done", but all 4 child tasks are in "To Do" status. A file system check confirms that **none** of the required files exist.
+
+Detailed Findings
+-----------------
+
+### 1. Missing Files (Tasks)
+| Task | Required File | Status |
+| :--- | :--- | :--- |
+| MD-2920 | `src/maestro_hive/external_scanner/repo_manager.py` | ❌ **Missing** |
+| MD-2921 | `src/maestro_hive/external_scanner/vision_analyzer.py` | ❌ **Missing** |
+| MD-2922 | `src/maestro_hive/external_scanner/gap_engine.py` | ❌ **Missing** |
+| MD-2923 | `../../maestro-frontend-production/frontend/src/pages/ProjectScannerPage.tsx` | ❌ **Missing** |
+
+### 2. Conclusion
+The work for this Epic has not been performed. The "Done" status is incorrect.
+
+Recommendation
+--------------
+1.  **Reopen MD-3022 (EPIC)**.
+2.  **Keep Child Tasks Open**.
+3.  **Schedule Implementation**.

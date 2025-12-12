@@ -1,0 +1,44 @@
+[
+    {
+        "key": "AGORA-100",
+        "summary": "Design Event Bus Interface (Pub/Sub)",
+        "description": "Define the abstract base class for the Event Bus. It must support `publish(topic, message)` and `subscribe(topic, callback)`. It should be backend-agnostic (support Memory, Redis, NATS).",
+        "priority": "High",
+        "epic": "The Town Square"
+    },
+    {
+        "key": "AGORA-101",
+        "summary": "Implement InMemoryEventBus",
+        "description": "Create a reference implementation of the Event Bus using Python's `asyncio.Queue`. This allows local testing of multi-agent communication without external infrastructure.",
+        "priority": "High",
+        "epic": "The Town Square"
+    },
+    {
+        "key": "AGORA-102",
+        "summary": "Define Agent Communication Language (ACL) Schema",
+        "description": "Define the standard JSON schema for messages. Must include: `message_id`, `sender_pubkey`, `timestamp`, `performative` (REQUEST, PROPOSE, AGREE, REFUSE), and `content`.",
+        "priority": "High",
+        "epic": "The Town Square"
+    },
+    {
+        "key": "AGORA-103",
+        "summary": "Implement Agent Identity & Key Generation",
+        "description": "Create the `IdentityManager` class. On agent initialization, generate an Ed25519 keypair. Save the private key securely. Expose the public key as the Agent ID.",
+        "priority": "Medium",
+        "epic": "Identity & Trust"
+    },
+    {
+        "key": "AGORA-104",
+        "summary": "Implement Message Signing",
+        "description": "Integrate Identity with the Event Bus. Before publishing, sign the message payload with the private key. On receipt, verify the signature against the sender's public key.",
+        "priority": "Medium",
+        "epic": "Identity & Trust"
+    },
+    {
+        "key": "AGORA-105",
+        "summary": "Create Agent Registry Service",
+        "description": "Implement a service where agents can 'register' their presence and capabilities. `register(agent_id, guild, capabilities)`. Other agents can query this to find peers.",
+        "priority": "Medium",
+        "epic": "Guilds & Specialization"
+    }
+]

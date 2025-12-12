@@ -19,6 +19,7 @@ import re
 import difflib
 import logging
 import subprocess
+import os
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, asdict, field
@@ -265,7 +266,7 @@ Provide the fix.
             model: Model identifier for fix generation
         """
         self.model = model
-        self._api_key = None
+        self._api_key = os.environ.get("ANTHROPIC_API_KEY")
 
     def generate_fix(
         self,

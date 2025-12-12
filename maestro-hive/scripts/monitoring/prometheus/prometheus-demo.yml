@@ -1,5 +1,6 @@
 # Prometheus Configuration for Demo Server
 # MD-2030: Deploy Prometheus/Grafana Monitoring Stack to Demo Server
+# MD-3095: Enhanced with all service monitoring
 
 global:
   scrape_interval: 15s
@@ -30,35 +31,6 @@ scrape_configs:
           service: 'prometheus'
 
   # ============================================================================
-  # Maestro Backend API (port 4100)
-  # Primary application metrics endpoint
-  # ============================================================================
-  - job_name: 'maestro-backend'
-    static_configs:
-      - targets: ['host.docker.internal:4100']
-        labels:
-          service: 'maestro-backend'
-          tier: 'api'
-    metrics_path: /metrics
-    scheme: http
-    scrape_interval: 10s
-    scrape_timeout: 5s
-
-  # ============================================================================
-  # Maestro Backend Health Endpoint
-  # ============================================================================
-  - job_name: 'maestro-health'
-    static_configs:
-      - targets: ['host.docker.internal:4100']
-        labels:
-          service: 'maestro-backend'
-          tier: 'api'
-    metrics_path: /health
-    scheme: http
-    scrape_interval: 30s
-    scrape_timeout: 10s
-
-  # ============================================================================
   # Node Exporter - System Metrics
   # ============================================================================
   - job_name: 'node-exporter'
@@ -78,34 +50,102 @@ scrape_configs:
           service: 'alertmanager'
 
   # ============================================================================
-  # PostgreSQL (if postgres-exporter is deployed)
+  # cAdvisor - Container Metrics (MD-3095)
+  # Monitors all Docker containers
+  # ============================================================================
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'cadvisor'
+          tier: 'infrastructure'
+    scrape_interval: 15s
+
+  # ============================================================================
+  # PostgreSQL Exporter (MD-3095)
+  # Monitors PostgreSQL databases
   # ============================================================================
   - job_name: 'postgres'
     static_configs:
-      - targets: ['host.docker.internal:9187']
+      - targets: ['postgres-exporter:9187']
         labels:
           service: 'postgres'
           tier: 'database'
     scrape_interval: 30s
 
   # ============================================================================
-  # Redis (if redis-exporter is deployed)
+  # Redis Exporter (MD-3095)
+  # Monitors Redis instances
   # ============================================================================
   - job_name: 'redis'
     static_configs:
-      - targets: ['host.docker.internal:9121']
+      - targets: ['redis-exporter:9121']
         labels:
           service: 'redis'
           tier: 'cache'
     scrape_interval: 30s
 
   # ============================================================================
-  # Cadvisor - Container Metrics (optional)
+  # Blackbox Exporter - Health Endpoint Probing (MD-3095)
+  # AC-3: Real-time status with health check integration
   # ============================================================================
-  - job_name: 'cadvisor'
+  - job_name: 'blackbox-http'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
     static_configs:
-      - targets: ['host.docker.internal:8080']
+      # Development Environment Services
+      - targets:
+          - http://host.docker.internal:4100/health    # dev-backend
+          - http://host.docker.internal:3000           # dev-frontend
+          - http://host.docker.internal:4000/health    # dev-gateway
         labels:
-          service: 'cadvisor'
-          tier: 'infrastructure'
-    scrape_interval: 30s
+          environment: 'development'
+      # Sandbox Environment Services
+      - targets:
+          - http://host.docker.internal:14100/health   # sandbox-backend
+          - http://host.docker.internal:13000          # sandbox-frontend
+          - http://host.docker.internal:14000/health   # sandbox-gateway
+        labels:
+          environment: 'sandbox'
+      # Demo Environment Services
+      - targets:
+          - http://host.docker.internal:4100/health    # maestro-backend
+          - http://host.docker.internal:3001           # maestro-frontend
+        labels:
+          environment: 'demo'
+      # Quality Fabric
+      - targets:
+          - http://host.docker.internal:8000/health    # quality-fabric
+        labels:
+          environment: 'shared'
+          service: 'quality-fabric'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # TCP port checks for databases
+  - job_name: 'blackbox-tcp'
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    static_configs:
+      - targets:
+          - host.docker.internal:5432    # maestro-dev-postgres
+          - host.docker.internal:15432   # maestro-sandbox-postgres
+          - host.docker.internal:16379   # sandbox-redis
+          - host.docker.internal:3112    # sunday-postgres
+          - host.docker.internal:3113    # sunday-redis
+        labels:
+          tier: 'database'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

@@ -1,0 +1,23 @@
+FIX SUMMARY: Persona Loading Initialization
+=========================================
+
+Issue:
+------
+The `TeamExecutionEngineV2` fails to execute because the persona system (based on `maestro-engine`) requires explicit initialization.
+The error message `Personas not loaded. Call await adapter.ensure_loaded() first.` indicates that the async loading of persona definitions has not completed or was not triggered before the execution started.
+
+Root Cause:
+-----------
+The `SDLCPersonas` class in `personas.py` uses an async adapter to load personas from JSON definitions. While it attempts to lazy-load, the `ensure_loaded()` method must be awaited to guarantee that the definitions are available before any persona is accessed. `TeamExecutionEngineV2` does not currently perform this initialization step.
+
+Proposed Fix:
+-------------
+1.  Modify `src/maestro_hive/teams/team_execution_v2.py`.
+2.  Import `SDLCPersonas` and `MAESTRO_ENGINE_AVAILABLE` from `personas`.
+3.  In the `execute` method of `TeamExecutionEngineV2`, add a step to initialize the persona system.
+4.  This step will check if `MAESTRO_ENGINE_AVAILABLE` is true, and if so, retrieve the adapter and await `adapter.ensure_loaded()`.
+5.  Add logging to confirm successful loading or report errors.
+
+Verification:
+-------------
+After applying the fix, re-run `test_simple_execution.py`. The execution should proceed past the persona loading stage.

@@ -1,0 +1,24 @@
+MD-3033 Investigation Update
+==========================
+
+Discovery
+---------
+The "missing" files for MD-3033 were found in a detached documentation folder:
+`/home/ec2-user/projects/docs/jira/MD-3033/implementation/`
+
+This explains why the Compliance Report gave it a 100% score (it likely scanned this folder), while the actual codebase was empty (Fake Done).
+
+Files Found (Staged but not Deployed):
+- `e2e/fixtures/auth.fixture.ts`
+- `e2e/fixtures/database.fixture.ts`
+- `e2e/fixtures/api.fixture.ts`
+- `docker-compose.e2e.yml`
+- `.github/workflows/e2e-tests.yml`
+- `scripts/db-reset.sh`
+- And more...
+
+Resolution Plan
+---------------
+1.  **Move Files**: Copy these files from the `docs` folder to `maestro-frontend-production`.
+2.  **Verify Integration**: Ensure they work in the new location.
+3.  **Update JIRA**: Mark tasks as Done (legitimately this time).

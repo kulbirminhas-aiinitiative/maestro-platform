@@ -1,1 +1,1 @@
-# Tests for teams module
+"""Teams module tests."""

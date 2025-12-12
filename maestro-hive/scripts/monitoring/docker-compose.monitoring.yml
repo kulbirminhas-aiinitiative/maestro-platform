@@ -109,6 +109,79 @@ services:
       - monitoring-network
     restart: unless-stopped
 
+  # ============================================================================
+  # cAdvisor - Container Metrics (MD-3095)
+  # Provides CPU, memory, network, and disk usage for all Docker containers
+  # ============================================================================
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    container_name: maestro-cadvisor
+    hostname: cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+
+  # ============================================================================
+  # Postgres Exporter - PostgreSQL Database Metrics (MD-3095)
+  # Monitors all PostgreSQL instances
+  # ============================================================================
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: maestro-postgres-exporter
+    hostname: postgres-exporter
+    ports:
+      - "9187:9187"
+    environment:
+      - DATA_SOURCE_NAME=postgresql://postgres:maestro_secure_admin_2025_change_me@host.docker.internal:5432/postgres?sslmode=disable
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+
+  # ============================================================================
+  # Redis Exporter - Redis Cache Metrics (MD-3095)
+  # Monitors Redis instances for dev, sandbox environments
+  # ============================================================================
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.55.0
+    container_name: maestro-redis-exporter
+    hostname: redis-exporter
+    ports:
+      - "9121:9121"
+    environment:
+      - REDIS_ADDR=host.docker.internal:16379
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+
+  # ============================================================================
+  # Blackbox Exporter - Health Endpoint Probing (MD-3095)
+  # Probes HTTP endpoints for health checks
+  # ============================================================================
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.24.0
+    container_name: maestro-blackbox-exporter
+    hostname: blackbox-exporter
+    ports:
+      - "9115:9115"
+    volumes:
+      - ./blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+
 networks:
   monitoring-network:
     driver: bridge

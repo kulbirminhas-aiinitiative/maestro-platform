@@ -1,0 +1,61 @@
+# curriculum/python_101.yaml
+# Python 101: Fundamentals Curriculum
+# Part of Persona University (MD-3127)
+
+curriculum:
+  id: python_101
+  name: "Python 101: Fundamentals"
+  type: "major"
+  prerequisites: []
+
+  modules:
+    - id: syntax_basics
+      name: "Syntax Basics"
+      skills:
+        - python_syntax
+        - variable_types
+        - basic_operators
+      exam:
+        type: "code_completion"
+        time_limit_minutes: 30
+        pass_threshold: 0.8
+
+    - id: functions
+      name: "Functions & Scope"
+      skills:
+        - function_definition
+        - scope_rules
+        - parameters
+        - return_values
+      exam:
+        type: "bug_fix"
+        time_limit_minutes: 45
+        pass_threshold: 0.8
+
+    - id: data_structures
+      name: "Data Structures"
+      skills:
+        - lists
+        - dictionaries
+        - sets
+        - tuples
+      exam:
+        type: "code_completion"
+        time_limit_minutes: 45
+        pass_threshold: 0.8
+
+    - id: error_handling
+      name: "Error Handling"
+      skills:
+        - try_except
+        - custom_exceptions
+        - error_logging
+      exam:
+        type: "bug_fix"
+        time_limit_minutes: 30
+        pass_threshold: 0.8
+
+  certification:
+    name: "Python_Novice"
+    validity_days: 365
+    revocable: true

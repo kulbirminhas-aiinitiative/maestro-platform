@@ -15,6 +15,7 @@ This document contains **Gemini's proposals** for tickets MD-3091 to MD-3094. Th
 | Ticket | Gemini's Proposal | Actual JIRA Content | Verdict |
 |--------|-------------------|---------------------|---------|
 | **MD-3091** | JIT Validation (Micro-Loops) | Unified Execution Foundation | **CHALLENGE** |
+| **MD-3091-CORRECTION** | N/A | Fix Missing State Persistence | **NEW - CRITICAL** |
 | **MD-3092** | Stateful Orchestration | JIT Validation & Persona Reflection | **PARTIALLY ACCEPT** |
 | **MD-3093** | BDV/ACC Prompt Injection | Shift-Left Validation Integration | **ACCEPT as Enhancement** |
 | **MD-3094** | Feedback Highway | Token Efficiency & Cleanup | **ACCEPT - Merge** |
@@ -55,6 +56,11 @@ This document contains **Gemini's proposals** for tickets MD-3091 to MD-3094. Th
 > - `StateManager` at `/src/maestro_hive/core/state_manager.py`
 > - `CheckpointManager` at `/src/maestro_hive/maestro/state/checkpoint.py`
 > - `DAGExecutor` at `/src/maestro_hive/dag/dag_executor.py` (already has checkpoint/resume)
+>
+> ### 🔴 STATUS UPDATE (2025-12-11): INCOMPLETE
+> **Gap Analysis:** The implementation of MD-3091 is missing the critical "State Persistence" layer. The code runs in-memory only.
+> **Action:** Created correction ticket **MD-3091-CORRECTION** to implement `StateManager` integration.
+> **See:** `MD-3091_GAPS.md` for detailed findings.
 
 **Type:** Story
 **Priority:** Critical
@@ -111,6 +117,10 @@ We need to implement a "Micro-Loop" *inside* the persona execution to catch synt
 > - `DAGExecutor` with node-level state tracking
 >
 > **Action Taken:** Stateful orchestration moved to **actual MD-3091** as "Unified Execution Foundation"
+>
+> ### 🟡 STATUS UPDATE (2025-12-11): PARTIAL
+> **Gap Analysis:** Syntax checking (`ast.parse`) is implemented in `PersonaExecutor._validate_python_syntax`. However, deeper validation (linting, static analysis) is missing.
+> **Action:** Proceed with implementation but prioritize MD-3091-CORRECTION first.
 
 **Type:** Story
 **Priority:** High
@@ -165,6 +175,10 @@ We need "Stateful Orchestration" where the coordinator remembers which personas 
 >
 >     return prompt
 > ```
+>
+> ### 🔴 STATUS UPDATE (2025-12-11): FAILED
+> **Gap Analysis:** No evidence of "Prompt Injection" or BDV/ACC constraint enforcement in `PersonaExecutor`. It executes tasks blindly without injecting safety rules.
+> **Action:** Needs implementation of `_build_persona_prompt` logic to inject constraints.
 
 **Type:** Story
 **Priority:** High
@@ -225,6 +239,10 @@ We need to inject these rules into the *input prompt* so the AI knows the constr
 > ```
 >
 > **Action Taken:** Concept merged into **actual MD-3091** two-level retry design. Actual MD-3094 repurposed for "Token Efficiency & Cleanup"
+>
+> ### 🔴 STATUS UPDATE (2025-12-11): FAILED
+> **Gap Analysis:** `_check_token_budget` method is defined in `PersonaExecutor` but **never called**. The budget limits are ignored.
+> **Action:** Wire up `_check_token_budget` in the execution loop.
 
 **Type:** Story
 **Priority:** Medium
@@ -274,3 +292,44 @@ MD-3091 (Foundation) ─┬─► MD-3092 (JIT) ─┬─► MD-3093 (Shift-Left
 
 1. **MD-3093 AC-5:** BDV/ACC prompt injection (from Gemini's MD-3093)
 2. **MD-3091 FailureReport:** Structured failure data class (from Gemini's MD-3094)
+
+---
+
+## CORRECTION TICKETS (Created 2025-12-11)
+
+Based on Gemini's gap analysis, the following correction tickets were created:
+
+| Ticket | Original | Gap | Priority | Status |
+|--------|----------|-----|----------|--------|
+| **MD-3096** | MD-3093 | Proactive Constraint Injection (BDV/ACC in prompts) | P1 | To Do |
+| **MD-3097** | MD-3091 | State Persistence (StateManager not integrated) | P0 | To Do |
+| **MD-3098** | MD-3092 | Linting Integration (pylint/ruff not in JIT loop) | P1 | To Do |
+| **MD-3099** | MD-3094 | Token Budget Wiring (_check_token_budget never called) | P1 | To Do |
+
+### Evidence of Gaps
+
+```python
+# GAP 1 - MD-3097 (State Persistence)
+# team_execution_v2.py:1016
+# contract_manager will need StateManager - for now skip it
+
+# GAP 2 - MD-3098 (Linting)
+# grep -r "pylint|flake8|ruff" src/maestro_hive/teams
+# Result: No matches found
+
+# GAP 4 - MD-3099 (Token Budget)
+# grep -r "_check_token_budget(" src/
+# Result: Only definition at line 209, NO CALLS
+```
+
+### Updated Dependency Chain
+
+```
+MD-3097 (State Persistence) ──► MD-3091 (Foundation)
+                                      │
+                                      ├──► MD-3098 (Linting) ──► MD-3092 (JIT)
+                                      │
+                                      ├──► MD-3096 (Prompt Injection) ──► MD-3093 (Shift-Left)
+                                      │
+                                      └──► MD-3099 (Token Budget) ──► MD-3094 (Token Efficiency)
+```

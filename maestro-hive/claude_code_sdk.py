@@ -22,6 +22,9 @@ from pathlib import Path
 from typing import AsyncGenerator, Optional, Dict, Any, List
 from dataclasses import dataclass, field
 
+import sys
+print("DEBUG: Loaded claude_code_sdk from root", file=sys.stderr)
+
 logger = logging.getLogger(__name__)
 
 # Find the claude CLI
@@ -134,7 +137,8 @@ async def query(
             cwd=str(work_dir),
             env=env,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
+            stdin=asyncio.subprocess.DEVNULL
         )
 
         # Read and parse JSON stream output

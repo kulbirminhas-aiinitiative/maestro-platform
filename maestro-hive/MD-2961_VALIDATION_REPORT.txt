@@ -1,0 +1,44 @@
+MD-2961 Validation Report
+=========================
+
+EPIC: MD-2961 - Workflow Optimization & Standardization
+Status: Done (in JIRA)
+Actual Status: **Orphaned / Not Integrated**
+
+Summary
+-------
+The files associated with this EPIC exist in `src/maestro_hive/workflow/`, but they are **not integrated** into the main execution engine (`team_execution_v2.py`). Furthermore, the specific classes requested in the User Stories (e.g., `StandardizedToolRegistry`) do not exist by name, although generic implementations (`WorkflowPattern`, `ValidationRule`) are present.
+
+Detailed Findings
+-----------------
+
+### 1. File Existence (Tasks)
+| Task | File | Status |
+| :--- | :--- | :--- |
+| MD-2981 | `src/maestro_hive/workflow/standard_library.py` | ✅ Exists |
+| MD-2982 | `src/maestro_hive/workflow/best_practices_enforcer.py` | ✅ Exists |
+| MD-2983 | `src/maestro_hive/workflow/shared_toolkit.py` | ✅ Exists |
+| MD-2984 | `src/maestro_hive/workflow/error_prevention_rag.py` | ✅ Exists |
+| MD-2985 | `src/maestro_hive/frontend_assets/workflow/OptimizationDashboard.tsx` | ✅ Exists |
+
+### 2. Feature Implementation (Stories)
+| Story | Requested Feature | Finding |
+| :--- | :--- | :--- |
+| MD-2974 | `StandardizedToolRegistry` | ❌ **Missing**. `standard_library.py` contains `WorkflowPattern` but no registry class. |
+| MD-2975 | `BestPracticeLinter` | ❌ **Missing**. `best_practices_enforcer.py` contains `ValidationRule` but no Linter class. |
+| MD-2976 | `SharedComponentLibrary` | ❌ **Missing**. `shared_toolkit.py` contains `TokenBucketRateLimiter` but no Component Library. |
+| MD-2977 | `AntiPatternDetection` | ❌ **Missing**. No specific anti-pattern detection logic found. |
+| MD-2978 | `HistoricalErrorRAG` | ✅ Exists in `error_prevention_rag.py` (orphaned). |
+
+### 3. Integration (The Gap)
+The `team_execution_v2.py` engine **does not import** any of these new modules.
+- No import of `standard_library`
+- No import of `best_practices_enforcer`
+- No import of `shared_toolkit`
+- No import of `error_prevention_rag`
+
+Recommendation
+--------------
+1.  **Reopen MD-2961 (EPIC)** or create a new "Integration" EPIC.
+2.  **Rename/Refactor** the existing classes to match the requested feature names (e.g., rename `WorkflowPattern` to `StandardizedTool` or wrap it in a Registry).
+3.  **Integrate** these modules into `team_execution_v2.py`.

@@ -10,8 +10,9 @@ from pathlib import Path
 
 # Add to path
 sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from quality_fabric_client import QualityFabricClient, PersonaType
+from maestro_hive.quality.quality_fabric_client import QualityFabricClient, PersonaType
 from dataclasses import asdict
 
 
@@ -172,7 +173,7 @@ async def test_complete_workflow():
         persona_results=persona_results
     )
     
-    print(f"\nPhase Transition: {phase_result['phase']} → {phase_result['next_phase']}")
+    print(f"\nPhase Transition: {phase_result.get('phase', 'unknown')} → {phase_result.get('next_phase', 'unknown')}")
     
     status_icon = {"pass": "✅", "warning": "⚠️", "fail": "❌"}[phase_result['status']]
     print(f"Status: {status_icon} {phase_result['status'].upper()}")

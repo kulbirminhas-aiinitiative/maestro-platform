@@ -51,6 +51,22 @@ sys.path.insert(0, str(Path(__file__).parent))
 # Import our modules
 from persona_executor_v2 import PersonaExecutorV2, PersonaExecutionResult, MockGeneration
 
+# MD-3093: Shift-Left Validation
+try:
+    from maestro_hive.teams.shift_left_validator import (
+        ShiftLeftValidator,
+        CriticalViolation,
+        GroupValidationResult,
+        ValidationFeedback
+    )
+    SHIFT_LEFT_AVAILABLE = True
+except ImportError:
+    SHIFT_LEFT_AVAILABLE = False
+    ShiftLeftValidator = None
+    CriticalViolation = Exception
+    GroupValidationResult = None
+    ValidationFeedback = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -76,23 +92,29 @@ class ParallelExecutionResult:
     total_duration: float
     sequential_duration: float  # What it would have taken sequentially
     time_savings_percent: float
-    
+
     # Per-persona results
     persona_results: Dict[str, PersonaExecutionResult]
-    
+
     # Execution groups
     groups_executed: List[ExecutionGroup]
     parallelization_achieved: float  # 0-1, how much parallelization was achieved
-    
+
     # Contract validation
     contracts_fulfilled: int
     contracts_total: int
     integration_issues: List[Dict[str, Any]]
-    
+
     # Quality
     overall_quality_score: float
     quality_by_persona: Dict[str, float]
-    
+
+    # MD-3093: Shift-Left Validation Results
+    shift_left_validations: List[Any] = field(default_factory=list)  # List[GroupValidationResult]
+    early_stopped: bool = False
+    early_stop_reason: Optional[str] = None
+    corrections_applied: int = 0
+
     # Metadata
     executed_at: datetime = field(default_factory=datetime.now)
 
@@ -112,17 +134,28 @@ class ParallelCoordinatorV2:
     def __init__(
         self,
         output_dir: Path,
-        max_parallel_workers: int = 4
+        max_parallel_workers: int = 4,
+        enable_shift_left: bool = True
     ):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.max_parallel_workers = max_parallel_workers
-        
+
         # Dependency graph
         self.dependency_graph = nx.DiGraph()
-        
+
+        # MD-3093: Shift-Left Validator
+        self.shift_left_validator = None
+        self.enable_shift_left = enable_shift_left
+        if enable_shift_left and SHIFT_LEFT_AVAILABLE:
+            self.shift_left_validator = ShiftLeftValidator()
+            logger.info("✅ Shift-Left Validator enabled (MD-3093)")
+        elif enable_shift_left:
+            logger.warning("⚠️ Shift-Left Validator requested but not available")
+
         logger.info("✅ Parallel Coordinator V2 initialized")
         logger.info(f"   Max parallel workers: {max_parallel_workers}")
+        logger.info(f"   Shift-Left validation: {self.shift_left_validator is not None}")
     
     def analyze_dependencies(
         self,
@@ -241,65 +274,125 @@ class ParallelCoordinatorV2:
     ) -> ParallelExecutionResult:
         """
         Execute personas in parallel based on contracts.
-        
+
         This is the main orchestration method.
+
+        MD-3093: Now includes shift-left validation after each group.
         """
         start_time = datetime.now()
         context = context or {}
-        
+        execution_id = context.get("session_id", f"exec_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+
         logger.info("="*80)
         logger.info("🚀 PARALLEL EXECUTION COORDINATOR")
         logger.info("="*80)
         logger.info(f"Requirement: {requirement[:80]}...")
         logger.info(f"Contracts: {len(contracts)}")
         logger.info(f"Max parallel workers: {self.max_parallel_workers}")
+        logger.info(f"Shift-Left validation: {self.shift_left_validator is not None}")
         logger.info("="*80)
-        
+
+        # MD-3093: Reset shift-left validator for new execution
+        if self.shift_left_validator:
+            self.shift_left_validator.reset()
+
         # Step 1: Identify parallel groups
         groups = self.identify_parallel_groups(contracts)
-        
+
         # Step 2: Generate mocks for contracts that need them
         mocks = await self._generate_mocks_for_contracts(contracts)
-        
+
         # Step 3: Execute groups in order (parallel within groups)
+        # MD-3093: With shift-left validation after each group
         persona_results = {}
         groups_executed = []
-        
+        shift_left_validations = []
+        early_stopped = False
+        early_stop_reason = None
+        corrections_applied = 0
+
         for group in groups:
             logger.info(f"\n🎬 Executing {group.id}...")
             logger.info(f"   Personas: {', '.join(group.personas)}")
             logger.info(f"   Parallel: {len(group.personas) > 1}")
-            
-            # Execute personas in this group in parallel
-            group_results = await self._execute_group(
-                requirement,
-                group,
-                mocks,
-                context
-            )
-            
-            # Merge results
-            persona_results.update(group_results)
-            groups_executed.append(group)
-            
-            logger.info(f"   ✅ {group.id} complete")
-        
+
+            try:
+                # Execute personas in this group in parallel
+                group_results = await self._execute_group(
+                    requirement,
+                    group,
+                    mocks,
+                    context
+                )
+
+                # Merge results
+                persona_results.update(group_results)
+                groups_executed.append(group)
+
+                # MD-3093 AC-1/AC-2: Shift-Left Validation after each group
+                if self.shift_left_validator:
+                    logger.info(f"   🔬 Running shift-left validation for {group.id}...")
+
+                    try:
+                        validation_result = await self.shift_left_validator.validate_group(
+                            group_id=group.id,
+                            group_result=group_results,
+                            contracts=group.contracts,
+                            output_dir=self.output_dir,
+                            execution_id=execution_id
+                        )
+                        shift_left_validations.append(validation_result)
+
+                        # MD-3093 AC-4: Apply feedback and retry if needed
+                        if validation_result.feedback and not validation_result.should_stop:
+                            retry_result = await self._apply_feedback_and_retry(
+                                requirement=requirement,
+                                group=group,
+                                group_results=group_results,
+                                feedback=validation_result.feedback,
+                                mocks=mocks,
+                                context=context
+                            )
+                            if retry_result:
+                                corrections_applied += 1
+                                persona_results.update(retry_result)
+                                logger.info(f"   🔄 Applied correction for {group.id}")
+
+                    except CriticalViolation as cv:
+                        # MD-3093 AC-3: Early stop on critical violations
+                        logger.error(f"   🛑 CRITICAL VIOLATION in {group.id}: {cv}")
+                        early_stopped = True
+                        early_stop_reason = str(cv)
+                        if cv.validation_result:
+                            shift_left_validations.append(cv.validation_result)
+                        break
+
+                logger.info(f"   ✅ {group.id} complete")
+
+            except Exception as e:
+                logger.error(f"   ❌ {group.id} failed: {e}")
+                # Continue with next group unless it's a critical failure
+                if "critical" in str(e).lower():
+                    early_stopped = True
+                    early_stop_reason = str(e)
+                    break
+
         # Step 4: Calculate metrics
         end_time = datetime.now()
         total_duration = (end_time - start_time).total_seconds()
-        
+
         # Calculate what sequential duration would have been
         sequential_duration = sum(
             result.duration_seconds
             for result in persona_results.values()
         )
-        
+
         # Calculate time savings
         time_savings_percent = (
             (sequential_duration - total_duration) / sequential_duration
             if sequential_duration > 0 else 0
         )
-        
+
         # Calculate parallelization achieved
         theoretical_parallel_time = max(
             [group.estimated_duration for group in groups],
@@ -309,32 +402,38 @@ class ParallelCoordinatorV2:
             theoretical_parallel_time / total_duration if total_duration > 0 else 0,
             1.0
         )
-        
+
         # Step 5: Validate integration
         integration_issues = await self._validate_integration(
             contracts,
             persona_results
         )
-        
+
         # Calculate contract fulfillment
         contracts_fulfilled = sum(
             1 for result in persona_results.values()
             if result.contract_fulfilled
         )
         contracts_total = len(contracts)
-        
+
         # Calculate quality scores
         overall_quality = sum(
             result.quality_score for result in persona_results.values()
         ) / len(persona_results) if persona_results else 0.0
-        
+
         quality_by_persona = {
             persona_id: result.quality_score
             for persona_id, result in persona_results.items()
         }
-        
+
+        # Determine success (including early stop consideration)
+        execution_success = (
+            all(r.success for r in persona_results.values())
+            and not early_stopped
+        )
+
         result = ParallelExecutionResult(
-            success=all(r.success for r in persona_results.values()),
+            success=execution_success,
             total_duration=total_duration,
             sequential_duration=sequential_duration,
             time_savings_percent=time_savings_percent,
@@ -346,13 +445,77 @@ class ParallelCoordinatorV2:
             integration_issues=integration_issues,
             overall_quality_score=overall_quality,
             quality_by_persona=quality_by_persona,
+            shift_left_validations=shift_left_validations,
+            early_stopped=early_stopped,
+            early_stop_reason=early_stop_reason,
+            corrections_applied=corrections_applied,
             executed_at=end_time
         )
-        
+
         # Print summary
         self._print_execution_summary(result)
-        
+
         return result
+
+    async def _apply_feedback_and_retry(
+        self,
+        requirement: str,
+        group: ExecutionGroup,
+        group_results: Dict[str, PersonaExecutionResult],
+        feedback: 'ValidationFeedback',
+        mocks: Dict[str, Any],
+        context: Dict[str, Any],
+        max_retries: int = 2
+    ) -> Optional[Dict[str, PersonaExecutionResult]]:
+        """
+        MD-3093 AC-4: Apply validation feedback and retry execution.
+
+        Args:
+            requirement: Original requirement
+            group: Execution group to retry
+            group_results: Previous results
+            feedback: Validation feedback with corrections
+            mocks: Available mocks
+            context: Execution context
+            max_retries: Maximum retry attempts
+
+        Returns:
+            Updated results if correction successful, None otherwise
+        """
+        retry_count = feedback.retry_context.get("retry_number", 0)
+
+        if retry_count >= max_retries:
+            logger.warning(f"   Max retries ({max_retries}) reached for {group.id}")
+            return None
+
+        logger.info(f"   🔄 Applying feedback for {feedback.persona_id} (retry {retry_count + 1}/{max_retries})")
+
+        # Update feedback context
+        feedback.retry_context["retry_number"] = retry_count + 1
+
+        # Add feedback to context for persona
+        correction_context = {
+            **context,
+            "validation_feedback": feedback.to_prompt_context(),
+            "is_correction_retry": True,
+            "retry_number": retry_count + 1
+        }
+
+        try:
+            # Re-execute the group with feedback context
+            corrected_results = await self._execute_group(
+                requirement=requirement,
+                group=group,
+                mocks=mocks,
+                context=correction_context
+            )
+
+            logger.info(f"   ✅ Correction applied for {group.id}")
+            return corrected_results
+
+        except Exception as e:
+            logger.error(f"   ❌ Correction failed for {group.id}: {e}")
+            return None
     
     async def _generate_mocks_for_contracts(
         self,
@@ -541,16 +704,34 @@ class ParallelCoordinatorV2:
         logger.info(f"")
         logger.info(f"✨ Quality:")
         logger.info(f"   Overall: {result.overall_quality_score:.0%}")
-        
+
         for persona_id, quality in result.quality_by_persona.items():
             logger.info(f"   {persona_id}: {quality:.0%}")
-        
+
+        # MD-3093: Shift-Left Validation Summary
+        if result.shift_left_validations:
+            logger.info(f"")
+            logger.info(f"🔬 Shift-Left Validation (MD-3093):")
+            logger.info(f"   Groups validated: {len(result.shift_left_validations)}")
+            logger.info(f"   Corrections applied: {result.corrections_applied}")
+
+            passed = sum(1 for v in result.shift_left_validations if v.passed)
+            logger.info(f"   Passed: {passed}/{len(result.shift_left_validations)}")
+
+            if result.early_stopped:
+                logger.error(f"   🛑 EARLY STOP: {result.early_stop_reason}")
+
+            # Show per-group validation scores
+            for validation in result.shift_left_validations:
+                status = "✅" if validation.passed else ("🛑" if validation.should_stop else "⚠️")
+                logger.info(f"   {status} {validation.group_id}: BDV={validation.bdv_score:.2f} ACC={validation.acc_score:.2f}")
+
         if result.integration_issues:
             logger.info(f"")
             logger.info(f"⚠️  Issues:")
             for issue in result.integration_issues:
                 logger.info(f"   [{issue['severity']}] {issue['message']}")
-        
+
         logger.info("="*80)
         
         # Visual timeline

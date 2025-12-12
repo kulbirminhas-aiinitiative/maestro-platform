@@ -1,0 +1,39 @@
+# Blackbox Exporter Configuration
+# MD-3095: Health endpoint probing for all Maestro services
+
+modules:
+  # HTTP health check for APIs (expects 200 OK)
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200]
+      method: GET
+      follow_redirects: true
+      preferred_ip_protocol: "ip4"
+
+  # HTTP health check for APIs that may return other success codes
+  http_2xx_3xx:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 201, 204, 301, 302, 307]
+      method: GET
+      follow_redirects: true
+      preferred_ip_protocol: "ip4"
+
+  # TCP port check (for databases, redis, etc.)
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      preferred_ip_protocol: "ip4"
+
+  # ICMP ping check
+  icmp:
+    prober: icmp
+    timeout: 5s
+    icmp:
+      preferred_ip_protocol: "ip4"

@@ -1,0 +1,45 @@
+MD-2385 Validation Report
+=========================
+
+EPIC: MD-2385 - Real-Time Team Performance Metrics & Grading System
+Status: Done (in JIRA)
+Actual Status: **Incomplete / Fake Done**
+
+Summary
+-------
+The Epic is marked as "Done", but the implementation is incomplete and relies on mock data. All remediation child tasks (MD-2468 to MD-2474) are in "To Do" status.
+
+Detailed Findings
+-----------------
+
+### 1. Frontend Implementation
+| File | Status | Finding |
+| :--- | :--- | :--- |
+| `maestro-frontend/src/components/PerformanceMetrics.tsx` | ⚠️ **Mocked** | Contains comment: `// Mock data - replace with actual API calls` |
+
+### 2. Backend Implementation
+| Component | Expected File | Status | Finding |
+| :--- | :--- | :--- | :--- |
+| Team Aggregation | `src/maestro_hive/teams/performance_tracker.py` | ❌ **Missing** | File does not exist. |
+| Agent Tracker | `dde/performance_tracker.py` | ✅ **Exists** | Exists but lacks team-level aggregation logic. |
+| Gamification | `*gamification*` | ❌ **Missing** | No gamification logic found. |
+
+### 3. Child Tasks (Remediation)
+| Task | Summary | Status |
+| :--- | :--- | :--- |
+| MD-2468 | Add formal acceptance criteria | To Do |
+| MD-2469 | Technical design document | To Do |
+| MD-2470 | Replace frontend mock data | To Do |
+| MD-2471 | Team performance aggregation service | To Do |
+| MD-2472 | Connect Jira/Git tools | To Do |
+| MD-2473 | Gamification features | To Do |
+| MD-2474 | Test suite | To Do |
+
+### 4. Conclusion
+The "Done" status is incorrect. The feature is partially implemented (UI shell exists) but non-functional (mock data) and missing core backend logic.
+
+Recommendation
+--------------
+1.  **Reopen MD-2385 (EPIC)**.
+2.  **Keep Child Tasks Open**.
+3.  **Schedule Implementation**.

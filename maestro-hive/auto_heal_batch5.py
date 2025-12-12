@@ -140,8 +140,14 @@ class AutoHealer:
 
             # Run validation again (it will update the recovery plan)
             import subprocess
+            # Use absolute path or correct relative path to validate_all_workflows.py
+            validate_script = Path("src/maestro_hive/quality/validate_all_workflows.py").resolve()
+            if not validate_script.exists():
+                logger.error(f"Validation script not found at {validate_script}")
+                break
+
             result = subprocess.run(
-                ['python3', 'validate_all_workflows.py'],
+                ['python3', str(validate_script)],
                 capture_output=True,
                 text=True,
                 cwd=str(Path(__file__).parent)

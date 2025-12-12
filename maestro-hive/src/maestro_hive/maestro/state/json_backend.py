@@ -39,7 +39,7 @@ class JSONStateStore(StateStore):
 
     def __init__(
         self,
-        state_dir: str = "/tmp/maestro/state",
+        state_dir: str = "/var/maestro/state",
         max_versions: int = 100,
     ):
         """

@@ -1,0 +1,378 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# MAESTRO HIVE CONSTITUTION (Governance Policy)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Version: 2.0.0
+# Status: DRAFT (Post-Review)
+# Last Updated: 2025-12-11
+# RFC Reference: RFC-001_GOVERNANCE_LAYER.md
+# Review Reference: RFC-001_GOVERNANCE_LAYER_REVIEW.md
+#
+# CHANGE LOG:
+#   v1.0.0 - Initial draft
+#   v2.0.0 - Added sections 3-10 based on critical review findings
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SECTION 1: GLOBAL LIMITS
+# ───────────────────────────────────────────────────────────────────────────────
+# Hard limits that apply to the entire swarm.
+# These are the "physics" of the environment - cannot be exceeded.
+global_constraints:
+  max_daily_budget_usd: 50.00
+  max_concurrent_agents: 10
+  max_recursion_depth: 5
+
+  # [REVIEW NOTE] Added: Human-in-the-loop for critical actions
+  require_human_approval_for:
+    - "deploy_prod"
+    - "delete_database"
+    - "modify_policy"
+    - "kill_agent"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SECTION 2: FILE SYSTEM PROTECTION
+# ───────────────────────────────────────────────────────────────────────────────
+# "Physics" of the world: Some things cannot be touched.
+# This implements the "Constitutional Self-Protection" principle.
+file_protection:
+  # Files that agents can NEVER modify or delete
+  # [REVIEW NOTE] This list protects the constitution from being rewritten
+  immutable_paths:
+    - ".env"
+    - ".env.*"
+    - "config/governance/policy.yaml"
+    - "docs/rfc/RFC-001_GOVERNANCE_LAYER.md"
+    - ".git/*"
+    - "*.pem"
+    - "*.key"
+    - "**/secrets/**"
+
+  # Files that require "Senior" or "Architect" role to modify
+  protected_paths:
+    - "src/maestro_hive/core/*"
+    - "alembic.ini"
+    - "docker-compose*.yml"
+    - "Dockerfile*"
+    - "pyproject.toml"
+    - "setup.py"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SECTION 3: CONCURRENCY CONTROL
+# ───────────────────────────────────────────────────────────────────────────────
+# [REVIEW NOTE] NEW SECTION - Critical gap identified in review
+# Prevents race conditions when multiple agents edit same resources
+concurrency_control:
+  strategy: "pessimistic_locking"  # Lock before edit
+
+  file_locks:
+    max_lock_duration_seconds: 300      # 5 minutes max
+    lock_expiry_action: "force_release_and_notify"
+    max_locks_per_agent: 3              # Prevent lock hoarding
+    queue_max_waiters: 5                # Max agents waiting for same file
+
+  conflict_resolution:
+    default: "escalate_to_governance"
+    read_only: "allow_concurrent"       # Multiple readers OK
+    same_agent_retry: "allow_after_cooldown"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SECTION 4: AGENT ROLES & RIGHTS
+# ───────────────────────────────────────────────────────────────────────────────
+# Defining the hierarchy of the society.
+# Implements principle of least privilege.
+roles:
+  # The "Intern" - Can write code but not deploy
+  developer_agent:
+    max_tokens_per_run: 20000
+    max_file_locks: 2
+    allowed_tools:
+      - "read_file"
+      - "create_file"
+      - "edit_file"
+      - "run_test"
+      - "search_code"
+    forbidden_tools:
+      - "deploy_service"
+      - "delete_database"
+      - "modify_policy"
+      - "kill_agent"
+      - "merge_pr"
+
+  # [REVIEW NOTE] NEW ROLE - Progression path for developers
+  senior_developer_agent:
+    max_tokens_per_run: 50000
+    max_file_locks: 3
+    allowed_tools:
+      - "read_file"
+      - "create_file"
+      - "edit_file"
+      - "run_test"
+      - "search_code"
+      - "merge_pr"           # Can merge PRs
+      - "code_review"
+    forbidden_tools:
+      - "deploy_service"
+      - "delete_database"
+      - "modify_policy"
+
+  # The "Architect" - Can change structure and deploy
+  architect_agent:
+    max_tokens_per_run: 100000
+    max_file_locks: 5
+    allowed_tools: ["*"]     # Full access
+    forbidden_tools:
+      - "modify_policy"      # Even architects can't change laws
+
+  # The "Sheriff" - Can kill other agents and enforce policy
+  governance_agent:
+    max_tokens_per_run: 50000
+    allowed_tools:
+      - "kill_process"
+      - "revoke_token"
+      - "read_logs"
+      - "read_audit"
+      - "modify_reputation"
+      - "review_appeal"
+      - "lock_file"
+      - "unlock_file"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SECTION 5: ROLE PROGRESSION
+# ───────────────────────────────────────────────────────────────────────────────
+# [REVIEW NOTE] NEW SECTION - Defines how agents "level up"
+# Addresses the question: How does an intern become an architect?
+role_progression:
+  developer_agent:
+    can_promote_to: "senior_developer_agent"
+    requirements:
+      min_reputation: 200
+      min_tenure_days: 7
+      successful_prs: 5
+      zero_policy_violations_days: 7
+
+  senior_developer_agent:
+    can_promote_to: "architect_agent"
+    requirements:
+      min_reputation: 500
+      min_tenure_days: 30
+      successful_deployments: 3
+      human_approval: true    # Humans must sign off on architects
+
+  # [REVIEW NOTE] Demotion is also possible
+  demotion_triggers:
+    reputation_below: 30
+    policy_violations_in_week: 2
+    action: "demote_one_level"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SECTION 6: REPUTATION SYSTEM
+# ───────────────────────────────────────────────────────────────────────────────
+# How agents earn or lose trust.
+# [REVIEW NOTE] Enhanced with anti-gaming measures
+reputation_scoring:
+  initial_score: 50
+  min_score_to_survive: 10    # Below this, agent is decommissioned
+
+  # ┌─────────────────────────────────────────────────────────────────────────┐
+  # │ ANTI-GAMING MEASURES                                                     │
+  # │ [REVIEW NOTE] Critical addition to prevent reputation manipulation       │
+  # └─────────────────────────────────────────────────────────────────────────┘
+  rate_limits:
+    max_daily_gain: 100       # Cap daily positive reputation
+    max_daily_loss: -50       # Prevent death spiral
+    cooldown_between_same_event_seconds: 60  # No rapid-fire gains
+
+  # Decay model - prevents stale high-reputation agents from dominating
+  decay:
+    model: "exponential"
+    half_life_days: 30        # Reputation halves every 30 inactive days
+    minimum_floor: 20         # Never decay below this
+
+  # ┌─────────────────────────────────────────────────────────────────────────┐
+  # │ SCORING EVENTS                                                           │
+  # │ [REVIEW NOTE] Added conditions to prevent gaming                         │
+  # └─────────────────────────────────────────────────────────────────────────┘
+  events:
+    # Positive events
+    test_passed:
+      base: +5
+      conditions:
+        - "test_increases_coverage"      # Must actually improve coverage
+        - "test_is_not_trivial"          # No `assert True` tests
+    pr_merged:
+      base: +20
+      weight_by: "min(lines_changed / 50, 3)"  # Larger PRs worth more, capped at 3x
+      min_lines: 10                      # Prevent 1-line PR spam
+    bug_fixed:
+      base: +15
+      conditions:
+        - "bug_existed_before_agent_joined"  # Can't create then fix bugs
+    code_review_completed:
+      base: +10
+      conditions:
+        - "review_has_substantive_comments"
+
+    # Negative events
+    test_failed: -5
+    build_broken: -20
+    policy_violation: -30
+    security_vulnerability_introduced: -50
+    appeal_rejected: -10
+    hallucination_detected: -15
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SECTION 7: APPEAL SYSTEM
+# ───────────────────────────────────────────────────────────────────────────────
+# [REVIEW NOTE] NEW SECTION - Addresses RFC Open Question #3
+# Provides recourse for agents blocked by the Enforcer
+appeal_system:
+  enabled: true
+  max_appeals_per_day: 3
+
+  reviewers:
+    tier_1: "governance_agent"
+    tier_2: "human_escalation"    # If governance_agent also denies
+
+  # Fast-track approvals for trusted agents
+  auto_approve:
+    conditions:
+      - "agent_reputation > 300 AND action_is_read_only"
+      - "agent_reputation > 400 AND action_not_in_protected_paths"
+
+  # Automatic denials
+  auto_deny:
+    conditions:
+      - "agent_reputation < 20"
+      - "same_action_denied_3_times_today"
+      - "action_targets_immutable_path"
+
+  escalation:
+    trigger: "tier_1_denied_and_agent_appeals"
+    human_sla_hours: 24
+    notify_via: ["event_bus", "slack"]
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SECTION 8: EMERGENCY OVERRIDE ("God Mode")
+# ───────────────────────────────────────────────────────────────────────────────
+# [REVIEW NOTE] NEW SECTION - Addresses RFC Open Question #1
+# Human override capability with strict constraints
+emergency_override:
+  enabled: true
+
+  # Multi-signature requirement prevents single point of failure
+  min_human_signatures: 2
+  max_duration_hours: 4       # Override expires automatically
+
+  allowed_actions:
+    - "increase_budget"
+    - "extend_deadline"
+    - "grant_temporary_permission"
+    - "kill_runaway_agent"
+    - "pause_all_agents"
+
+  # These actions are NEVER allowed, even in emergency
+  # [REVIEW NOTE] Constitutional protection - cannot be overridden
+  forbidden_actions:
+    - "delete_audit_logs"
+    - "modify_policy_retroactively"
+    - "disable_enforcement"
+    - "bypass_immutable_paths"
+
+  audit:
+    log_to_immutable_store: true
+    notify_all_stakeholders: true
+    require_justification: true
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SECTION 9: IDENTITY & SECURITY
+# ───────────────────────────────────────────────────────────────────────────────
+# [REVIEW NOTE] NEW SECTION - Addresses Sybil and collusion attacks
+identity_security:
+  require_cryptographic_identity: true
+  identity_algorithm: "ed25519"
+  max_agents_per_identity: 1          # Prevent clone armies
+  spawn_cooldown_seconds: 3600        # 1 hour between agent spawns
+
+anti_collusion:
+  enabled: true
+  correlation_threshold: 0.8          # Flag if agents are 80% coordinated
+  detection_window_hours: 24
+  monitored_patterns:
+    - "simultaneous_bids"
+    - "reputation_transfer_patterns"
+    - "coordinated_file_edits"
+  action_on_detection: "flag_for_human_review"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SECTION 10: AUDIT & LOGGING
+# ───────────────────────────────────────────────────────────────────────────────
+# [REVIEW NOTE] NEW SECTION - Critical for forensics and compliance
+audit:
+  log_all_actions: true
+  log_all_policy_checks: true
+  log_format: "structured_json"
+  retention_days: 90
+
+  # Immutable audit log - cannot be tampered with
+  immutable_log:
+    enabled: true
+    backend: "append_only_file"       # Options: append_only_file, s3, blockchain
+
+  # Fields available for forensic queries
+  queryable_fields:
+    - "agent_id"
+    - "action_type"
+    - "target_resource"
+    - "policy_result"
+    - "timestamp"
+    - "reputation_at_time"
+
+  # Integration with Event Bus (MD-3100)
+  broadcast_to_event_bus:
+    enabled: true
+    topics:
+      violations: "governance.violation"
+      reputation: "governance.reputation_change"
+      role_changes: "governance.role_change"
+      appeals: "governance.appeal"
+      overrides: "governance.emergency_override"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SECTION 11: CHAOS AGENTS (Anti-Fragility)
+# ───────────────────────────────────────────────────────────────────────────────
+# Implements the "Chaos Management" pillar from RFC-001
+chaos_agents:
+  # The "Loki" Agent - Introduces controlled chaos
+  loki:
+    enabled: true
+    schedule: "0 3 * * *"             # Run at 3 AM daily
+    actions:
+      - type: "kill_random_worker"
+        probability: 0.1
+      - type: "inject_latency"
+        target: "event_bus"
+        latency_ms: 500
+        probability: 0.2
+      - type: "simulate_resource_exhaustion"
+        probability: 0.05
+    constraints:
+      max_disruptions_per_run: 3
+      never_target: ["governance_agent", "audit_service"]
+
+  # The "Janitor" Agent - Fights entropy
+  janitor:
+    enabled: true
+    schedule: "0 2 * * *"             # Run at 2 AM daily
+    actions:
+      - type: "archive_old_logs"
+        older_than_days: 30
+      - type: "remove_dead_code"
+        require_zero_references: true
+      - type: "validate_documentation"
+        check_readme_matches_structure: true
+      - type: "cleanup_orphan_files"
+        in_directories: ["/tmp", "/.cache"]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# END OF CONSTITUTION
+# ═══════════════════════════════════════════════════════════════════════════════

@@ -18,10 +18,15 @@ Each scenario tests different execution patterns and contract types.
 import asyncio
 import json
 import logging
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List
 from dataclasses import dataclass, asdict
+
+# Add src to path
+sys.path.insert(0, str(Path(__file__).parent / "src" / "maestro_hive" / "teams"))
+sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 # Configure logging
 logging.basicConfig(
@@ -574,7 +579,10 @@ class ComprehensiveTestRunner:
         
         try:
             # Import team execution v2
-            from team_execution_v2 import TeamExecutionEngineV2
+            try:
+                from team_execution_v2 import TeamExecutionEngineV2
+            except ImportError:
+                from maestro_hive.teams.team_execution_v2 import TeamExecutionEngineV2
             
             # Create engine
             engine = TeamExecutionEngineV2()

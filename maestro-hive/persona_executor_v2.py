@@ -49,13 +49,29 @@ from personas import SDLCPersonas
 
 # Claude Code API Layer - Standalone package
 try:
+    # MD-3054: Use local adapter with stdin fix instead of external package
     import sys
-    sys.path.insert(0, '/home/ec2-user/projects/maestro-platform')
-    from claude_code_api_layer import ClaudeCLIClient
+    from pathlib import Path
+    
+    # Add src to path to find the adapter
+    src_path = str(Path(__file__).parent / "src")
+    if src_path not in sys.path:
+        sys.path.insert(0, src_path)
+        
+    try:
+        from maestro_hive.teams.claude_client_adapter import ClaudeCLIClient
+        logging.info("✅ Claude SDK loaded (Local Adapter)")
+    except ImportError as e:
+        logging.warning(f"⚠️ Local Claude adapter import failed: {e}")
+        # Fallback to external if local not found
+        sys.path.insert(0, '/home/ec2-user/projects/maestro-platform')
+        from claude_code_api_layer import ClaudeCLIClient
+        logging.info("✅ Claude SDK loaded (External)")
+        
     CLAUDE_SDK_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     CLAUDE_SDK_AVAILABLE = False
-    logging.warning("claude_code_api_layer not available")
+    logging.warning(f"claude_code_api_layer not available: {e}")
 
 # RAG Template Client for template recommendations
 try:
